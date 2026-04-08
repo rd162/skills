@@ -305,6 +305,6 @@ Works with any agent or LLM that supports the skills format:
   (arXiv:2502.05078, 2025).
   Adaptive method selection across reasoning structures.
 - The 5-dimension classification (stakes, complexity, divergence,
-  freshness, budget) and the decision procedure are original
-  to PE_Library — no published framework provides an equivalent
-  actionable selection system for prompt engineering methods.
+  freshness, budget) and the decision procedure are novel —
+  no published framework provides an equivalent actionable selection
+  system for prompt engineering methods.

@@ -90,7 +90,7 @@ For each section in a system rule file, ask:
 
 ## Worked Example: Prompt_Optimization_Rules.md → 5 Skills
 
-This is the actual decomposition performed in the PE_Library thread.
+This is an actual decomposition example.
 
 ### Source File
 
@@ -382,7 +382,7 @@ After refactoring a system rule file:
 
 ---
 
-## Thread Narrative: How PE_Library Decomposed Its System Rules
+## Thread Narrative: How System Rules Were Decomposed
 
 ### Starting State
 

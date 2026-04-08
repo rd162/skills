@@ -237,11 +237,13 @@ because it weakens the isolation that makes Condorcet meaningful.
 ```
 
 **Risks:**
+
 - Candidates may converge further (trigger convergence detection again)
 - Adoption of innovations may be superficial
 - Independence of solutions is reduced
 
 **Benefits:**
+
 - Quality floor rises — the worst solution gets access to the best insights
 - The final winner incorporates the best ideas from all candidates
 - Prevents the scenario where the best insight was in the losing candidate

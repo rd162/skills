@@ -117,12 +117,12 @@ The skill uses natural-language sub-agent instructions that work across
 any environment with agent-dispatch capabilities. Detect what your
 environment provides and use the highest-isolation mode available.
 
-| Capability level           | Parallel? | Routing? | Notes                                 |
-| -------------------------- | --------- | -------- | ------------------------------------- |
-| Concurrent sub-agents      | Yes       | Yes      | Best: full isolation + parallel       |
-| Sequential sub-agents      | No        | Yes      | Good: isolation preserved, serial     |
-| Single-turn sub-agents     | Yes       | No       | Isolation but no iterative routing    |
-| No sub-agents (inline)     | No        | No       | Approximated via context fencing      |
+| Capability level       | Parallel? | Routing? | Notes                              |
+| ---------------------- | --------- | -------- | ---------------------------------- |
+| Concurrent sub-agents  | Yes       | Yes      | Best: full isolation + parallel    |
+| Sequential sub-agents  | No        | Yes      | Good: isolation preserved, serial  |
+| Single-turn sub-agents | Yes       | No       | Isolation but no iterative routing |
+| No sub-agents (inline) | No        | No       | Approximated via context fencing   |
 
 **Degradation order:**
 
@@ -175,6 +175,7 @@ FOR EACH gate in current phase:
 ```
 
 Why gates instead of direct tool references:
+
 - **Portability:** Same skill works across environments with different tools
 - **Decoupling:** Parent skill does not hardcode child skill identity
 - **Auditability:** Gates create explicit checkpoints in execution trace
@@ -257,6 +258,7 @@ would miss the dimensions that drove the refinements.
 ### Tie-Breaking
 
 If two candidates tie on win count:
+
 1. Prefer the one with stronger termination signal (HELD > CONVERGE)
 2. Prefer the one with higher domain appropriateness
 3. If still tied, prefer the simpler candidate

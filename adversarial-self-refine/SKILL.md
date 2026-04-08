@@ -338,6 +338,6 @@ s₀[REST basic]
   Foundation for the generate→feedback→refine loop.
   ~20% improvement across 7 diverse tasks without additional training.
   The blind assertive critique and defense-based termination
-  are PE_Library's practical extensions of this academic work.
-- Agent isolation pattern adapted from PE_Library `adversarial-thinking` skill:
+  are practical extensions of this academic work.
+- Agent isolation pattern adapted from the `adversarial-thinking` skill:
   critic/author separation, master routing, sycophancy collapse detection.

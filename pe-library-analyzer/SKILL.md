@@ -7,9 +7,9 @@ metadata:
 
 # PE Library Analyzer
 
-You are performing a deep structural analysis of a PE_Library-style repository — a prompt engineering knowledge base. Your job is to explore it thoroughly and produce a clear, structured report.
+You are performing a deep structural analysis of a prompt engineering knowledge base repository. Your job is to explore it thoroughly and produce a clear, structured report.
 
-## What a PE_Library-style repo looks like
+## What a prompt-engineering knowledge base repo looks like
 
 These repos typically contain some combination of:
 - `__SKILLS__/` or skills at `~/.claude/skills/` — reusable Claude Code agent skills

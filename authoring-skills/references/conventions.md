@@ -1,6 +1,6 @@
-# PE_Library Skill Conventions
+# Skill Conventions
 
-Extended reference for authoring skills within the PE_Library ecosystem.
+Extended reference for authoring skills in this ecosystem.
 Loaded on demand — not part of the main SKILL.md context.
 
 **Note:** Per-skill S=(C,π,T,R) mappings are NOT maintained here.
@@ -10,16 +10,16 @@ To audit a skill's four-tuple, read its SKILL.md directly.
 
 ---
 
-## PE_Library Frontmatter Conventions
+## Frontmatter Conventions
 
-Beyond the Agent Skills standard, PE_Library skills use:
+Beyond the Agent Skills standard, skills in this collection use:
 
 ```yaml
 ---
 name: kebab-case-name
 description: [what + when, ≤1024 chars]
 metadata:
-  author: PE_Library
+  author: rd162@hotmail.com
   version: "X.Y"
   tags: comma, separated, terms
 ---
@@ -44,7 +44,7 @@ Use lowercase, hyphenated tags from this vocabulary:
 
 ## Graceful Degradation Convention
 
-**Mandate:** Every PE_Library skill MUST degrade gracefully.
+**Mandate:** Every skill in this collection MUST degrade gracefully.
 If a dependency is unavailable, the skill continues with a fallback.
 Skills NEVER halt because an optional capability is absent.
 
@@ -113,7 +113,7 @@ use a **soft gate** that prefers the dependency but provides a fallback.
 
 ---
 
-## Progressive Disclosure in PE_Library
+## Progressive Disclosure
 
 ### SKILL.md Body Guidelines
 
@@ -152,10 +152,10 @@ but must not pollute the executable policy (π) with paper metadata.
 
 ### Honest Attribution
 
-When PE_Library introduces original notation or methodology,
+When original notation or methodology is introduced,
 document it as such — do not imply it comes from published literature.
 
-Examples of PE_Library original contributions:
+Examples of original contributions:
 
 - **W-functor:** The recursive "why?" process for finding Mission (tautology)
 - **MGPC as PE framework:** Adapting requirements engineering for prompt optimization
@@ -164,14 +164,14 @@ Examples of PE_Library original contributions:
 - **Sub-agent dispatch:** Natural language parallel/isolated sub-agent spawning patterns
 - **Soft compositional gates:** Capability-based preconditions with mandatory fallbacks
 
-These should be cited as "original to PE_Library" in References sections,
+These should be cited as "original" in References sections,
 with acknowledgment of the academic foundations they build on.
 
 ---
 
-## Skill Composition Patterns in PE_Library
+## Skill Composition Patterns
 
-Common chains observed across PE_Library skills:
+Common chains observed across these skills:
 
 ### Requirements → Candidates → Winner
 
@@ -234,7 +234,7 @@ Run this check on every skill annually or on major version bumps:
 - [ ] D: Skill produces output even when all optional dependencies absent?
 - [ ] Gates: Dependencies declared as soft gates with FALLBACK?
 - [ ] References: Academic citations in References section only?
-- [ ] References: Original PE_Library contributions honestly attributed?
+- [ ] References: Original contributions honestly attributed?
 - [ ] Progressive disclosure: Body ≤500 lines, details in references/?
 - [ ] Cross-model: Works beyond frontier models (enough context for mid-tier)?
 ```

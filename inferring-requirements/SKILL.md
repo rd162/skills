@@ -183,7 +183,7 @@ Example: "build a todo app"
 ```
 
 **Note on terminology:** This skill calls the recursive "why?" process
-the "W-functor" — original notation from PE_Library
+the "W-functor" — original notation
 inspired by category theory's concept of functors as structure-preserving maps.
 The "W" stands for "Why." It is not established academic terminology;
 it is a practical shorthand for this specific recursion pattern.
@@ -314,4 +314,4 @@ Works with any agent or LLM:
   Source for goal-oriented requirements engineering.
   The MGPC structure (Mission, Goals, Premises, Constraints)
   adapts Pohl's requirements framework for prompt engineering use.
-  The specific adaptation and "W-functor" notation are original to PE_Library.
+  The specific adaptation and "W-functor" notation are original.
