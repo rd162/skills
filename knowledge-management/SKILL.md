@@ -63,6 +63,38 @@ The storage mechanism varies; the knowledge structure does not.
 
 ---
 
+## Choosing the Right Artifact Type
+
+When unsure which type to create, use these litmus tests:
+
+| Test | Yes → | No → |
+| ---- | ----- | ---- |
+| Can it be verified as true/false independently? | **Fact** | Concept or Narrative |
+| Does it explain how multiple facts relate? | **Concept** | Fact |
+| Does it provide step-by-step instructions? | **Procedure** | Narrative |
+| Remove all imperative verbs — still valuable? | **Narrative** | Procedure |
+| Does it define vocabulary other artifacts must follow? | **Ontology** | Concept |
+
+### Complexity Domain Mapping
+
+Different situations call for different artifact types.
+Simple problems with clear cause-and-effect need Facts and Procedures.
+Complex or chaotic situations — where patterns only emerge in retrospect —
+need Concepts and Narratives to capture sense-making.
+
+| Domain | Characteristics | Best artifact types | Approach |
+| ------ | --------------- | ------------------- | -------- |
+| **Simple** | Clear cause-effect | Facts, Procedures | Categorize → apply best practice |
+| **Complicated** | Knowable cause-effect | Procedures, Concepts | Analyze → apply good practice |
+| **Complex** | Emergent cause-effect | Concepts, Narratives | Probe → sense → respond |
+| **Chaotic** | No clear cause-effect | Narratives | Act → sense → respond |
+
+If you're documenting a production outage (chaotic), start with a Narrative.
+If you're documenting a deployment process (complicated), write a Procedure.
+If you're defining what "microservices" means in this org (complex), create a Concept.
+
+---
+
 ## Artifact Observations
 
 Each artifact contains observations — concise tagged statements
@@ -205,6 +237,17 @@ If the artifact is about a different topic, defer it.
 
 Once enough artifacts exist, analyze recurring vocabulary
 and formalize key terms as an Ontology artifact.
+
+**Vocabulary governance:** When creating ontology terms, consider scope:
+
+- **Core terms** (reused across many artifacts): `is_a`, `requires`, `produces` —
+  stable, high governance, change rarely
+- **Domain terms** (specific to a knowledge area): `bio:expresses`, `legal:cites` —
+  must map to a core term via `subPropertyOf`
+- **Project aliases** (local convenience): team nicknames, local shorthand —
+  never canonical, project-scoped and ephemeral
+
+This prevents vocabulary bloat while keeping domain expressiveness.
 
 **Overall flow:** Request → Narrative(s) + {Facts, Concepts, Procedures} → Graph → `[[future-forward]]` as backlog
 

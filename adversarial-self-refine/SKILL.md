@@ -106,6 +106,7 @@ Termination is **observed by MASTER**, never instructed to sub-agents.
 - Does NOT know: it will be responded to, that an AUTHOR exists
 - Task: assert compliance failures as facts, not questions
 - Output: numbered list of unmet requirements and structural flaws
+- Cognitive mode: **declarative assessment** — evaluating what IS against what SHOULD BE
 
 ### AUTHOR agent (isolated sub-agent, one per round)
 - Receives: current solution sₙ + FULL critique output
@@ -113,6 +114,14 @@ Termination is **observed by MASTER**, never instructed to sub-agents.
 - Does NOT know: it is being "tested" or that a loop is running
 - Task: improve the solution addressing ALL critique points
 - Output: revised solution sₙ₊₁
+- Cognitive mode: **procedural revision** — applying skills to transform the solution
+
+**Why cognitive mode separation matters:**
+The CRITIC's job is declarative — it evaluates what IS against what SHOULD BE.
+The AUTHOR's job is procedural — it applies transformation skills to improve.
+When these modes share context, the declarative assessment gets contaminated
+by procedural memory ("I chose this approach because...") — producing
+rationalization instead of genuine evaluation. Isolation keeps them clean.
 
 **Critical framing for AUTHOR:** Do NOT frame as "defend or revise."
 Frame as: "This feedback was received on your solution. Improve it."

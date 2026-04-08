@@ -256,6 +256,66 @@ Solution Space: {PWA + REST, native + GraphQL, hybrid + real-time}
 
 ---
 
+## Handling Partial Input
+
+Real-world requests often provide incomplete MGPC — some components stated,
+others missing entirely. Rather than failing, apply expansion:
+
+```text
+Input: "Build SPA with cloud platform, budget $50K"
+
+Present:  G (Build SPA), P (Cloud platform appropriate), C ($50K budget)
+Missing:  M (no mission stated)
+
+Expansion:
+  ∆1: W(Goal) → Mission: Why SPA? → reach users → empower access → intrinsic value
+  ∆2: G(Mission, "SPA") → fill remaining P and C from L5→L1 saturation
+
+Result: Complete MGPC with Mission discovered via "why?" and
+        gaps filled via bottom-up expansion
+```
+
+The expansion is idempotent — running it on already-complete input
+produces the same output. So always run both phases regardless of input completeness.
+
+---
+
+## Optional: Challenge Requirements
+
+After producing MGPC, you can evolve requirements by challenging
+Goals, Premises, or Constraints — while Mission stays invariant.
+This is useful when the initial MGPC feels too narrow
+or when the user asks to "explore alternatives" or "think outside the box."
+
+### Three Challenge Types
+
+| Challenge | What it transforms | Cascade effect | Example |
+| --------- | ------------------ | -------------- | ------- |
+| **Goal** | G → G' (different approach to same Mission) | P and C must update | Cloud platform → radio mesh network |
+| **Premise** | P → P' (different assumption) | C must update | "Users want web" → "Users want local-first" |
+| **Constraint** | C → C' (different limit) | None | "Mobile-first" → "Multi-platform + kiosks" |
+
+**Mission is never challenged.** It is the fixed point of the "why?" recursion —
+if it seems wrong, re-run the recursion rather than challenging it directly.
+
+**Cascading is mandatory:** A goal challenge that doesn't update
+its premises and constraints produces an internally inconsistent spec.
+
+```text
+Challenge example:
+  Original G: "Cloud-based social platform"
+  Challenge: "Could a different approach better serve the Mission?"
+  New G: "Radio-based decentralized network"
+  → P must update: "Digital connectivity" → "Local infrastructure ownership"
+  → C must update: "Serverless, APIs" → "Radio hardware, mesh protocols"
+  → M unchanged: "Strengthen local communities"
+```
+
+Use challenges sparingly — they expand the solution space significantly.
+Most requests need only Phase 0 + Phase 1 without challenges.
+
+---
+
 ## Integration with Other Skills
 
 This skill's MGPC output is consumed by downstream skills,

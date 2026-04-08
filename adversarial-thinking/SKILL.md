@@ -93,9 +93,18 @@ For high-stakes domains, trace forward consequences (what goes wrong if advice i
 ### 0.2 Infer Requirements
 
 Use a requirements-inference capability if available; otherwise extract inline from
-the user's request combined with research findings. Produce:
+the user's request combined with research findings.
 
-- **Enriched requirements registry** — explicit + research-discovered requirements with sources.
+Structure requirements as MGPC where possible —
+Mission (terminal value), Goals (concrete objectives),
+Premises (assumptions that must hold), Constraints (hard/soft limits).
+This structure gives the critique agent specific categories to probe:
+unmet Goals, violated Constraints, false Premises.
+
+Produce:
+
+- **Enriched requirements registry** — structured as MGPC when feasible,
+  with explicit + research-discovered requirements and sources.
 - **Anti-requirements registry** — failure modes and anti-patterns the solution should avoid.
   Format: `[AR-id]: Solutions should not [pattern] | Source: [ref] | Consequence: [impact]`.
   Anti-requirements tell the critique what failure modes to probe — the ones pure reasoning
@@ -106,6 +115,12 @@ the user's request combined with research findings. Produce:
 
 ## Phase 1: Generate 3 Divergent Candidates
 
+The enriched requirements map to multiple valid solutions —
+each candidate explores a different region of the solution space.
+Divergence isn't arbitrary: it comes from different weightings of
+competing requirements (e.g., simplicity vs. extensibility,
+speed vs. safety, convention vs. innovation).
+
 Generate all 3 in the same context so each candidate is aware of prior ones and can
 deliberately diverge. Cross-awareness drives divergence; separate contexts produce overlap.
 
@@ -113,7 +128,9 @@ Use the **generation prompt template** from `references/templates.md § Generati
 The template instructs the model to:
 
 1. Infer 3 cognitive strategies grounded in the specific problem's tensions
-   (not generic labels — the strategies emerge from competing requirements).
+   (not generic labels — the strategies emerge from competing requirements,
+   especially from tensions between Goals and Constraints or between
+   hard and soft constraints that pull in different directions).
 2. Generate one candidate per strategy, varying structure, granularity, and tone.
    Varying these secondary axes alongside the primary strategy lens prevents
    candidates that differ in approach but look identical in form.
