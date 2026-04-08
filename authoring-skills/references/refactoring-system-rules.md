@@ -105,8 +105,8 @@ and pipeline composition patterns.
 | --------------------------------- | ----------- | --------------- | -------------------------------------- |
 | Core Mandate (L1-10)              | ✓ always    | System rule     | Kept (or moved to activation rule)     |
 | PE Methods Reference (L12-155)    | Conditional | Skill           | `selecting-pe-methods`                 |
-| Phase 0: Bottom-Up Saturation     | Conditional | Skill           | `inferring-requirements`               |
-| Phase 0.5: Top-Down Intent        | Conditional | Skill           | (merged into inferring-requirements)   |
+| Phase 0: Bottom-Up Saturation     | Conditional | Skill           | `requirements-extractor`               |
+| Phase 0.5: Top-Down Intent        | Conditional | Skill           | (merged into requirements-extractor)   |
 | Phase 2: Generate 3 Candidates    | Conditional | Skill           | `think-deeper`                         |
 | Phase 2.5: Self-Refine Each       | Conditional | Skill           | `adversarial-self-refine`              |
 | Phase 3: Condorcet Comparison     | Conditional | Skill           | (merged into think-deeper)             |
@@ -415,7 +415,7 @@ Applied C=always vs C=conditional to each section:
 5 skills created, each with full S=(C,π,T,R):
 
 - `selecting-pe-methods` (246 lines)
-- `inferring-requirements` (243 lines)
+- `requirements-extractor` (243 lines)
 - `think-deeper` (formerly multi-candidate-condorcet, 426 lines)
 - `adversarial-self-refine` (169 lines)
 - `continuation-and-handoff` (338 lines)

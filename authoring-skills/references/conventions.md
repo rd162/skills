@@ -176,7 +176,7 @@ Common chains observed across these skills:
 ### Requirements → Candidates → Winner
 
 ```text
-inferring-requirements → MGPC (or inline requirements extraction as fallback)
+requirements-extractor → MGPC (or inline requirements extraction as fallback)
   → think-deeper → 3 candidates
     → blind-attack refinement × 3 (or inline critique as fallback) → refined candidates
     → Condorcet pairwise → winner

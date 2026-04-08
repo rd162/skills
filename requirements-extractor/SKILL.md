@@ -1,17 +1,17 @@
 ---
-name: inferring-requirements
-description: Discovers hidden requirements bottom-up using Chain of Knowledge triples and infers intent top-down into Mission, Goals, Premises, Constraints (MGPC). Use when analyzing a raw request, prompt, or brief to uncover implicit requirements, broaden the solution space, and produce a structured requirements specification before implementation or candidate generation.
+name: requirements-extractor
+description: Extracts structured requirements from raw knowledge context — documents, briefs, user requests, or transcripts — using bottom-up Chain of Knowledge expansion to surface implicit constraints, then top-down intent inference to produce a Mission, Goals, Premises, Constraints (MGPC) specification. Use when you have unstructured input and need a formal requirements spec before implementation, architecture, or candidate generation.
 version: "2.0"
 metadata:
   author: rd162@hotmail.com
   tags: requirements, discovery, CoK, MGPC, prompt-engineering
 ---
 
-# Inferring Requirements
+# Requirements Extractor
 
-Systematic requirements discovery combining bottom-up knowledge expansion
-with top-down intent inference.
-Produces an MGPC specification from any raw request.
+Extracts structured requirements from raw knowledge context.
+Combines bottom-up knowledge expansion with top-down intent inference
+to produce an MGPC specification from any unstructured input.
 
 The unique value of this approach:
 bottom-up broadens the solution space BEFORE top-down narrows it.

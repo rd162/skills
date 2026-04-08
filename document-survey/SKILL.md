@@ -495,7 +495,7 @@ CHECK 8: External research sources cited with date and tier
 - **Downstream:** Feeds the survey into **rfp-proposal-generation**
   or any other deliverable-generation workflow.
 - **Composes with:** **deep-research** skill for Phase 2 entity research.
-- **Composes with:** **inferring-requirements** skill for deeper §5/§6 analysis.
+- **Composes with:** **requirements-extractor** skill for deeper §5/§6 analysis.
 
 ## Environment Compatibility
 
