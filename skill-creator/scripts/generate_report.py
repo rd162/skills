@@ -1,4 +1,4 @@
-#!/Users/rd/devel/PE_Library/__SKILLS__/skill-creator/.venv/bin/python3
+#!/usr/bin/env python3
 """Generate an HTML report from run_loop.py output.
 
 Takes the JSON output from run_loop.py and generates a visual HTML report
@@ -269,7 +269,7 @@ def generate_html(data: dict, auto_refresh: bool = False, skill_name: str = "") 
             triggers = r.get("triggers", 0)
             runs = r.get("runs", 0)
 
-            icon = "\u2713" if did_pass else "\u2717"
+            icon = "✓" if did_pass else "✗"
             css_class = "pass" if did_pass else "fail"
 
             html_parts.append(f'                <td class="result {css_class}">{icon}<span class="rate">{triggers}/{runs}</span></td>\n')
@@ -281,7 +281,7 @@ def generate_html(data: dict, auto_refresh: bool = False, skill_name: str = "") 
             triggers = r.get("triggers", 0)
             runs = r.get("runs", 0)
 
-            icon = "\u2713" if did_pass else "\u2717"
+            icon = "✓" if did_pass else "✗"
             css_class = "pass" if did_pass else "fail"
 
             html_parts.append(f'                <td class="result test-result {css_class}">{icon}<span class="rate">{triggers}/{runs}</span></td>\n')

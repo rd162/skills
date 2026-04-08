@@ -1,4 +1,4 @@
-#!/Users/rd/devel/PE_Library/__SKILLS__/skill-creator/.venv/bin/python3
+#!/usr/bin/env python3
 """
 Aggregate individual run results into benchmark summary statistics.
 

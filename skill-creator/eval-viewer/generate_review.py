@@ -1,4 +1,4 @@
-#!/Users/rd/devel/PE_Library/__SKILLS__/skill-creator/.venv/bin/python3
+#!/usr/bin/env python3
 """Generate and serve a review page for eval results.
 
 Reads the workspace directory, discovers runs (directories with outputs/),
@@ -448,7 +448,7 @@ def main() -> None:
 
     url = f"http://localhost:{port}"
     print(f"\n  Eval Viewer")
-    print(f"  \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500")
+    print(f"  ─────────────────────────────────")
     print(f"  URL:       {url}")
     print(f"  Workspace: {workspace}")
     print(f"  Feedback:  {feedback_path}")
