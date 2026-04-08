@@ -17,7 +17,7 @@ description: >-
   Also use after the document-ingestion skill completes
   and the user wants to extract structured knowledge.
 metadata:
-  author: PE_Library
+  author: rd162@hotmail.com
   tags: document-analysis, survey, knowledge-extraction, cross-reference, vision, clarification-questions
 ---
 

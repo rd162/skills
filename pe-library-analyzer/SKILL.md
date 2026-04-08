@@ -1,6 +1,8 @@
 ---
 name: pe-library-analyzer
 description: Deep analysis of PE_Library-style repositories — prompt engineering knowledge bases containing skills, primers, system prompts, and methodology docs. Produces a structured report covering Purpose, Skills Inventory, PE Methodologies, Tools & Integrations, Project Status, and Key Files. Use this skill whenever the user asks "what is this project about?", "analyze this repo", "give me an overview", "explain this codebase", "what skills are available?", "summarize this PE library", or any question about understanding the contents or structure of a prompt engineering repository. Also trigger when the user opens a new session and seems to need orientation in a PE-style project.
+metadata:
+  author: rd162@hotmail.com
 ---
 
 # PE Library Analyzer

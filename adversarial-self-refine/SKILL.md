@@ -3,7 +3,7 @@ name: adversarial-self-refine
 description: Iteratively improve any solution through blind assertive critique until the model defends or converges. Uses isolated sub-agents (CRITIC + AUTHOR) so critique is never biased by authoring context. Falls back to single-thread when sub-agents unavailable (DEGRADED). Use when refining drafts, code, prompts, designs, plans, or any artifact that benefits from iterative quality improvement. Applies a recursive functor pattern with emergent termination detection.
 version: "3.0"
 metadata:
-  author: PE_Library
+  author: rd162@hotmail.com
   tags: prompt-engineering, self-refine, iterative-improvement, quality, multi-agent
 ---
 

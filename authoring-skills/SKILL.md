@@ -3,7 +3,7 @@ name: authoring-skills
 description: Guide for creating well-structured agent skills and refactoring monolithic system rules into reusable skills following the S=(C,π,T,R) formalization. Use when designing a new skill, improving an existing skill, reviewing skill quality, restructuring skill instructions, refactoring system rule files into skills, extracting reusable procedures from monolithic prompts, or when user says "create a skill", "write a skill", "new SKILL.md", "extract skills from", "refactor rules into skills", or "decompose this system prompt".
 version: "2.0"
 metadata:
-  author: PE_Library
+  author: rd162@hotmail.com
   tags: meta-skill, skill-authoring, S-CPTR, agent-skills, best-practices, refactoring
 ---
 

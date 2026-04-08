@@ -19,7 +19,7 @@ description: >-
   AI-readable. Also use when new documents arrive or user needs to re-process
   an existing __FRAGMENTS__/ directory.
 metadata:
-  author: PE_Library
+  author: rd162@hotmail.com
   tags: document-conversion, ingestion, markitdown, docling, drawio, webp, vips, pdf, fragments, libreoffice, chrome, video, whisper, scenedetect, vtt
 ---
 

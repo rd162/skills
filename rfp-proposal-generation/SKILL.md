@@ -19,7 +19,7 @@ description: >-
   or when the user asks to 'verify the proposal',
   'check consistency', or 'run the 15 checks'.
 metadata:
-  author: PE_Library
+  author: rd162@hotmail.com
   tags: rfp, proposal, feasibility, requirements-coverage, wbs, gantt, team-composition, consistency
 ---
 

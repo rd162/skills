@@ -3,7 +3,7 @@ name: selecting-pe-methods
 description: Selects the optimal prompt engineering method or method combination for a given task based on domain, complexity, stakes, and constraints. Use when deciding between reasoning strategies (CoT, ToT, GoT, CoD, SoT), action patterns (ReAct, Plan-and-Solve), or knowledge methods (CoK) before starting work. Provides a decision matrix and selection rationale.
 version: "2.0"
 metadata:
-  author: PE_Library
+  author: rd162@hotmail.com
   tags: prompt-engineering, method-selection, reasoning, CoT, ToT, ReAct, CoD, SoT
 ---
 

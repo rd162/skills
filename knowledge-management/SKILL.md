@@ -11,7 +11,7 @@ description: >-
   or when structuring information into typed artifacts.
 version: "2.0"
 metadata:
-  author: PE_Library
+  author: rd162@hotmail.com
   tags: knowledge-management, artifacts, revision, materialization, Basic-Memory
 ---
 

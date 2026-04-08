@@ -3,7 +3,7 @@ name: inferring-requirements
 description: Discovers hidden requirements bottom-up using Chain of Knowledge triples and infers intent top-down into Mission, Goals, Premises, Constraints (MGPC). Use when analyzing a raw request, prompt, or brief to uncover implicit requirements, broaden the solution space, and produce a structured requirements specification before implementation or candidate generation.
 version: "2.0"
 metadata:
-  author: PE_Library
+  author: rd162@hotmail.com
   tags: requirements, discovery, CoK, MGPC, prompt-engineering
 ---
 

@@ -3,11 +3,11 @@ name: adversarial-thinking
 description: Produces rigorously stress-tested solutions through adversarial exploration. Generates divergent approaches, battle-tests each via isolated blind-attack dialogues between attacker and defender agents, then selects the strongest through pairwise comparison. Returns one recommended solution and one alternative. Use when the user asks to "think deeper", "think harder", "ultrathink", "deep research", "research deeply", "research this carefully", "give me a really good answer", "explore alternatives", "I need the best approach", or when the request is naturally high-stakes — architecture decisions, strategy choices, complex trade-offs, important designs, or any question where a first-draft answer risks missing critical flaws. Composes with deep-research-t1 when both deep knowledge gathering and adversarial solution refinement are needed.
 version: "8.0"
 metadata:
-  author: PE_Library
+  author: rd162@hotmail.com
   tags: adversarial-refinement, blind-attack, solution-quality, deep-thinking, cross-platform
 ---
 
-# Think Deeper — Adversarial Solution Refinement
+# Adversarial Solution Refinement
 
 Explore divergent approaches, battle-test each via isolated critique/author dialogues,
 select the strongest through pairwise comparison,
@@ -17,12 +17,12 @@ deliver one recommended solution and one alternative.
 
 ## Depth Configuration
 
-| Depth        | Trigger                                               | Research    | Ph2 Rounds | Ph2.5               | Agents |
-| ------------ | ----------------------------------------------------- | ----------- | ---------- | -------------------- | ------ |
-| **Quick**    | "quick take", "brief", "just compare"                 | 1-2 queries | 1          | Skip                 | 7      |
-| **Standard** | Default                                               | 3-5 queries | 2-3        | Convergence only     | 7      |
-| **Deep**     | "think deeply", "thorough", high-stakes               | 5-8 queries | 3-5        | Conv + cite + inv    | 10     |
-| **Maximum**  | "exhaustive", "ultrathink"                            | Deep        | Until conv | All + cross-pollin   | 10     |
+| Depth        | Trigger                                 | Research    | Ph2 Rounds | Ph2.5              | Agents |
+| ------------ | --------------------------------------- | ----------- | ---------- | ------------------ | ------ |
+| **Quick**    | "quick take", "brief", "just compare"   | 1-2 queries | 1          | Skip               | 7      |
+| **Standard** | Default                                 | 3-5 queries | 2-3        | Convergence only   | 7      |
+| **Deep**     | "think deeply", "thorough", high-stakes | 5-8 queries | 3-5        | Conv + cite + inv  | 10     |
+| **Maximum**  | "exhaustive", "ultrathink"              | Deep        | Until conv | All + cross-pollin | 10     |
 
 Research scales with depth because shallow domains need fewer queries to saturate,
 while high-stakes domains have more failure modes to discover.
@@ -35,11 +35,11 @@ Detect depth from the user's language. Track remaining budget and downgrade mid-
 
 ## Termination
 
-| Signal   | Condition                                            | Action                                        |
-| -------- | ---------------------------------------------------- | --------------------------------------------- |
-| COMPLETE | Phase 4 output produced (winner + runner-up + trace) | Deliver to user                               |
-| DEGRADED | A phase lacked sub-agent isolation                   | Warn user, proceed with best-effort output    |
-| TIMEOUT  | Token budget exhausted mid-pipeline                  | Create continuation artifact at phase boundary|
+| Signal   | Condition                                            | Action                                         |
+| -------- | ---------------------------------------------------- | ---------------------------------------------- |
+| COMPLETE | Phase 4 output produced (winner + runner-up + trace) | Deliver to user                                |
+| DEGRADED | A phase lacked sub-agent isolation                   | Warn user, proceed with best-effort output     |
+| TIMEOUT  | Token budget exhausted mid-pipeline                  | Create continuation artifact at phase boundary |
 
 ---
 
@@ -111,6 +111,7 @@ deliberately diverge. Cross-awareness drives divergence; separate contexts produ
 
 Use the **generation prompt template** from `references/templates.md § Generation`.
 The template instructs the model to:
+
 1. Infer 3 cognitive strategies grounded in the specific problem's tensions
    (not generic labels — the strategies emerge from competing requirements).
 2. Generate one candidate per strategy, varying structure, granularity, and tone.
@@ -172,13 +173,13 @@ Use prompt templates from `references/templates.md § Critique` and `§ Author`.
 The master observes agent output for signals — agents are never told when to stop,
 because instructed termination causes agents to optimize for ending rather than quality.
 
-| Signal            | Observation                                                     | Action       |
-| ----------------- | --------------------------------------------------------------- | ------------ |
-| CONVERGE          | Critique recycling previous points, no novel issues             | Terminate    |
-| DRIFTING          | Issues shifting from structural to edge-case                    | Terminate    |
-| SOFTENING         | Critique accommodating rather than assessing (see below)        | Intervene    |
-| AUTHOR-HELD       | Author states "requirements met per [evidence]"                 | Note quality |
-| AUTHOR-FAILED     | Author acknowledges fundamental gap                             | Note flaw    |
+| Signal        | Observation                                              | Action       |
+| ------------- | -------------------------------------------------------- | ------------ |
+| CONVERGE      | Critique recycling previous points, no novel issues      | Terminate    |
+| DRIFTING      | Issues shifting from structural to edge-case             | Terminate    |
+| SOFTENING     | Critique accommodating rather than assessing (see below) | Intervene    |
+| AUTHOR-HELD   | Author states "requirements met per [evidence]"          | Note quality |
+| AUTHOR-FAILED | Author acknowledges fundamental gap                      | Note flaw    |
 
 **Combining signals:** converge + held = strong candidate; drifting + held = adequate;
 author-failed = fundamental flaw worth noting for Condorcet voters.
@@ -267,11 +268,11 @@ or runner-up was TIMEOUT. Hide raw candidates, traces, and rejected unless reque
 
 ## Reference Files
 
-| File                             | When to read                                               |
-| -------------------------------- | ---------------------------------------------------------- |
-| references/templates.md          | Before dispatching any sub-agent — contains prompt          |
-|                                  | templates for critique, author, generation, and Condorcet  |
-| references/delegate-and-gates.md | Dispatch patterns, environment adaptation, gates,          |
-|                                  | anti-patterns, composition table                           |
-| references/phase-detail.md       | Phase 2.5 full protocols (Deep/Maximum), execution trace   |
-| references/academic-references.md| Supporting literature for design decisions                  |
+| File                              | When to read                                              |
+| --------------------------------- | --------------------------------------------------------- |
+| references/templates.md           | Before dispatching any sub-agent — contains prompt        |
+|                                   | templates for critique, author, generation, and Condorcet |
+| references/delegate-and-gates.md  | Dispatch patterns, environment adaptation, gates,         |
+|                                   | anti-patterns, composition table                          |
+| references/phase-detail.md        | Phase 2.5 full protocols (Deep/Maximum), execution trace  |
+| references/academic-references.md | Supporting literature for design decisions                |

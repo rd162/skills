@@ -3,7 +3,7 @@ name: continuation-and-handoff
 description: Generates structured continuation prompts for resuming work in the next session, or handoff prompts for transferring work to a different agent. Adapts to the host environment — uses native mechanisms (task lists, sub-agents, RALPH loops) when available, falls back to portable markdown artifacts. Use when work spans multiple sessions, context limits approach, a natural phase boundary is reached, or a different agent capability is needed.
 version: "2.0"
 metadata:
-  author: PE_Library
+  author: rd162@hotmail.com
   tags: continuation, handoff, multi-session, cross-vendor, pipeline
 ---
 
