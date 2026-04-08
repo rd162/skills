@@ -1,0 +1,82 @@
+{
+  "expectations": [
+    {
+      "text": "Output is not marked DEGRADED — execution used real sub-agents, not inline self-play",
+      "passed": true,
+      "evidence": "process_log.md: 'Execution mode: PARALLEL (top-level Claude Code session — Agent tool available)'. Output header states 'PARALLEL (7 isolated sub-agents — NOT DEGRADED)'. 7 real agents with agent IDs confirmed."
+    },
+    {
+      "text": "Process log confirms Phase 2 critique agent and 3 author agents were actually spawned",
+      "passed": true,
+      "evidence": "process_log.md section 2: critique agent a71a7741aae5514ce + authors a22a34f0848fa7525, abd66d1d7df176a70, a105f8c2b8dbde323 — all with real agent IDs. Authors spawned in parallel after critique completed."
+    },
+    {
+      "text": "Process log confirms 3 Condorcet pairwise comparison sub-agents were actually spawned",
+      "passed": true,
+      "evidence": "process_log.md section 3: compare-AB (ac8d58af2924510ba), compare-AC (a9a26ce3a40b61833), compare-BC (aeadb80ba9dba0dc7) — all with real agent IDs, spawned in parallel."
+    },
+    {
+      "text": "Output contains both a recommended solution AND a distinct runner-up alternative",
+      "passed": true,
+      "evidence": "output.md: '## RECOMMENDED → Sliding Window Counter + Adaptive Throttling Hybrid (B')' and '## ALTERNATIVE → Token Bucket + Lua Atomicity Stack (A')' — two fully elaborated distinct solutions."
+    },
+    {
+      "text": "Evidence of 3 divergent candidates generated in Phase 1 (A/B/C labeling or equivalent)",
+      "passed": true,
+      "evidence": "output.md TRACE section: 'A: Token Bucket + Lua Atomicity Stack, B: Sliding Window Counter + Adaptive Throttling, C: Policy-as-Configuration Gateway Pattern (Kong)'. Divergence scores: A vs B ~7/10, A vs C ~9/10, B vs C ~9/10."
+    },
+    {
+      "text": "Output reflects domain research — references established rate-limiting patterns (e.g., token bucket, sliding window, leaky bucket, fixed window) rather than only generic advice",
+      "passed": true,
+      "evidence": "Phase 0 produced 10-requirement enriched registry. Output includes: token bucket, sliding window counter, boundary-burst analysis, RFC 6585, IETF draft-ietf-httpapi-ratelimit-headers, Redis Lua atomicity, XFF right-to-left walk, circuit breaker patterns, Condorcet tally. Deep domain specificity throughout."
+    },
+    {
+      "text": "Winner recommendation includes concrete implementation guidance beyond just naming a pattern",
+      "passed": true,
+      "evidence": "output.md includes: complete Lua script, Python key construction with hash tags, header-building code, graduated warning logic, per-endpoint-type fail policy code, retry storm detection code, trusted proxy XFF walk code, and observability metric definitions."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "total_tool_calls": 7,
+    "output_chars": 9800
+  },
+  "timing": {
+    "executor_duration_seconds": 780.0,
+    "total_duration_seconds": 780.0
+  },
+  "claims": [
+    {
+      "claim": "7 isolated sub-agents were spawned with real agent IDs",
+      "type": "factual",
+      "verified": true,
+      "evidence": "process_log.md lists 7 agent IDs: a71a7741aae5514ce, a22a34f0848fa7525, abd66d1d7df176a70, a105f8c2b8dbde323, ac8d58af2924510ba, a9a26ce3a40b61833, aeadb80ba9dba0dc7"
+    },
+    {
+      "claim": "Authors were isolated — each saw only its own candidate",
+      "type": "process",
+      "verified": true,
+      "evidence": "Each author agent prompt explicitly contained only one candidate plus the full critique output. Agent isolation is guaranteed by separate spawning."
+    },
+    {
+      "claim": "Condorcet tally B'=2, A'=1, C'=0 was computed from actual agent responses",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Three separate Condorcet agents returned: B' beats A', A' beats C', B' beats C'. Tally computed from these three independent verdicts."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "All 7 assertions pass. This is the first clean run — real sub-agent isolation confirmed. The pipeline integrity assertions correctly distinguish this top-level execution from the sub-agent runs in iterations 1 and 2."
+  }
+}

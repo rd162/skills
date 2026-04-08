@@ -1,0 +1,43 @@
+{
+  "tool_calls": {
+    "Read": 1,
+    "ToolSearch": 1,
+    "WebSearch": 2,
+    "Bash": 1,
+    "Write": 2
+  },
+  "total_tool_calls": 7,
+  "total_steps": 5,
+  "searches_executed": 0,
+  "searches_attempted": 2,
+  "search_outcome": "DENIED — WebSearch permission not granted; graceful degradation to training knowledge",
+  "degraded_mode": true,
+  "files_created": ["response.md", "metrics.json"],
+  "errors_encountered": 1,
+  "error_detail": "WebSearch permission denied on both attempted queries; fell back to training knowledge per Graceful Degradation protocol",
+  "cok_levels_completed": 2,
+  "sources_cited": 10,
+  "source_tiers": {
+    "T1": 7,
+    "T2": 3,
+    "T3": 0,
+    "T4": 0
+  },
+  "protocol_steps_completed": {
+    "delta1_tool_availability": true,
+    "delta2_strategy": true,
+    "delta3_execute": "partial — degraded to training knowledge",
+    "delta4_organize": true,
+    "delta5_weight": true,
+    "delta6_output": true,
+    "delta7_validation": true
+  },
+  "validation_checklist": {
+    "current_date_obtained": true,
+    "searches_executed_3_plus": false,
+    "sources_cited_3_plus": true,
+    "contradictions_exposed": true,
+    "high_stakes_domain": false,
+    "degraded_mode_disclosed": true
+  }
+}

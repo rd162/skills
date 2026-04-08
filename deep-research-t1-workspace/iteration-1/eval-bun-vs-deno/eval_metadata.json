@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "bun-vs-deno",
+  "prompt": "Our team is evaluating Bun vs Deno for a greenfield TypeScript backend service. We care about: runtime performance, npm ecosystem compatibility, tooling maturity, and production readiness in 2025. Can you research this thoroughly and tell us which one is actually better for this use case?",
+  "assertions": [
+    "Both Bun and Deno are researched (not just one)",
+    "Sources are annotated with T1-T4 tiers",
+    "At least 3 searches are executed",
+    "Contradictions or uncertainties between sources are explicitly mentioned",
+    "A recommendation or comparative conclusion is provided"
+  ]
+}

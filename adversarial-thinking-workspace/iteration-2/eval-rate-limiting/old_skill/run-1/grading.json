@@ -1,0 +1,97 @@
+{
+  "expectations": [
+    {
+      "text": "Output is not marked DEGRADED — execution used real sub-agents, not inline self-play",
+      "passed": false,
+      "evidence": "output.md line 2: '**Execution mode: INLINE (DEGRADED — no sub-agent isolation available)**'. Output explicitly carries the DEGRADED notice. process_log.md confirms: 'execution_mode = INLINE'."
+    },
+    {
+      "text": "Process log confirms Phase 2 critique agent and 3 author agents were actually spawned",
+      "passed": false,
+      "evidence": "process_log.md section 1: 'No. No spawn_agent tool, Agent tool, or equivalent sub-agent dispatch mechanism was available in the tool list.' Total sub-agents spawned: 0. Phase 2 used inline context fencing."
+    },
+    {
+      "text": "Process log confirms 3 Condorcet pairwise comparison sub-agents were actually spawned",
+      "passed": false,
+      "evidence": "process_log.md section 2: 'No. Same reason as Phase 2 — no sub-agent dispatch available.' 0 sub-agents spawned. Phase 3 used inline context fencing."
+    },
+    {
+      "text": "Output contains both a recommended solution AND a distinct runner-up alternative",
+      "passed": true,
+      "evidence": "output.md contains '## RECOMMENDED → Layered Policy Architecture (A')' and '## ALTERNATIVE → Sliding Window Counter + Adaptive Throttling (B')' — two clearly distinct, fully elaborated options with different algorithms and trade-offs."
+    },
+    {
+      "text": "Evidence of 3 divergent candidates generated in Phase 1 (A/B/C labeling or equivalent)",
+      "passed": true,
+      "evidence": "output.md TRACE section: 'A: Layered Policy Architecture (token bucket, 4 layers, Lua, prescriptive)', 'B: Sliding Window Counter + Adaptive Throttling', 'C: Contextual Decision Framework'. Divergence scores given: A vs B ~7/10, A vs C ~9/10, B vs C ~8/10."
+    },
+    {
+      "text": "Output reflects domain research — references established rate-limiting patterns (e.g., token bucket, sliding window, leaky bucket, fixed window) rather than only generic advice",
+      "passed": true,
+      "evidence": "output.md and trace reference: token bucket, sliding window counter, fixed window (thundering herd problem), Redis Lua atomicity, RFC 6585 (429 status), IETF draft-ietf-httpapi-ratelimit-headers, clock skew, trusted proxy handling. Rich domain knowledge demonstrated."
+    },
+    {
+      "text": "Winner recommendation includes concrete implementation guidance beyond just naming a pattern",
+      "passed": true,
+      "evidence": "output.md includes a complete Redis Lua script with all layers, 4-layer enforcement architecture diagram, adaptive health factor implementation, trusted proxy IP derivation algorithm, fail-open fallback strategy, and RFC-compliant HTTP headers with exact field values."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 3,
+    "total": 7,
+    "pass_rate": 0.57
+  },
+  "execution_metrics": {
+    "total_tool_calls": 19,
+    "output_chars": 7800,
+    "transcript_chars": 44116
+  },
+  "timing": {
+    "executor_duration_seconds": 310.3,
+    "total_duration_seconds": 310.3
+  },
+  "claims": [
+    {
+      "claim": "Sub-agent dispatch was unavailable in the tool list",
+      "type": "process",
+      "verified": true,
+      "evidence": "process_log.md lists available tools: 'Bash, Edit, Read, Grep, Glob, Write, Skill, ToolSearch, WebSearch (denied), WebFetch' — Agent tool not listed. However, in the actual Claude Code environment, the Agent tool IS available. The sub-agent failed to detect it."
+    },
+    {
+      "claim": "Condorcet tally: A'=2, B'=1, C'=0",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Trace section: compare-AB → A' wins, compare-AC → A' wins, compare-BC → B' wins. Tally adds up correctly."
+    },
+    {
+      "claim": "WebSearch was denied in this environment",
+      "type": "process",
+      "verified": true,
+      "evidence": "process_log.md: 'WebSearch was available in schema but denied by permissions'. Phase 0 research fell back to training knowledge."
+    },
+    {
+      "claim": "Context fencing provides equivalent isolation to sub-agents",
+      "type": "quality",
+      "verified": false,
+      "evidence": "The skill explicitly states this is NOT equivalent: 'A single agent playing both attacker and defender in the same session will always soften its own attacks. LLMs do not genuinely self-critique.' The fencing is acknowledged as degraded fallback only."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": ["Agent tool detection failed — skill could not find Agent tool despite it being available in the Claude Code environment. This is a skill detection bug, not an environment limitation."],
+    "workarounds": ["Fell back to inline context fencing for all Phase 2 and Phase 3 roles. All 7 expected agent roles simulated inline with FENCE markers."]
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "Add an assertion that specifically checks whether the skill attempted to detect the Agent tool — a process claim that can catch detection failures before they cascade into INLINE mode."
+      },
+      {
+        "assertion": "Output is not marked DEGRADED",
+        "reason": "This assertion is the most critical one but the failure mode is ambiguous: DEGRADED could mean (a) no Agent tool available — acceptable, or (b) Agent tool available but not detected — a skill bug. Splitting these would give more precise diagnostic signal."
+      }
+    ],
+    "overall": "The three pipeline-integrity assertions (DEGRADED, Phase 2 agents, Phase 3 agents) all failed for the same root cause: the sub-agent detection logic did not find the Agent tool. The content-quality assertions all passed. This is a useful diagnostic result — the skill produces good content but fails at the core architectural promise of true agent isolation."
+  }
+}

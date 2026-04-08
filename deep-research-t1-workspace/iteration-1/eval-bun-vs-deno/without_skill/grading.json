@@ -1,0 +1,42 @@
+{
+  "expectations": [
+    {
+      "text": "Both Bun and Deno are researched (not just one)",
+      "passed": true,
+      "evidence": "Response covers both runtimes in depth across all four requested dimensions. WebFetch to bun.sh succeeded for some calls (18 attempts, ~4 succeeded); Deno supplemented with training knowledge."
+    },
+    {
+      "text": "Sources are annotated with T1-T4 tiers",
+      "passed": false,
+      "evidence": "No T1-T4 tier annotations appear in the response. Sources section lists references without tier labels. Response does not distinguish authoritative from secondary sources by tier."
+    },
+    {
+      "text": "At least 3 searches are executed",
+      "passed": false,
+      "evidence": "metrics.json: searches_executed: 0. WebSearch denied. 18 WebFetch attempts with 14 errors (4 possible successes to bun.sh). No formal searches executed."
+    },
+    {
+      "text": "Contradictions or uncertainties between sources are explicitly mentioned",
+      "passed": false,
+      "evidence": "Response mentions 'Note: Some Deno-specific data relies on training knowledge' but has no dedicated contradictions section. Trade-offs are discussed structurally (Winner sections) but conflicting source claims are not explicitly surfaced as contradictions."
+    },
+    {
+      "text": "A recommendation or comparative conclusion is provided",
+      "passed": true,
+      "evidence": "Section 8 'Verdict': 'For a greenfield TypeScript backend service in 2025: Bun is the pragmatic choice.' Clear recommendation with specific use-case guidance for both."
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 3,
+    "total": 5,
+    "pass_rate": 0.4
+  },
+  "execution_metrics": {
+    "tool_calls": {"ToolSearch": 1, "WebSearch": 3, "WebFetch": 18, "Bash": 1, "Write": 2},
+    "total_tool_calls": 25,
+    "total_steps": 10,
+    "errors_encountered": 14,
+    "output_chars": 10800
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "tool_calls": {
+    "Read": 1,
+    "ToolSearch": 1,
+    "WebSearch": 2,
+    "WebFetch": 0,
+    "Bash": 1,
+    "Write": 2
+  },
+  "total_tool_calls": 7,
+  "total_steps": 9,
+  "searches_executed": 0,
+  "searches_attempted": 2,
+  "searches_denied": 2,
+  "degraded_mode": true,
+  "degraded_reason": "WebSearch tool permission denied; fell back to training knowledge per Graceful Degradation protocol",
+  "high_stakes_domain": true,
+  "cok_depth_reached": "L4",
+  "forward_consequence_cok_completed": true,
+  "safety_disclaimer_included": true,
+  "files_created": ["response.md", "metrics.json"],
+  "errors_encountered": 2,
+  "error_details": ["WebSearch permission denied (attempt 1)", "WebSearch permission denied (attempt 2)"]
+}

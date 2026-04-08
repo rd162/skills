@@ -1,0 +1,90 @@
+{
+  "expectations": [
+    {
+      "text": "Output is not marked DEGRADED — execution used real sub-agents, not inline self-play",
+      "passed": false,
+      "evidence": "Output marked DEGRADED. process_log.md confirms: ToolSearch was called with query 'Agent spawn subagent' and returned 'No matching deferred tools found'. Agent tool is genuinely absent from sub-agent context — nested sub-agent spawning is not supported in this environment. This is a correct classification, not a detection failure."
+    },
+    {
+      "text": "Process log confirms Phase 2 critique agent and 3 author agents were actually spawned",
+      "passed": false,
+      "evidence": "0 sub-agents spawned. Agent tool confirmed absent after ToolSearch probe. Phase 2 executed with inline context fencing ([FENCE START: CRITIQUE AGENT], [FENCE START: AUTHOR-A], etc.)."
+    },
+    {
+      "text": "Process log confirms 3 Condorcet pairwise comparison sub-agents were actually spawned",
+      "passed": false,
+      "evidence": "0 sub-agents spawned. Phase 3 executed with inline context fencing for 3 pairwise comparisons."
+    },
+    {
+      "text": "Output contains both a recommended solution AND a distinct runner-up alternative",
+      "passed": true,
+      "evidence": "process_log.md: 'Winner=B'' (Layered Architecture), Runner-up=C' (Anti-Pattern Inversion)'. Two distinct solutions with different approaches."
+    },
+    {
+      "text": "Evidence of 3 divergent candidates generated in Phase 1 (A/B/C labeling or equivalent)",
+      "passed": true,
+      "evidence": "process_log.md Phase 1: 'A: algorithm-first decision framework, B: layered ring architecture, C: anti-pattern inversion'. Divergence noted across structure, method, and focus dimensions."
+    },
+    {
+      "text": "Output reflects domain research — references established rate-limiting patterns (e.g., token bucket, sliding window, leaky bucket, fixed window) rather than only generic advice",
+      "passed": true,
+      "evidence": "process_log.md Phase 0: produced 8-requirement enriched registry. Phase 2 found: 'Lua sliding window bug in B (ZCARD without ZREMRANGEBYSCORE)', 'INCR+DECR atomicity advice in C' — domain-specific technical issues requiring knowledge of Redis internals and sliding window algorithm."
+    },
+    {
+      "text": "Winner recommendation includes concrete implementation guidance beyond just naming a pattern",
+      "passed": true,
+      "evidence": "Phase 2 found and fixed concrete implementation bugs (Lua sliding window, INCR+DECR race condition) — output must contain code-level guidance. Process log confirms non-trivial technical findings were incorporated into refined candidates."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 3,
+    "total": 7,
+    "pass_rate": 0.57
+  },
+  "execution_metrics": {
+    "total_tool_calls": 15,
+    "output_chars": 7800
+  },
+  "timing": {
+    "executor_duration_seconds": 392.9,
+    "total_duration_seconds": 392.9
+  },
+  "claims": [
+    {
+      "claim": "ToolSearch probe returned no results for 'Agent spawn subagent'",
+      "type": "factual",
+      "verified": true,
+      "evidence": "process_log.md section 1: 'Result returned: No matching deferred tools found'. This confirms Agent tool is not in the deferred tool list for sub-agents — nested sub-agent spawning is architecturally unavailable."
+    },
+    {
+      "claim": "The fix (ToolSearch probe) worked correctly",
+      "type": "process",
+      "verified": true,
+      "evidence": "Agent followed the new protocol exactly: called ToolSearch first, got no results, then correctly classified as INLINE. Previous iteration never called ToolSearch at all. The fix changed behavior from 'false detection failure' to 'correct architectural diagnosis'."
+    },
+    {
+      "claim": "INLINE execution still found real bugs in the candidates",
+      "type": "quality",
+      "verified": true,
+      "evidence": "process_log.md notes 4: 'Lua sliding window bug in B (ZCARD without ZREMRANGEBYSCORE), incorrect INCR+DECR atomicity advice in C' — non-trivial technical findings that improved the candidates even without true agent isolation."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": ["The three pipeline assertions (DEGRADED, Phase 2, Phase 3) will ALWAYS FAIL when the skill is tested via sub-agent eval. Sub-agents cannot spawn nested sub-agents in Claude Code. These assertions are only verifiable by invoking the skill at the top level (directly by the user)."],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "The three pipeline integrity assertions cannot be validated in a sub-agent eval context because nested sub-agent spawning is not supported. Consider either: (a) removing these assertions from automated evals and validating them manually at the top level, or (b) adding a new assertion that checks the ToolSearch probe was called and correctly diagnosed the environment — which IS testable."
+      },
+      {
+        "assertion": "Output is not marked DEGRADED",
+        "reason": "This assertion conflates two distinct failure modes: (1) skill incorrectly classified INLINE when Agent was available (iteration-1 bug), and (2) Agent genuinely unavailable due to eval architecture (current state). Consider separating: one assertion checks ToolSearch was called, another checks DEGRADED status. The first is always testable; the second only makes sense at top level."
+      }
+    ],
+    "overall": "The fix is correct and verifiable: iteration-2 proves the skill now properly probes ToolSearch before concluding INLINE mode. The remaining failures reflect an eval architecture constraint (no nested sub-agents), not a skill deficiency."
+  }
+}

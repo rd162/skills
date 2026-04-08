@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "nextjs-auth",
+  "prompt": "I'm building a new web app with Next.js and need to add authentication. What's the current recommended approach for auth in Next.js in 2025? I've heard things about Auth.js, Clerk, and others but not sure which to pick or how they compare. Want to understand the real-world trade-offs before committing.",
+  "assertions": [
+    "At least 3 distinct web searches are executed",
+    "Sources are cited with tier annotations (T1, T2, T3, or T4)",
+    "The current date is obtained dynamically (not hardcoded)",
+    "At least 3 source URLs are referenced",
+    "Trade-offs or contradictions between approaches are explicitly noted"
+  ]
+}

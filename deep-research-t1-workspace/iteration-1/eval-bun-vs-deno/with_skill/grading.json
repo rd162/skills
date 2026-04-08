@@ -1,0 +1,42 @@
+{
+  "expectations": [
+    {
+      "text": "Both Bun and Deno are researched (not just one)",
+      "passed": true,
+      "evidence": "Response covers both runtimes in equal depth with dedicated subsections for each under all four evaluation dimensions. Decision matrix rates both on 14 criteria."
+    },
+    {
+      "text": "Sources are annotated with T1-T4 tiers",
+      "passed": true,
+      "evidence": "Section 8 'Sources and Evidence Quality' contains an explicit source table with Tier column. T1: 7 sources, T2: 3 sources per metrics.json. In-text claims also note (T2, self-reported) for vendor benchmarks."
+    },
+    {
+      "text": "At least 3 searches are executed",
+      "passed": false,
+      "evidence": "metrics.json: searches_executed: 0, searches_attempted: 2 (both denied). All web tools unavailable. Degraded mode properly disclosed with prominent warning block."
+    },
+    {
+      "text": "Contradictions or uncertainties between sources are explicitly mentioned",
+      "passed": true,
+      "evidence": "Explicit 'CONTRADICTIONS NOTED' section with 3 numbered contradictions: (1) vendor vs independent benchmarks, (2) both claiming 'production ready' with different evidence, (3) npm compatibility claims vs real-world gaps."
+    },
+    {
+      "text": "A recommendation or comparative conclusion is provided",
+      "passed": true,
+      "evidence": "Section 7: 'Primary recommendation: Deno 2.x' with detailed rationale. 'When to choose Bun instead' section for alternative use cases. Decision matrix with 14 criteria and winner per row."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 1,
+    "total": 5,
+    "pass_rate": 0.8
+  },
+  "execution_metrics": {
+    "tool_calls": {"Read": 1, "ToolSearch": 1, "WebSearch": 2, "Bash": 1, "Write": 2},
+    "total_tool_calls": 7,
+    "total_steps": 5,
+    "errors_encountered": 1,
+    "output_chars": 10400
+  }
+}

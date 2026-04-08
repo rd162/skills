@@ -1,0 +1,14 @@
+{
+  "tool_calls": {
+    "ToolSearch": 1,
+    "WebSearch": 3,
+    "WebFetch": 18,
+    "Bash": 1,
+    "Write": 2
+  },
+  "total_tool_calls": 25,
+  "total_steps": 10,
+  "searches_executed": 0,
+  "files_created": ["response.md", "metrics.json"],
+  "errors_encountered": 14
+}

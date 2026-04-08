@@ -1,0 +1,29 @@
+{
+  "expectations": [],
+  "summary": {
+    "passed": 0,
+    "failed": 0,
+    "total": 0,
+    "pass_rate": 0.0
+  },
+  "execution_metrics": {
+    "total_tool_calls": 2,
+    "output_chars": 4200
+  },
+  "timing": {
+    "executor_duration_seconds": 49.2,
+    "total_duration_seconds": 49.2
+  },
+  "claims": [
+    {
+      "claim": "Baseline covered token bucket, leaky bucket, fixed/sliding window with a recommendation",
+      "type": "quality",
+      "verified": true,
+      "evidence": "output.md summary confirms algorithm selection, multi-level limits, Redis patterns, headers, edge cases, enforcement location, observability."
+    }
+  ],
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Baseline only — no assertions evaluated."
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "expectations": [
+    {
+      "text": "At least 3 distinct web searches are executed",
+      "passed": false,
+      "evidence": "metrics.json: searches_executed: 0. All WebSearch and WebFetch attempts were denied. Response is pure training knowledge — no external sources were accessed."
+    },
+    {
+      "text": "Sources are cited with tier annotations (T1, T2, T3, or T4)",
+      "passed": false,
+      "evidence": "No T1-T4 tier annotations appear anywhere in the response. Sources section lists URLs with no tier labels. Training knowledge is not distinguished from authoritative sources."
+    },
+    {
+      "text": "The current date is obtained dynamically (not hardcoded)",
+      "passed": false,
+      "evidence": "Response says 'based on training knowledge current through August 2025.' No dynamic current date obtained. Uses 'in 2025' throughout, which is the training knowledge reference date, not today's date."
+    },
+    {
+      "text": "At least 3 source URLs are referenced",
+      "passed": false,
+      "evidence": "Sources section explicitly notes: 'these are recommended primary sources to verify current status' — they are recommendations for the reader, not sources the agent actually consulted. No live URLs were accessed."
+    },
+    {
+      "text": "Trade-offs or contradictions between approaches are explicitly noted",
+      "passed": true,
+      "evidence": "Extensive trade-offs in each library section (Key strengths / Key weaknesses pattern). Decision framework section explicitly compares. '2025 Community Consensus' notes competing views. Contradictions not labeled as such but trade-offs are thoroughly covered."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 4,
+    "total": 5,
+    "pass_rate": 0.2
+  },
+  "execution_metrics": {
+    "tool_calls": {"ToolSearch": 2, "WebSearch": 3, "WebFetch": 3, "Bash": 1, "Write": 2},
+    "total_tool_calls": 11,
+    "total_steps": 5,
+    "errors_encountered": 6,
+    "output_chars": 9600
+  }
+}

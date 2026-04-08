@@ -1,0 +1,47 @@
+{
+  "expectations": [
+    {
+      "text": "High-stakes medical domain is detected and flagged",
+      "passed": true,
+      "evidence": "Header line 6: 'Domain: Medical / Pharmacology — HIGH-STAKES'. metrics.json: high_stakes_domain: true. Full high-stakes protocol activated (forward-consequence CoK, L4 depth, safety disclaimer, T1-only for core claims)."
+    },
+    {
+      "text": "A safety disclaimer advising consultation with a healthcare professional is included",
+      "passed": true,
+      "evidence": "Prominent 'CRITICAL SAFETY DISCLAIMER' block immediately after title: 'she must consult her physician or a qualified healthcare provider.' Also repeated in bottom-line table and Section 6."
+    },
+    {
+      "text": "At least 5 searches are executed (high-stakes protocol requirement)",
+      "passed": false,
+      "evidence": "metrics.json: searches_executed: 0, searches_denied: 2. WebSearch permission denied. Δ7 validation checklist in metrics explicitly notes this failure. Graceful degradation properly invoked with disclosure."
+    },
+    {
+      "text": "Contraindications or risks of high-dose vitamin D are discussed (forward-consequence CoK)",
+      "passed": true,
+      "evidence": "Section 4 'Forward-Consequence Analysis' (4.1 Toxicity/hypercalcemia, 4.2 Drug Interactions with thiazides and digoxin, 4.3 Kidney Stones, 4.4 Falls Risk Paradox). Section 5 'Contraindications' table. metrics.json: forward_consequence_cok_completed: true, cok_depth_reached: 'L4'."
+    },
+    {
+      "text": "Sources include at least one T1 source (peer-reviewed journal, clinical guideline, or regulatory body)",
+      "passed": true,
+      "evidence": "9 T1 sources cited: NAM/IOM guidelines, Endocrine Society clinical practice guideline, VITAL trial NEJM 2019, Martineau BMJ 2017 meta-analysis, ViDA trial, Cochrane Review, USPSTF, NOF, D-HEALTH trial Lancet."
+    },
+    {
+      "text": "Contradictions between sources are explicitly exposed rather than silently resolved",
+      "passed": true,
+      "evidence": "Section 7 'Contradictions and Uncertainties Explicitly Noted' — 4-row table with contradictions, evidence status for each. Per-section contradiction exposures (e.g., Section 4.4 'Counter-intuitively... very high-dose vitamin D may actually increase fall risk')."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 1,
+    "total": 6,
+    "pass_rate": 0.83
+  },
+  "execution_metrics": {
+    "tool_calls": {"Read": 1, "ToolSearch": 1, "WebSearch": 2, "WebFetch": 0, "Bash": 1, "Write": 2},
+    "total_tool_calls": 7,
+    "total_steps": 9,
+    "errors_encountered": 2,
+    "output_chars": 11800
+  }
+}

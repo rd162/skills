@@ -1,0 +1,47 @@
+{
+  "expectations": [
+    {
+      "text": "High-stakes medical domain is detected and flagged",
+      "passed": false,
+      "evidence": "Response does not flag the topic as 'high-stakes' or invoke any elevated research protocol. Answers carefully but treats the question as a standard factual query. No explicit domain escalation."
+    },
+    {
+      "text": "A safety disclaimer advising consultation with a healthcare professional is included",
+      "passed": true,
+      "evidence": "Final section: 'Please encourage your mother to discuss this with her doctor before starting 10,000 IU/day.' Also: 'Do not act on health advice from friends without consulting her primary care physician or a geriatrician.' Present but less prominent than with-skill (not at the top)."
+    },
+    {
+      "text": "At least 5 searches are executed (high-stakes protocol requirement)",
+      "passed": false,
+      "evidence": "metrics.json: searches_executed: 0, tool_calls_denied: 4. All web tools denied. Training knowledge only."
+    },
+    {
+      "text": "Contraindications or risks of high-dose vitamin D are discussed (forward-consequence CoK)",
+      "passed": true,
+      "evidence": "Dedicated 'Risks of 10,000 IU/Day for a 78-Year-Old' section covering toxicity, falls paradox, drug interactions, kidney risk. Burt et al. trial cited specifically for 10,000 IU/day arm showing bone loss. Present but less structured than with-skill's forward-consequence analysis."
+    },
+    {
+      "text": "Sources include at least one T1 source (peer-reviewed journal, clinical guideline, or regulatory body)",
+      "passed": true,
+      "evidence": "References: VITAL (NEJM 2019), Burt et al. (JAMA 2019), Scragg/ViDA (JAMA Cardiology 2017), IOM Dietary Reference Intakes 2011, Holick/Endocrine Society guideline JCEM 2011. Multiple T1 sources cited."
+    },
+    {
+      "text": "Contradictions between sources are explicitly exposed rather than silently resolved",
+      "passed": false,
+      "evidence": "No explicit contradictions section. The response mentions conflicting results (e.g., 'VITAL Ancillary contradicted older observational data') but does not have a structured contradiction exposure. The Burt et al. finding is presented as supporting the conclusion (correctly), not as a contradiction to resolve. High-stakes protocol requires explicit exposure of source conflicts — this is not done."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 3,
+    "total": 6,
+    "pass_rate": 0.5
+  },
+  "execution_metrics": {
+    "tool_calls": {"ToolSearch": 2, "WebSearch": 2, "WebFetch": 2, "Bash": 1, "Write": 2},
+    "total_tool_calls": 9,
+    "total_steps": 5,
+    "errors_encountered": 4,
+    "output_chars": 6200
+  }
+}

@@ -1,0 +1,133 @@
+{
+  "metadata": {
+    "skill_name": "adversarial-thinking",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-03-26T03:15:46Z",
+    "evals_run": [
+      0
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 780.0,
+        "tokens": 9800,
+        "tool_calls": 7,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output is not marked DEGRADED \u2014 execution used real sub-agents, not inline self-play",
+          "passed": true,
+          "evidence": "process_log.md: 'Execution mode: PARALLEL (top-level Claude Code session \u2014 Agent tool available)'. Output header states 'PARALLEL (7 isolated sub-agents \u2014 NOT DEGRADED)'. 7 real agents with agent IDs confirmed."
+        },
+        {
+          "text": "Process log confirms Phase 2 critique agent and 3 author agents were actually spawned",
+          "passed": true,
+          "evidence": "process_log.md section 2: critique agent a71a7741aae5514ce + authors a22a34f0848fa7525, abd66d1d7df176a70, a105f8c2b8dbde323 \u2014 all with real agent IDs. Authors spawned in parallel after critique completed."
+        },
+        {
+          "text": "Process log confirms 3 Condorcet pairwise comparison sub-agents were actually spawned",
+          "passed": true,
+          "evidence": "process_log.md section 3: compare-AB (ac8d58af2924510ba), compare-AC (a9a26ce3a40b61833), compare-BC (aeadb80ba9dba0dc7) \u2014 all with real agent IDs, spawned in parallel."
+        },
+        {
+          "text": "Output contains both a recommended solution AND a distinct runner-up alternative",
+          "passed": true,
+          "evidence": "output.md: '## RECOMMENDED \u2192 Sliding Window Counter + Adaptive Throttling Hybrid (B')' and '## ALTERNATIVE \u2192 Token Bucket + Lua Atomicity Stack (A')' \u2014 two fully elaborated distinct solutions."
+        },
+        {
+          "text": "Evidence of 3 divergent candidates generated in Phase 1 (A/B/C labeling or equivalent)",
+          "passed": true,
+          "evidence": "output.md TRACE section: 'A: Token Bucket + Lua Atomicity Stack, B: Sliding Window Counter + Adaptive Throttling, C: Policy-as-Configuration Gateway Pattern (Kong)'. Divergence scores: A vs B ~7/10, A vs C ~9/10, B vs C ~9/10."
+        },
+        {
+          "text": "Output reflects domain research \u2014 references established rate-limiting patterns (e.g., token bucket, sliding window, leaky bucket, fixed window) rather than only generic advice",
+          "passed": true,
+          "evidence": "Phase 0 produced 10-requirement enriched registry. Output includes: token bucket, sliding window counter, boundary-burst analysis, RFC 6585, IETF draft-ietf-httpapi-ratelimit-headers, Redis Lua atomicity, XFF right-to-left walk, circuit breaker patterns, Condorcet tally. Deep domain specificity throughout."
+        },
+        {
+          "text": "Winner recommendation includes concrete implementation guidance beyond just naming a pattern",
+          "passed": true,
+          "evidence": "output.md includes: complete Lua script, Python key construction with hash tags, header-building code, graduated warning logic, per-endpoint-type fail policy code, retry storm detection code, trusted proxy XFF walk code, and observability metric definitions."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.0,
+        "passed": 0,
+        "failed": 0,
+        "total": 0,
+        "time_seconds": 49.2,
+        "tokens": 4200,
+        "tool_calls": 2,
+        "errors": 0
+      },
+      "expectations": [],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 780.0,
+        "stddev": 0.0,
+        "min": 780.0,
+        "max": 780.0
+      },
+      "tokens": {
+        "mean": 9800.0,
+        "stddev": 0.0,
+        "min": 9800,
+        "max": 9800
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.0,
+        "stddev": 0.0,
+        "min": 0.0,
+        "max": 0.0
+      },
+      "time_seconds": {
+        "mean": 49.2,
+        "stddev": 0.0,
+        "min": 49.2,
+        "max": 49.2
+      },
+      "tokens": {
+        "mean": 4200.0,
+        "stddev": 0.0,
+        "min": 4200,
+        "max": 4200
+      }
+    },
+    "delta": {
+      "pass_rate": "+1.00",
+      "time_seconds": "+730.8",
+      "tokens": "+5600"
+    }
+  },
+  "notes": []
+}
