@@ -225,6 +225,12 @@ If the answer could plausibly influence a decision that affects
 someone's physical health, mental health, legal standing,
 financial security, or physical safety — treat as high-stakes.
 When uncertain, **escalate**.
+This follows Signal Detection Theory (Green & Swets, 1966):
+the cost of a false negative (missing a high-stakes domain)
+is catastrophic — harm, death, imprisonment —
+while a false positive (over-researching a safe domain)
+costs only extra tokens. This asymmetric cost matrix
+makes low detection thresholds the rational choice.
 
 **Mandatory protocol when high-stakes detected:**
 
@@ -319,7 +325,30 @@ Any domain:
   (method, fails_when, ?)                 → failure conditions
 ```
 
+### Complexity-Informed Research Depth
+
+Different domains require different research depth.
+The Cynefin complexity framework (Snowden & Boone, 2007)
+provides a principled basis for depth selection:
+
+| Domain Complexity | Characteristics | CoK Depth | Research Approach |
+| ----------------- | --------------- | --------- | ----------------- |
+| **Simple** | Clear cause-effect, best practices exist | L0-L2 | Standard Δ1-Δ7, few searches |
+| **Complicated** | Knowable cause-effect, expert analysis needed | L0-L3 | Multiple angles, T1-T2 sources |
+| **Complex** | Emergent patterns, no single right answer | L0-L4 | Deep research, broad sweep |
+| **Chaotic** | No clear cause-effect, high-stakes | L0-L4 + consequences | Maximum depth, forward-consequence fills |
+
+Use this mapping at Δ2 (Strategy) to calibrate research depth.
+A simple factual lookup (Simple) doesn't need L4 expansion;
+a novel medical question (Chaotic) needs maximum depth
+plus forward-consequence CoK to surface what could go wrong.
+
 ### Expansion Levels and Stop Criteria
+
+Saturation is formally a fixed-point detection (Tarski, 1955):
+when further expansion produces no new relevant triples,
+the knowledge graph has reached its fixed point.
+The criteria below are observable proxies for this condition.
 
 ```text
 L0: Initial topic → direct triples (relevance 1.0)
@@ -400,6 +429,10 @@ execute with temporal qualifiers (use `{current_year}`, never hardcode),
 record each finding with source URL + date + tier (T1-T4).
 
 ### Δ4: Organize
+
+Δ4 implements the Combination phase of the SECI knowledge conversion model
+(Nonaka & Takeuchi, 1995) — systematically combining explicit knowledge
+from multiple sources into a structured synthesis.
 
 ```text
 SOURCES: [Source]:[Finding](T#) — at least 3
@@ -642,6 +675,9 @@ User: "What's the best state management for React?"
 
 When a file path is resolved from `$ARGUMENTS`, write findings to a persistent
 markdown playbook instead of answering inline.
+This implements the Externalization phase of the SECI model
+(Nonaka & Takeuchi, 1995) — converting research findings
+into persistent structured artifacts for organizational knowledge capture.
 
 ### Create mode (file does not exist)
 
@@ -797,11 +833,34 @@ This skill adapts to available tooling:
 - **Claude Code / Cursor / Codex / Gemini CLI / Kimi:** Works with any available search tools
 - **Bare LLM / API:** Degraded mode only (training knowledge + disclaimer)
 
+## Formal Basis
+
+The deep research methodology has grounding in established theory:
+
+- **CoK expansion:** Chain of Knowledge triple-based graph expansion
+  (Li et al., 2023) with saturation as fixed-point detection
+  (Tarski, 1955; Kleene, 1952) — expansion stops when further
+  iteration produces no new relevant triples.
+- **Source tiering:** T1-T4 hierarchy operationalizes the Accuracy
+  dimension from ISO 25012 (2008) data quality model.
+- **Complexity-informed depth:** Research depth maps to Cynefin
+  domains (Snowden & Boone, 2007): Simple→shallow, Complex→deep,
+  Chaotic→maximum with forward-consequence fills.
+- **High-stakes detection:** Asymmetric threshold follows Signal
+  Detection Theory (Green & Swets, 1966): false negative cost
+  (catastrophic) >> false positive cost (tokens).
+- **Knowledge conversion:** Δ4 Organize = SECI Combination;
+  File Output = SECI Externalization (Nonaka & Takeuchi, 1995).
+- **Δ4 output structure:** Frame with named slots (SOURCES,
+  CONSENSUS, CONTRADICTIONS, GAPS) per Minsky's Frame Theory (1975).
+
+See `references/academic-references.md` for full citations and provenance.
+
 ## References
 
 - Li et al.,
-  "Chain of Knowledge: A Framework for Grounding
-  Large Language Models with Structured Knowledge Bases"
+  "Chain-of-Knowledge: Grounding Large Language Models
+  via Dynamic Knowledge Adapting over Heterogeneous Sources"
   (arXiv:2305.13269, 2023).
   Foundation for CoK triple structure and graph-based expansion.
 - Xu et al.,
@@ -810,3 +869,15 @@ This skill adapts to available tooling:
   (arXiv:2501.05366, 2025).
   Agentic search integration patterns
   and multi-step verification workflows.
+- Snowden, D. J., and Boone, M. E.,
+  "A Leader's Framework for Decision Making"
+  (Harvard Business Review, 2007).
+  Cynefin complexity framework — grounds research depth mapping.
+- Green, D. M., and Swets, J. A.,
+  *Signal Detection Theory and Psychophysics*
+  (Wiley, 1966).
+  Grounds the asymmetric cost threshold for high-stakes detection.
+- Nonaka, I., and Takeuchi, H.,
+  *The Knowledge-Creating Company*
+  (Oxford University Press, 1995).
+  SECI model — grounds knowledge conversion phases in the protocol.
