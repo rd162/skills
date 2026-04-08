@@ -330,14 +330,39 @@ s₀[REST basic]
 | Bare LLMs / manual       | None            | INLINE     | Run turns manually, mark DEGRADED  |
 | Programmatic             | Parallel calls  | PARALLEL   | Implement critic/author as API calls |
 
+## Formal Basis
+
+The core loop R(s) = Author(Critic(s)) has grounding in established theory:
+
+- **Fixed-point convergence:** The defense signal is a behavioral fixed point
+  R(s*) ~ s* — grounded in Tarski's fixed-point theorem (1955)
+  and iterative approximation (Kleene, 1952).
+- **Isolation mandate:** LLMs cannot self-correct reasoning without
+  external feedback (Huang et al., ICLR 2024). Multi-agent debate
+  avoids Degeneration-of-Thought (Liang et al., EMNLP 2024).
+- **Assertive critique:** Builds on Constitutional AI's principle-guided
+  critique (Bai et al., 2022) and AI Safety via Debate (Irving et al., 2018).
+- **Cognitive basis:** CRITIC operates on declarative assessment,
+  AUTHOR applies procedural revision — mapping to ACT-R's
+  declarative/procedural knowledge distinction (Anderson, 1983).
+
+See `references/academic-references.md` for full citations and provenance.
+
 ## References
 
 - Madaan et al.,
   "Self-Refine: Iterative Refinement with Self-Feedback"
-  (arXiv:2303.17651, 2023; ICLR 2024).
+  (arXiv:2303.17651, 2023; NeurIPS 2023).
   Foundation for the generate→feedback→refine loop.
   ~20% improvement across 7 diverse tasks without additional training.
   The blind assertive critique and defense-based termination
   are practical extensions of this academic work.
+- Huang et al.,
+  "Large Language Models Cannot Self-Correct Reasoning Yet"
+  (arXiv:2310.01798, ICLR 2024).
+  Core justification for mandatory CRITIC/AUTHOR isolation.
+- Irving et al.,
+  "AI Safety via Debate" (arXiv:1805.00899, 2018).
+  Foundational adversarial debate framework.
 - Agent isolation pattern adapted from the `adversarial-thinking` skill:
   critic/author separation, master routing, sycophancy collapse detection.

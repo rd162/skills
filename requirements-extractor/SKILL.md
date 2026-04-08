@@ -301,6 +301,23 @@ Works with any agent or LLM:
 - **Bare LLMs**: Run Phase 0 + Phase 1 manually in conversation
 - **Programmatic**: Implement as CoK graph builder → MGPC extractor pipeline
 
+## Formal Basis
+
+The two-phase process has grounding in established theory:
+
+- **Phase 0 (Bottom-Up):** Chain of Knowledge expansion (Li et al., 2023)
+  combined with goal decomposition from goal-oriented RE (van Lamsweerde, 2001).
+  The L5→L1 hierarchy mirrors generalization functors
+  from Applied Category Theory (Fong & Spivak, 2019).
+- **Phase 1 (Top-Down):** The recursive "why?" chain adapts Toyota's
+  5 Whys root cause analysis (Ohno, 1988). The Mission as a fixed point
+  of the W-functor has formal grounding in Tarski's fixed-point theorem (1955).
+- **MGPC structure:** Adapts Pohl's requirements layering (2010)
+  for prompt engineering. ACT formalization treats M, G, P, C
+  as objects in a Requirements Category with morphisms between levels.
+
+See `references/academic-references.md` for full citations and provenance.
+
 ## References
 
 - Li et al.,
@@ -315,3 +332,14 @@ Works with any agent or LLM:
   The MGPC structure (Mission, Goals, Premises, Constraints)
   adapts Pohl's requirements framework for prompt engineering use.
   The specific adaptation and "W-functor" notation are original.
+- van Lamsweerde, A.,
+  "Goal-Oriented Requirements Engineering: A Guided Tour"
+  (RE'01, 2001).
+  Goal decomposition and obstacle analysis.
+- Fong, B., and Spivak, D. I.,
+  "An Invitation to Applied Category Theory"
+  (Cambridge University Press, 2019).
+  Formal vocabulary for the ACT formalization of requirements.
+- Ohno, T.,
+  "Toyota Production System" (Productivity Press, 1988).
+  Origin of the "5 Whys" root cause analysis technique.

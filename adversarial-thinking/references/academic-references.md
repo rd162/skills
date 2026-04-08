@@ -124,6 +124,57 @@ Loaded on demand — not part of the main SKILL.md context.
 
 ---
 
+## Applied Category Theory and Requirements Formalization
+
+- Fong, Brendan, and David I. Spivak.
+  *An Invitation to Applied Category Theory:
+  Seven Sketches in Composability.*
+  Cambridge University Press, 2019. arXiv:1803.05316.
+  Formal vocabulary (objects, morphisms, functors)
+  for the Requirements Category and Solution Functor F: Req → Sol.
+  Phase 0 requirements inference maps between these categories;
+  Phase 1 candidate generation applies the Solution Functor
+  to produce divergent branches.
+
+- Pohl, Klaus.
+  *Requirements Engineering: Fundamentals, Principles,
+  and Techniques.*
+  Springer, 2010.
+  Source for goal-oriented requirements structure.
+  The MGPC framework (Mission, Goals, Premises, Constraints)
+  used in Phase 0.2 adapts Pohl's requirements layering.
+
+- van Lamsweerde, Axel.
+  "Goal-Oriented Requirements Engineering: A Guided Tour."
+  *Proceedings of the 5th IEEE International Symposium
+  on Requirements Engineering (RE'01)*, pp. 249–262, 2001.
+  Goal decomposition and obstacle analysis.
+  Informs the enriched requirements registry: goals decompose
+  into assessment criteria for Condorcet voters.
+
+- Tarski, Alfred.
+  "A Lattice-Theoretical Fixpoint Theorem
+  and Its Applications."
+  *Pacific Journal of Mathematics*, 5(2), 285–309, 1955.
+  Fixed-point theory grounding convergence detection in Phase 2:
+  when the critique-and-revise loop reaches a fixed point
+  (defense or output stabilization), further iteration is circular.
+
+---
+
+## Cognitive Architecture
+
+- Anderson, John R.
+  *The Architecture of Cognition.*
+  Harvard University Press, 1983.
+  ACT-R cognitive architecture: declarative vs. procedural knowledge.
+  Grounds the critique/author separation:
+  CRITIQUE operates on declarative assessment (compliance evaluation),
+  AUTHOR applies procedural revision (solution improvement).
+  Isolation prevents cross-contamination of cognitive modes.
+
+---
+
 ## Skill Formalization
 
 - Jiang et al.,

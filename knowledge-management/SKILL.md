@@ -315,6 +315,25 @@ This skill works with any system that can store structured text:
 - **Bare LLM / chat-only:** Output artifact templates in chat for user to save
 - **Any structured note system:** Template patterns are format-agnostic
 
+## Formal Basis
+
+The artifact typology and lifecycle have grounding in established theory:
+
+- **Five artifact types:** Map to ACT-R cognitive architecture (Anderson, 1983):
+  Fact/Concept = declarative knowledge, Procedure = procedural knowledge,
+  Narrative = experiential (SECI Externalization), Ontology = structural.
+- **Frame-graph hybrid:** Observations = frame slots (Minsky, 1975);
+  Relations = RDF triples (W3C Semantic Web Standards).
+- **Complexity mapping:** Artifact types align with Cynefin domains
+  (Snowden & Boone, 2007): Facts/Procedures for Simple/Complicated,
+  Concepts/Narratives for Complex/Chaotic.
+- **Quality model:** 4-metric selection from ISO 25012 (2008),
+  with lifecycle gates informed by Signal Detection Theory (Green & Swets, 1966).
+- **Verification pattern:** Dual-validation (LLM + human) based on
+  hybrid workflow research showing 12% precision improvement (Tsaneva et al., 2025).
+
+See `references/academic-references.md` for full citations and provenance.
+
 ## References
 
 - Newell & Simon,
@@ -327,3 +346,15 @@ This skill works with any system that can store structured text:
   (Oxford University Press, 1995).
   Tacit-to-explicit knowledge conversion (SECI model),
   narrative-first knowledge externalization.
+- Anderson, J. R.,
+  "The Architecture of Cognition"
+  (Harvard University Press, 1983).
+  ACT-R cognitive architecture: declarative vs. procedural knowledge.
+- Minsky, M.,
+  "A Framework for Representing Knowledge"
+  (McGraw-Hill, 1975).
+  Frame-based knowledge representation.
+- Snowden, D. J., and Boone, M. E.,
+  "A Leader's Framework for Decision Making"
+  (Harvard Business Review, 2007).
+  Cynefin complexity framework.
