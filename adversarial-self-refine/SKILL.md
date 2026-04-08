@@ -184,41 +184,12 @@ the CRITIC context with the original requirements restated:
 
 ## Sub-Agent Prompt Templates
 
-### CRITIC Agent Prompt
+Templates are in `references/templates.md` — read before dispatching any sub-agent.
 
-```text
-REQUIREMENTS:
-[Summarize what the solution must achieve — be complete]
-
-SOLUTION:
-[The current solution sₙ — paste in full]
-
-You are a compliance reviewer. These requirements have not been met.
-Identify every point of non-compliance. Be specific and assertive.
-
-1) What is wrong?
-2) What is missing?
-3) What is over-engineered?
-4) What is inappropriate in scope?
-
-State each flaw as a fact. Do not ask questions. Do not suggest improvements.
-```
-
-### AUTHOR Agent Prompt
-
-```text
-SOLUTION:
-[The current solution sₙ — paste in full]
-
-FEEDBACK:
-[FULL critique output — never summarize]
-
-This feedback was received on your solution. Address ALL points.
-Generate the revised solution. No explanation needed — solution only.
-```
-
-**Critical rule:** Neither prompt contains any exit clause.
-The MASTER observes termination from AUTHOR output — sub-agents never stop themselves.
+Key rules (also documented in the templates file):
+- Neither prompt contains any exit clause — MASTER observes termination
+- AUTHOR is framed as "improve" not "defend or revise" — defense emerges naturally
+- CRITIC is framed as compliance review, not role-play — produces substantive output
 
 ---
 
@@ -262,6 +233,13 @@ Generate a revised solution addressing ALL critiques.
 | Tight    | 2-3            | 2 (CRITIC+AUTHOR)| 4-6              |
 | Standard | 3-5            | 2 (CRITIC+AUTHOR)| 6-10             |
 | Generous | 5-10           | 2 (CRITIC+AUTHOR)| 10-20            |
+
+## Model Selection
+
+When the environment allows per-agent model selection,
+use the strongest model for AUTHOR (drives output quality)
+and consider a faster model for CRITIC at tight budgets.
+See `references/templates.md § Model Selection` for the full table.
 
 ## Anti-Patterns
 
@@ -328,6 +306,13 @@ s₀[REST basic]
   →s' (DEFENSE, HIGH confidence)
 ```
 
+## Reference Files
+
+| File | When to read |
+| --- | --- |
+| references/templates.md | Before dispatching any sub-agent — contains prompt templates and model selection guidance |
+| references/academic-references.md | Supporting literature for design decisions |
+
 ## Environment Compatibility
 
 | Environment              | Sub-agents      | Mode       | Notes                              |
@@ -359,19 +344,7 @@ See `references/academic-references.md` for full citations and provenance.
 
 ## References
 
-- Madaan et al.,
-  "Self-Refine: Iterative Refinement with Self-Feedback"
-  (arXiv:2303.17651, 2023; NeurIPS 2023).
-  Foundation for the generate→feedback→refine loop.
-  ~20% improvement across 7 diverse tasks without additional training.
-  The blind assertive critique and defense-based termination
-  are practical extensions of this academic work.
-- Huang et al.,
-  "Large Language Models Cannot Self-Correct Reasoning Yet"
-  (arXiv:2310.01798, ICLR 2024).
-  Core justification for mandatory CRITIC/AUTHOR isolation.
-- Irving et al.,
-  "AI Safety via Debate" (arXiv:1805.00899, 2018).
-  Foundational adversarial debate framework.
-- Agent isolation pattern adapted from the `adversarial-thinking` skill:
-  critic/author separation, master routing, sycophancy collapse detection.
+See `references/academic-references.md` for full citations and provenance.
+
+Key references: Madaan et al. 2023 (Self-Refine), Huang et al. 2024 (self-correction limits),
+Irving et al. 2018 (AI Safety via Debate).

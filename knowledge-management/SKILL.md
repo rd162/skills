@@ -251,6 +251,21 @@ This prevents vocabulary bloat while keeping domain expressiveness.
 
 **Overall flow:** Request → Narrative(s) + {Facts, Concepts, Procedures} → Graph → `[[future-forward]]` as backlog
 
+### Sub-Agent Dispatch for Bulk Materialization
+
+When materializing **3+ artifacts**, dispatch each to a sub-agent
+for parallel creation. The master handles Narratives (need full context)
+and relation stitching (needs all artifacts).
+
+| Artifact count | Strategy |
+| --- | --- |
+| 1-2 | Create inline |
+| 3-5 | One sub-agent per artifact |
+| 6+ | Group by type (2-3 per agent) |
+
+For model selection per artifact type and the full dispatch protocol,
+see @references/sub-agent-guide.md.
+
 ---
 
 ## Unified Artifact Template
@@ -379,25 +394,7 @@ See `references/academic-references.md` for full citations and provenance.
 
 ## References
 
-- Newell & Simon,
-  "Human Problem Solving"
-  (Prentice-Hall, 1972).
-  Foundation for knowledge representation:
-  declarative, procedural, experiential memory types.
-- Nonaka & Takeuchi,
-  "The Knowledge-Creating Company"
-  (Oxford University Press, 1995).
-  Tacit-to-explicit knowledge conversion (SECI model),
-  narrative-first knowledge externalization.
-- Anderson, J. R.,
-  "The Architecture of Cognition"
-  (Harvard University Press, 1983).
-  ACT-R cognitive architecture: declarative vs. procedural knowledge.
-- Minsky, M.,
-  "A Framework for Representing Knowledge"
-  (McGraw-Hill, 1975).
-  Frame-based knowledge representation.
-- Snowden, D. J., and Boone, M. E.,
-  "A Leader's Framework for Decision Making"
-  (Harvard Business Review, 2007).
-  Cynefin complexity framework.
+See `references/academic-references.md` for full citations and provenance.
+
+Key references: Anderson 1983 (ACT-R), Nonaka & Takeuchi 1995 (SECI),
+Minsky 1975 (Frames), Snowden & Boone 2007 (Cynefin).

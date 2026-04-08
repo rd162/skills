@@ -11,12 +11,13 @@ Loaded on demand for dispatch details, environment adaptation, and enrichment.
 2. [Why This Architecture](#why-this-architecture)
 3. [Sub-Agent Dispatch Patterns](#sub-agent-dispatch-patterns)
 4. [Environment Adaptation](#environment-adaptation)
-5. [Compositional Gates](#compositional-gates)
-6. [Execution Mode Decision Tree](#execution-mode-decision-tree)
-7. [Phase 3: Extended Condorcet Details](#phase-3-extended-condorcet-details)
-8. [Anti-Patterns](#anti-patterns)
-9. [Composition with Other Capabilities](#composition-with-other-capabilities)
-10. [Practical Guidance from Testing](#practical-guidance-from-testing)
+5. [Model Selection for Sub-Agents](#model-selection-for-sub-agents)
+6. [Compositional Gates](#compositional-gates)
+7. [Execution Mode Decision Tree](#execution-mode-decision-tree)
+8. [Phase 3: Extended Condorcet Details](#phase-3-extended-condorcet-details)
+9. [Anti-Patterns](#anti-patterns)
+10. [Composition with Other Capabilities](#composition-with-other-capabilities)
+11. [Practical Guidance from Testing](#practical-guidance-from-testing)
 
 ---
 
@@ -131,6 +132,35 @@ environment provides and use the highest-isolation mode available.
 3. Sequential + routed (routing preserved, no parallelism)
 4. Sequential single-turn (minimal isolation)
 5. Inline with context fencing (no isolation, mark output DEGRADED)
+
+---
+
+## Model Selection for Sub-Agents
+
+Different agent roles have different cognitive demands.
+When the environment allows model selection per sub-agent,
+use the strongest model where reasoning depth matters most
+and faster models where the task is more mechanical.
+
+| Agent Role | Cognitive Demand | Model Tier | Rationale |
+| --- | --- | --- | --- |
+| **Critique Agent** | Highest | Strongest (opus-class) | Weak critique → weak refinement; this agent is the quality bottleneck |
+| **Solution Authors** | High | Strongest (opus-class) | Must research counter-evidence and produce creative revisions |
+| **Generation (Phase 1)** | High | Strongest (opus-class) | Divergent exploration requires deep domain understanding |
+| **Condorcet Voters (Standard+)** | High | Strongest (opus-class) | Research-armed voting with claim verification needs strong reasoning |
+| **Condorcet Voters (Quick)** | Moderate | Fast (sonnet-class) | Quick-depth comparisons are straightforward requirement matching |
+| **Inverse Spec Recovery** | Moderate | Fast (sonnet-class) | Structured extraction from solution text is well-suited to faster models |
+
+**When model selection is unavailable:**
+Use the default model for all agents. Isolation alone
+(separate contexts preventing self-play bias) is worth
+the dispatch overhead even without model differentiation.
+
+**Cost optimization at scale:**
+At Quick depth with 7 agents, using fast models for Condorcet voters
+reduces total pipeline cost by ~20-30% with minimal quality impact.
+At Deep/Maximum depth, use the strongest model for all agents —
+every phase involves research and complex reasoning.
 
 ---
 

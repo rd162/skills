@@ -327,6 +327,27 @@ but it can also be used standalone for requirements analysis.
 - **Verification:** Premises become testable assumptions
 - **Audit:** The CoK saturation output documents the reasoning trail
 
+## Sub-Agent Dispatch
+
+Requirements extraction benefits from sub-agents in two scenarios:
+
+**Multi-domain input:** When the request spans 2+ independent domains,
+each domain's L5→L1 CoK expansion runs in parallel via sub-agents.
+The master merges saturation data, then runs Phase 1 (always inline —
+Mission inference needs the full picture).
+
+**Challenge exploration:** When exploring alternatives, Goal/Premise/Constraint
+challenges run in parallel since each produces an independent alternative MGPC.
+
+| Scenario | Strategy |
+| --- | --- |
+| Single domain | Inline (no sub-agents) |
+| 2-4 independent domains | One sub-agent per domain |
+| Challenge exploration | One sub-agent per challenge type |
+
+See @references/sub-agent-guide.md for dispatch patterns,
+model selection, and the merge protocol.
+
 ## Anti-Patterns
 
 ```text
@@ -380,26 +401,7 @@ See `references/academic-references.md` for full citations and provenance.
 
 ## References
 
-- Li et al.,
-  "Chain-of-Knowledge: Grounding Large Language Models
-  via Dynamic Knowledge Adapting over Heterogeneous Sources"
-  (arXiv:2305.13269, 2023).
-  Foundation for CoK triple structure and graph-based expansion.
-- Pohl, K.,
-  "Requirements Engineering: Fundamentals, Principles, and Techniques"
-  (Springer, 2010).
-  Source for goal-oriented requirements engineering.
-  The MGPC structure (Mission, Goals, Premises, Constraints)
-  adapts Pohl's requirements framework for prompt engineering use.
-  The specific adaptation and "W-functor" notation are original.
-- van Lamsweerde, A.,
-  "Goal-Oriented Requirements Engineering: A Guided Tour"
-  (RE'01, 2001).
-  Goal decomposition and obstacle analysis.
-- Fong, B., and Spivak, D. I.,
-  "An Invitation to Applied Category Theory"
-  (Cambridge University Press, 2019).
-  Formal vocabulary for the ACT formalization of requirements.
-- Ohno, T.,
-  "Toyota Production System" (Productivity Press, 1988).
-  Origin of the "5 Whys" root cause analysis technique.
+See `references/academic-references.md` for full citations and provenance.
+
+Key references: Li et al. 2023 (CoK), Pohl 2010 (Requirements Engineering),
+van Lamsweerde 2001 (GORE), Ohno 1988 (5 Whys).
