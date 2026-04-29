@@ -1,6 +1,6 @@
 ---
 name: deep-research-t1
-version: "2.2"
+version: "2.3"
 description: >-
   Systematically gathers, validates, and synthesizes external knowledge
   using CoK graph-based expansion until saturation, combining a structured
@@ -203,13 +203,43 @@ budget exhausted, circular references detected.
 
 | Tier | Description                          | Default Confidence | Weight in Conflicts |
 | ---- | ------------------------------------ | ------------------ | ------------------- |
-| T1   | Peer-reviewed / official docs / RFCs | HIGH               | Strongest           |
-| T2   | Expert blogs / established sources   | MED                | Strong              |
-| T3   | Community forums / Stack Overflow    | LOW                | Weak                |
-| T4   | Opinions / unverified claims         | LOW                | Weakest             |
+| T1   | Peer-reviewed / official vendor docs / RFCs / standards bodies — **public sources only** | HIGH | Strongest |
+| T2   | Expert blogs, established trade press, primary partner documents (`__SPECS__/`) | MED | Strong |
+| T3   | Community forums, Stack Overflow, fragments/extracts (`__FRAGMENTS__/`), summaries of prior tiers | LOW | Weak |
+| T4   | Opinions, unverified claims, AI-generated content, project-internal generated docs (surveys, playbooks, memory) | LOW | Weakest |
+
+**T1 is reserved for true public sources.** Internal/closed documents
+never qualify as T1, even when authoritative inside the organization.
 
 When sources conflict, higher tier + more recent = stronger evidence.
 Annotate every cited source with its tier.
+
+See `references/source-tiering.md` for the full policy: `source_class`
+taxonomy, default tier per path, frontmatter schema, and conflict
+resolution rules.
+
+### Local Document Tier Resolution
+
+When citing a local file (project doc, fragment, memory entry):
+
+1. Read the file's frontmatter `tier` if present — use it.
+2. If absent, apply default-by-path:
+   - `__SPECS__/**` → T2 (`source_class: specs`)
+   - `__FRAGMENTS__/**` → T3 (`source_class: fragment`)
+   - `.agents/memory/**`, `.claude/memory/**` → T4 (`source_class: generated`)
+   - Project-root generated docs (surveys, playbooks, discovery reports) → T4
+3. If still unresolved, infer from git history + content:
+   - `git log --diff-filter=A -- <file>` for first-add date and message
+   - "import"/"ingest"/"convert" in commit message → T3 fragment
+   - Heavy LLM-slop signal (generic bullets, em dashes, no concrete data,
+     no source links) → T4 if low-quality model, T3 if premium model output
+   - Clearly human-authored (typos, idiosyncratic voice, named refs) →
+     T2 default; T1 only if it cites external public authority
+   - Unclear → T4 (safe conservative default)
+4. When a skill writes an inferred tier, add `tier_inferred: true` to
+   the frontmatter so future passes can refine it.
+
+See `references/source-tiering.md` §5 for the full inference algorithm.
 
 ---
 

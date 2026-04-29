@@ -1,35 +1,76 @@
 ---
-name: document-ingestion
-version: "1.4"
+name: document-pipeline
+version: "2.0"
 description: >-
-  Converts raw documents (PDF, DOCX, PPTX, XLSX), draw.io diagrams, and video
-  files (MP4, MKV, AVI, MOV) into AI-readable fragments using dual markdown
-  converters (MarkItDown + Docling), mandatory WEBP sliding-window page images
-  via libvips, and video processing via OpenAI Whisper (VTT subtitles) +
-  PySceneDetect (scene-change cadre images). Produces an indexed __FRAGMENTS__/
-  directory with SHA256 change tracking and incremental processing.
-  WEBP generation must never be skipped — uses a three-strategy fallback chain
-  for Office→PDF: LibreOffice headless (preferred), mammoth+Chrome (fallback),
-  docx2pdf/Word (last resort). Manual VTT/SRT subtitle files from __SPECS__
-  are preserved alongside Whisper-generated VTTs. Use when user says "convert
-  documents", "ingest documents", "process specs", "create fragments", "prepare
-  documents for analysis", "run the converter", "set up document pipeline",
-  "process videos", "extract subtitles", or when a project has an __SPECS__/
-  directory with raw documents or video recordings that need to be made
-  AI-readable. Also use when new documents arrive or user needs to re-process
-  an existing __FRAGMENTS__/ directory.
+  End-to-end document knowledge pipeline. Two modes in one skill:
+  (1) INGESTION — converts raw documents (PDF, DOCX, PPTX, XLSX), draw.io
+  diagrams, and video files (MP4, MKV, AVI, MOV) into AI-readable fragments
+  in __FRAGMENTS__/ using dual markdown converters (MarkItDown + Docling),
+  WEBP sliding-window page images via libvips, OpenAI Whisper VTT subtitles,
+  and PySceneDetect cadre images, with SHA256 change tracking and incremental
+  resume. (2) SURVEY — reads __FRAGMENTS__/ + optional web research and
+  produces a targeted survey/knowledge base scoped to a named subject
+  (one partner, one product) with structured §1–§12 sections, source
+  traceability, gap/contradiction/ambiguity catalogue, and prioritized
+  clarification questions with default assumptions. Both modes emit
+  source-tier frontmatter on outputs (T3 for fragments, T4 for surveys).
+  Use when user says "convert documents", "ingest documents", "create
+  fragments", "process specs", "run the converter", "process videos",
+  "extract subtitles", "build survey", "analyze documents", "extract
+  knowledge from fragments", "what do the specs say", "summarize the RFP",
+  "generate clarification questions", or for combined requests like
+  "ingest documents and produce a survey for X".
 metadata:
   author: rd162@hotmail.com
-  tags: document-conversion, ingestion, markitdown, docling, drawio, webp, vips, pdf, fragments, libreoffice, chrome, video, whisper, scenedetect, vtt
+  tags: document-conversion, ingestion, survey, knowledge-extraction, markitdown, docling, drawio, webp, vips, pdf, fragments, libreoffice, chrome, video, whisper, scenedetect, vtt, source-tiering
 ---
 
-# Document Ingestion
+# Document Pipeline — Ingestion + Targeted Survey
+
+End-to-end pipeline from raw documents to structured knowledge.
+Two modes — invoked separately or chained.
+
+## Mode Selection
+
+| User intent | Mode | Read further in |
+| ----------- | ---- | --------------- |
+| Convert raw documents/videos to fragments | **Ingestion** | Below in this SKILL.md |
+| Build a survey/knowledge base from fragments | **Survey** | `references/survey-mode.md` |
+| "Ingest X and produce survey for Y" | **Both, sequenced** | Run Ingestion first, then Survey |
+
+Both modes share `__FRAGMENTS__/` as the canonical interchange format.
+Ingestion emits `tier: T3, source_class: fragment` frontmatter on every
+fragment markdown. Survey emits `tier: T4, source_class: generated` on
+the survey/questions output. See
+`deep-research-t1/references/source-tiering.md` for the full policy.
+
+---
+
+## Ingestion Mode
 
 Convert raw documents, draw.io diagrams, and video files into AI-readable
 fragments using dual markdown converters, XML parsing, WEBP sliding-window
 images, and video speech-to-text + scene-change extraction.
 Scans project directories recursively — not limited to `__SPECS__/`.
 Domain-agnostic: works for any document type and any downstream analysis.
+
+**Frontmatter on emitted fragments:** `scripts/doc_converter.py` writes
+this YAML block at the top of every fragment markdown:
+
+```yaml
+---
+tier: T3
+source_class: fragment
+version: "1.0"
+last_updated: <ISO date>
+description: <converter> output for <source filename>
+source_file: <relative path to source under __SPECS__/ or scan root>
+---
+```
+
+If a fragment file is regenerated, `last_updated` is bumped but
+pre-existing `tier`/`source_class`/manually-edited keys are preserved
+(additivity rule from `source-tiering.md`).
 
 **WEBP images are mandatory** for all page-producing formats (PDF, DOCX, PPTX).
 pyvips cannot open Office files directly — PDF is the required intermediate.
@@ -60,7 +101,7 @@ strategy chain and anti-patterns.
 - Documents are already in markdown format (no conversion needed)
 - User only needs to read a single file (use `read_file` directly)
 - Documents are code files or structured data (JSON, CSV, YAML)
-- User wants to analyze fragments (use the document-survey skill instead)
+- User wants to analyze fragments (use the survey mode (see `references/survey-mode.md`) instead)
 
 ## Termination
 

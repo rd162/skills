@@ -9,9 +9,17 @@ Loaded on demand from the main SKILL.md.
 
 1. Run Δ1-Δ7 with sub-agent fan-out if 2+ research angles needed.
 2. Group findings into 5-10 logical sections.
-3. Write the file:
+3. Write the file with frontmatter (see `source-tiering.md`):
 
 ```markdown
+---
+tier: T4
+source_class: generated
+version: "1.0"
+last_updated: YYYY-MM-DD
+description: <one-line purpose>
+---
+
 # [Title derived from topic]
 
 ## [Section Name]
@@ -31,6 +39,9 @@ Loaded on demand from the main SKILL.md.
 _Captured: YYYY-MM-DD_
 ```
 
+A research playbook is `tier: T4, source_class: generated` even when it
+cites T1 sources internally — the playbook itself is a derived artifact.
+
 Rules:
 
 - Every claim MUST have a source URL — drop findings without one.
@@ -39,6 +50,13 @@ Rules:
 - Example — GOOD: "Cache aggressively. Redis for shared state, in-memory for hot paths."
 
 ## Update mode (file already exists)
+
+**Frontmatter additivity rule:** If the file has frontmatter, ADD missing
+keys only (`tier`, `source_class`, `version`, `last_updated`, `description`).
+NEVER overwrite values another skill or human has set. If the file uses a
+different frontmatter format (spec-kit, Jekyll, JSON-LD), preserve that
+format and append the tier keys at the end of the frontmatter block.
+Bump `version` and update `last_updated` on substantive content changes.
 
 1. Read the existing file. Note section headings, Sources list, and voice/style.
 2. Run Δ1-Δ7 targeted to what has changed since the `*Captured:*` date.

@@ -9,10 +9,10 @@ description: >-
   'document the context', 'summarize progress',
   'save memory', 'create a knowledge artifact',
   or when structuring information into typed artifacts.
-version: "2.0"
+version: "2.1"
 metadata:
   author: rd162@hotmail.com
-  tags: knowledge-management, artifacts, revision, materialization, Basic-Memory
+  tags: knowledge-management, artifacts, revision, materialization, Basic-Memory, source-tiering
 ---
 
 # Knowledge Management
@@ -270,10 +270,21 @@ see @references/sub-agent-guide.md.
 
 ## Unified Artifact Template
 
+Knowledge artifacts produced by this skill are `tier: T4, source_class:
+generated` per the source-tiering policy
+(`~/.claude/skills/deep-research-t1/references/source-tiering.md`).
+On every write, EMIT the tier keys; on every revision, ADD missing
+tier keys without overwriting existing values (additivity rule).
+
 ```markdown
 ---
 title: [Type] - [Name]
 type: [fact|concept|procedure|narrative|ontology]
+tier: T4
+source_class: generated
+version: "1.0"
+last_updated: YYYY-MM-DD
+description: <one-line — what this artifact captures>
 tags:
   - domain
   - discipline

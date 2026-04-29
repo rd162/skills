@@ -11,7 +11,7 @@ description: >-
   every Constraint cites its source.
   Use when you have unstructured input and need formal requirements
   before implementation, architecture, or candidate generation.
-version: "3.0"
+version: "3.1"
 metadata:
   author: rd162@hotmail.com
   tags: requirements, discovery, CoK, prompt-engineering
@@ -237,7 +237,20 @@ This makes the specification auditable and challengeable.
 
 ### Output Template
 
+When the spec is written to a file, prepend the source-tier frontmatter
+(`tier: T4, source_class: generated`) per
+`~/.claude/skills/deep-research-t1/references/source-tiering.md`. If the
+target file already has frontmatter, ADD missing keys only.
+
 ```text
+---
+tier: T4
+source_class: generated
+version: "1.0"
+last_updated: YYYY-MM-DD
+description: Requirements specification for <subject>
+---
+
 ## Mission
 
 [Single sentence — the terminal "why?" value]

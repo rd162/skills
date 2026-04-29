@@ -412,6 +412,37 @@ def extract_archive(filepath: Path, dest_dir: Path) -> List[Path]:
     return extracted
 
 # ---------------------------------------------------------------------------
+# Fragment frontmatter (source-tiering policy)
+# ---------------------------------------------------------------------------
+# Every fragment markdown emits a YAML frontmatter block declaring its
+# tier (T3) and source_class (fragment). Policy reference:
+# ~/.claude/skills/deep-research-t1/references/source-tiering.md
+# ---------------------------------------------------------------------------
+
+
+def _fragment_frontmatter(source_filepath: Path, converter: str) -> str:
+    """
+    Build the YAML frontmatter block for a generated fragment markdown.
+
+    Fragments are T3 (extract/summary of prior tiers) per the source-tiering
+    policy. The block is additive-by-design; downstream tools that re-emit
+    fragment files should preserve any user-edited keys (additivity rule).
+    """
+    today = datetime.now().date().isoformat()
+    return (
+        "---\n"
+        "tier: T3\n"
+        "source_class: fragment\n"
+        "version: \"1.0\"\n"
+        f"last_updated: {today}\n"
+        f"description: {converter} output for {source_filepath.name}\n"
+        f"source_file: {source_filepath.name}\n"
+        f"converter: {converter}\n"
+        "---\n\n"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Markdown converters
 # ---------------------------------------------------------------------------
 
@@ -433,9 +464,7 @@ def convert_with_markitdown(filepath: Path, output_dir: Path) -> Optional[Path]:
         result = md.convert(str(filepath))
         output_file = output_dir / f"{filepath.stem}_markitdown.md"
         with open(output_file, 'w', encoding='utf-8') as fh:
-            fh.write(f"<!-- Source: {filepath.name} -->\n")
-            fh.write(f"<!-- Converter: markitdown -->\n")
-            fh.write(f"<!-- Generated: {datetime.now().isoformat()} -->\n\n")
+            fh.write(_fragment_frontmatter(filepath, 'markitdown'))
             fh.write(result.text_content)
         logger.info(f"  ✓ markitdown → {output_file.name}")
         return output_file
@@ -476,10 +505,20 @@ output_file = Path({str(output_file)!r})
 converter = DocumentConverter()
 result = converter.convert(str(filepath))
 markdown_content = result.document.export_to_markdown()
+today = datetime.now().date().isoformat()
+frontmatter = (
+    "---\\n"
+    "tier: T3\\n"
+    "source_class: fragment\\n"
+    "version: \\"1.0\\"\\n"
+    f"last_updated: {{today}}\\n"
+    f"description: docling output for {{filepath.name}}\\n"
+    f"source_file: {{filepath.name}}\\n"
+    "converter: docling\\n"
+    "---\\n\\n"
+)
 with open(output_file, 'w', encoding='utf-8') as fh:
-    fh.write(f"<!-- Source: {{filepath.name}} -->\\n")
-    fh.write(f"<!-- Converter: docling -->\\n")
-    fh.write(f"<!-- Generated: {{datetime.now().isoformat()}} -->\\n\\n")
+    fh.write(frontmatter)
     fh.write(markdown_content)
 """
     try:
@@ -670,9 +709,7 @@ def convert_drawio_to_markdown(filepath: Path, output_dir: Path) -> Optional[Pat
         markdown_content = _parse_drawio_xml(filepath)
         output_file = output_dir / f"{filepath.stem}_drawio_parsed.md"
         with open(output_file, 'w', encoding='utf-8') as fh:
-            fh.write(f"<!-- Source: {filepath.name} -->\n")
-            fh.write(f"<!-- Converter: drawio-xml-parser -->\n")
-            fh.write(f"<!-- Generated: {datetime.now().isoformat()} -->\n\n")
+            fh.write(_fragment_frontmatter(filepath, 'drawio-xml-parser'))
             fh.write(markdown_content)
         logger.info(f"  ✓ drawio-xml-parser → {output_file.name}")
         return output_file
@@ -1182,16 +1219,16 @@ def _render_pdf_via_pdftoppm(
     pages_per_image: int = PAGES_PER_IMAGE,
 ) -> List[Path]:
     """
-    Fallback renderer: pdftoppm → PNG files → pyvips WEBP sliding window.
+    Fallback renderer: pdftoppm → PPM files → pyvips WEBP sliding window.
 
     Used when pyvips pdfload (poppler dynamic module) is unavailable.
-    Requires: pdftoppm (poppler-utils) + pyvips (for PNG→WEBP conversion).
+    Requires: pdftoppm (poppler-utils) + pyvips (for PPM→WEBP conversion).
     """
     import subprocess
     import shutil
 
     if not shutil.which('pdftoppm'):
-        logger.error("  ✗ pdftoppm not found — install poppler (brew install poppler / apt install poppler-utils)")
+        logger.error("  ✗ pdftoppm not found — install poppler (brew install poppler)")
         return []
 
     try:
@@ -1234,6 +1271,7 @@ def _render_pdf_via_pdftoppm(
                 vimg = pyvips.Image.new_from_file(
                     str(page_files[page_num]), access='sequential'
                 )
+                # Ensure RGB (no alpha) for consistent WEBP output
                 if vimg.bands == 4:
                     vimg = vimg.flatten(background=[255, 255, 255])
                 page_imgs.append(vimg)
@@ -1265,9 +1303,9 @@ def render_pdf_pages_to_images(
     Render PDF pages to WEBP images with a sliding window.
 
     Strategy:
-      1. pyvips pdfload  — fastest; requires poppler dynamic module loaded in libvips
+      1. pyvips pdfload  — fastest, requires poppler dynamic module loaded in libvips
       2. pdftoppm + pyvips — reliable fallback when pdfload is unavailable
-         (pdftoppm renders pages to PNG; pyvips assembles sliding-window WEBP)
+         (uses pdftoppm to render pages to PNG, then pyvips for WEBP conversion)
 
     Window structure (pages_per_image pages stacked horizontally):
       Image p001-003: page 1 | page 2 | page 3
@@ -1400,7 +1438,7 @@ def convert_to_images(
 # ---------------------------------------------------------------------------
 
 def _find_companion_subtitles(video_path: Path) -> List[Path]:
-    """Find .vtt/.srt files alongside a video in __SPECS__ (manual subtitles)."""
+    """Find .vtt/.srt/.txt transcript files alongside a video in the source directory."""
     companions = []
     parent = video_path.parent
     stem = video_path.stem
@@ -1413,6 +1451,10 @@ def _find_companion_subtitles(video_path: Path) -> List[Path]:
         for f in parent.glob(f"*{ext}"):
             if f not in companions and f.stem.startswith(stem[:40]):
                 companions.append(f)
+    # Also check for plain-text transcript (.txt) with the same stem
+    txt_exact = parent / f"{stem}.txt"
+    if txt_exact.exists() and txt_exact not in companions:
+        companions.append(txt_exact)
     return companions
 
 
@@ -1430,6 +1472,93 @@ def _copy_companion_subtitles(
             logger.info(f"  Copied manual subtitle: {sub.name}")
         copied.append(str(dest.relative_to(fragments_dir)))
     return copied
+
+
+def _find_transcript_in_fragment(fragment_stem: str, fragments_dir: Path) -> List[Path]:
+    """Return any transcript files already placed in the fragment's markdown directory."""
+    found = []
+    md_dir = fragments_dir / fragment_stem / "markdown"
+    if md_dir.exists():
+        for ext in ('.vtt', '.srt', '.txt'):
+            found.extend(md_dir.glob(f"*{ext}"))
+    return found
+
+
+def _collect_videos_missing_transcripts(
+    video_files: List[Path],
+    display_names: Dict[Path, str],
+    fragments_dir: Path,
+) -> List[tuple]:
+    """Return list of (video_path, fragment_markdown_dir) for videos with no transcript."""
+    missing = []
+    for vid in video_files:
+        if _find_companion_subtitles(vid):
+            continue
+        stem = Path(display_names.get(vid, vid.name)).stem
+        if _find_transcript_in_fragment(stem, fragments_dir):
+            continue
+        frag_md_dir = fragments_dir / stem / "markdown"
+        missing.append((vid, frag_md_dir))
+    return missing
+
+
+def _prompt_for_transcripts(missing: List[tuple]) -> set:
+    """
+    Report videos that have no transcript and ask what to do.
+
+    Returns the set of video Paths for which Whisper should run.
+    Three outcomes:
+      Enter / y  — re-check, then Whisper for any still missing
+      whisper    — Whisper immediately for all listed videos
+      skip       — skip transcription entirely (cadres still extracted)
+      q          — quit so the user can copy transcripts first
+    """
+    print("\n" + "=" * 60)
+    print("⚠  Videos without transcripts:")
+    print("=" * 60)
+    for vid, frag_md_dir in missing:
+        print(f"\n  {vid.name}")
+        print(f"  Place .vtt or .txt transcript in either location:")
+        print(f"    {frag_md_dir}")
+        print(f"    {vid.parent / (vid.stem + '.vtt')}")
+    print("\n" + "-" * 60)
+    print("Options:")
+    print("  [Enter]   Re-check directories, then Whisper for any still missing")
+    print("  whisper   Run Whisper now for all listed videos")
+    print("  skip      Skip transcription (cadres still extracted)")
+    print("  q         Quit — copy transcripts first, then re-run")
+    print("-" * 60)
+
+    try:
+        choice = input("Choice: ").strip().lower()
+    except (EOFError, KeyboardInterrupt):
+        print("\nNon-interactive — using Whisper for all missing transcripts.")
+        return {vid for vid, _ in missing}
+
+    if choice == 'q':
+        print("Quitting. Copy transcripts and re-run the converter.")
+        sys.exit(0)
+
+    if choice == 'whisper':
+        return {vid for vid, _ in missing}
+
+    if choice == 'skip':
+        print("Skipping transcription for all listed videos.")
+        return set()
+
+    # Default (Enter / y): re-check, Whisper only for those still missing
+    print("\nRe-checking for transcripts…")
+    still_missing: set = set()
+    for vid, frag_md_dir in missing:
+        companions = _find_companion_subtitles(vid)
+        stem = frag_md_dir.parent.name
+        in_frag = _find_transcript_in_fragment(stem, frag_md_dir.parent.parent)
+        if not companions and not in_frag:
+            print(f"  ⚠ Still missing: {vid.name} → will use Whisper")
+            still_missing.add(vid)
+        else:
+            print(f"  ✓ Transcript found: {vid.name}")
+    return still_missing
 
 
 def generate_vtt_subtitles(
@@ -1522,9 +1651,16 @@ def process_video(
     markdown_dir: Path,
     images_dir: Path,
     display_name: str,
+    whisper_allowed: bool = True,
 ) -> Dict:
-    """Process a video file: companion subs + Whisper VTT + scene-change cadres.
+    """Process a video file: transcript lookup + optional Whisper VTT + scene-change cadres.
 
+    Transcript resolution order:
+      1. Companion .vtt/.srt/.txt alongside the video in the source directory
+      2. Any .vtt/.srt/.txt already present in the fragment's markdown directory
+      3. Whisper — only when whisper_allowed=True and no transcript was found above
+
+    Scene-change cadre images are always extracted regardless of transcript status.
     Returns a results dict compatible with the standard manifest format.
     """
     results = {
@@ -1541,21 +1677,38 @@ def process_video(
         "type":              "video",
     }
 
-    # 1. Copy manual VTT/SRT from __SPECS__ (preserve originals)
-    logger.info("→ Checking for manual subtitles alongside video…")
+    # 1. Copy companion VTT/SRT/TXT from the source directory
+    logger.info("→ Checking for transcript alongside video…")
     results["manual_subtitles"] = _copy_companion_subtitles(
         filepath, markdown_dir, fragments_dir,
     )
     if results["manual_subtitles"]:
-        logger.info(f"  Found {len(results['manual_subtitles'])} manual subtitle(s)")
+        logger.info(f"  Found {len(results['manual_subtitles'])} transcript(s) in source dir")
 
-    # 2. Whisper-generated VTT (complements manual subs)
-    logger.info("→ Generating VTT subtitles (Whisper)…")
-    vtt = generate_vtt_subtitles(filepath, markdown_dir, VIDEO_WHISPER_MODEL)
-    if vtt:
-        results["vtt"] = str(vtt.relative_to(fragments_dir))
+    # 2. Check for transcripts already present in the fragment markdown directory
+    if not results["manual_subtitles"]:
+        in_frag = [
+            f for ext in ('.vtt', '.srt', '.txt')
+            for f in markdown_dir.glob(f"*{ext}")
+        ]
+        if in_frag:
+            logger.info(f"  Found {len(in_frag)} transcript(s) in fragment directory")
+            results["manual_subtitles"] = [
+                str(f.relative_to(fragments_dir)) for f in in_frag
+            ]
 
-    # 3. Scene-change cadre images
+    # 3. Whisper — only when no transcript was found AND Whisper is allowed
+    if results["manual_subtitles"]:
+        logger.info("→ Skipping Whisper — transcript already present")
+    elif whisper_allowed:
+        logger.info("→ Generating VTT subtitles (Whisper)…")
+        vtt = generate_vtt_subtitles(filepath, markdown_dir, VIDEO_WHISPER_MODEL)
+        if vtt:
+            results["vtt"] = str(vtt.relative_to(fragments_dir))
+    else:
+        logger.info("→ Skipping Whisper — no transcript available, Whisper not requested")
+
+    # 4. Scene-change cadre images
     logger.info("→ Extracting scene-change frames…")
     imgs = extract_scene_frames(filepath, images_dir, VIDEO_SCENE_THRESHOLD)
     results["images"] = [str(p.relative_to(fragments_dir)) for p in imgs]
@@ -1585,11 +1738,14 @@ def process_document(
     manifest: Dict,
     force: bool = False,
     source_label: Optional[str] = None,
+    whisper_allowed: bool = True,
 ) -> Dict:
     """
     Process one document: produce dual markdown + WEBP sliding-window images.
 
-    source_label — optional display name (e.g. for files extracted from archives)
+    source_label   — optional display name (e.g. for files extracted from archives)
+    whisper_allowed — when False, Whisper is skipped for video files even if no
+                      transcript is found (cadres are still extracted)
     """
     display_name = source_label or filepath.name
     ext = filepath.suffix.lower()
@@ -1619,10 +1775,11 @@ def process_document(
     logger.info(f"Processing: {display_name}")
     logger.info(f"{'='*60}")
 
-    # --- Video files get their own pipeline (VTT + scene cadres) ---
+    # --- Video files get their own pipeline (transcript + scene cadres) ---
     if SUPPORTED_EXTENSIONS.get(ext) == 'video':
         return process_video(
             filepath, fragments_dir, markdown_dir, images_dir, display_name,
+            whisper_allowed=whisper_allowed,
         )
 
     # 1. Markdown conversion — strategy depends on file type
@@ -1674,7 +1831,17 @@ def create_index_file(fragments_dir: Path, manifest: Dict):
     """Write a human-readable INDEX.md listing all processed fragments."""
     index_path = fragments_dir / "INDEX.md"
 
+    today = datetime.now().date().isoformat()
     with open(index_path, 'w', encoding='utf-8') as fh:
+        fh.write(
+            "---\n"
+            "tier: T3\n"
+            "source_class: fragment\n"
+            "version: \"1.0\"\n"
+            f"last_updated: {today}\n"
+            "description: Master index of converted document fragments\n"
+            "---\n\n"
+        )
         fh.write("# Document Fragments Index\n\n")
         fh.write(f"*Last updated: {manifest.get('last_updated', 'Unknown')}*\n\n")
         fh.write("## Processed Documents\n\n")
@@ -1718,18 +1885,21 @@ def _compute_display_names(file_list: List[Path]) -> Dict[Path, str]:
     Detect filename collisions among collected files and compute unique
     display names by prepending the nearest distinguishing parent directory.
 
-    When multiple files share the same stem (e.g. files from two different
-    subdirectories both named ``report.docx``), the fragment directory would
-    collide.  This function returns a mapping  ``{filepath: display_name}``
-    where ``display_name`` includes a context prefix for colliding files and
-    equals the bare filename for unique ones.
+    When multiple files share the same stem (e.g. two different partners both
+    have ``0302-discovery.docx``), the fragment directory would collide.
+    This function returns a mapping  ``{filepath: display_name}``  where
+    ``display_name`` includes a partner/context prefix for colliding files
+    and equals the bare filename for unique ones.
 
-    Prefix derivation (applied per colliding group):
-      1. Find the first ancestor directory component that differs among the
-         colliding files — that is the distinguishing context.
-      2. Clean the component (collapse whitespace/special chars to ``-``).
+    Prefix derivation heuristic (applied per colliding group):
+      1. Walk parent directories upward until a component differs among
+         the group members.
+      2. Use that component, simplified:
+         - Strip common project prefixes (``XI-Growth-Factory - ``).
+         - For partner-journey paths, use the partner directory name
+           (e.g. ``Calian Corp``, ``LookingPoint``).
+         - Collapse whitespace / special chars to ``-``.
       3. Prepend as ``{Prefix}-{original_filename}``.
-      4. Fallback: MD5 hash of the parent path (guarantees uniqueness).
     """
     from collections import defaultdict
 
@@ -1747,10 +1917,10 @@ def _compute_display_names(file_list: List[Path]) -> Dict[Path, str]:
             continue
 
         # Collision detected — derive a unique prefix per file
-        logger.info(f"⚠ Filename collision on '{stem}' across {len(paths)} files — adding context prefix")
+        logger.info(f"⚠ Filename collision on '{stem}' across {len(paths)} files — adding partner prefix")
 
         for fpath in paths:
-            prefix = _derive_context_prefix(fpath, paths)
+            prefix = _derive_partner_prefix(fpath)
             if prefix:
                 unique_name = f"{prefix}-{fpath.name}"
             else:
@@ -1763,51 +1933,67 @@ def _compute_display_names(file_list: List[Path]) -> Dict[Path, str]:
     return display
 
 
-def _derive_context_prefix(filepath: Path, collision_group: List[Path]) -> Optional[str]:
+def _derive_partner_prefix(filepath: Path) -> Optional[str]:
     """
-    Find the first ancestor directory component of ``filepath`` that differs
-    from the corresponding component of every other file in ``collision_group``.
+    Extract a human-readable partner/context prefix from the file's path.
 
-    This is purely path-structural — no project-specific keywords.
-    Returns a cleaned prefix string, or None if no distinguishing component
-    can be found (caller should fall back to a hash).
+    Looks for known directory patterns in __SPECS__:
+      - ``partners-journey/{PartnerDir}/...``  →  partner name
+      - ``{Country}/{PartnerDir}/...``          →  partner name
+      - Any distinguishing parent dir component
+
+    Returns a cleaned prefix string or None.
     """
-    # Collect resolved parent parts for each file (excluding the filename itself)
-    all_parts = [p.resolve().parts[:-1] for p in collision_group]
-    own_parts = filepath.resolve().parts[:-1]
+    parts = filepath.parts
 
-    # Walk own ancestors from closest (immediate parent) outward
-    _GENERIC_DIRS = {"meeting notes", "meetings", "documents", "notes", "docs",
-                     "templates", "attachments", "files", "shared"}
+    # Strategy 1: Look for "partners-journey" or "11-partners-journey" ancestor
+    for i, part in enumerate(parts):
+        if "partners-journey" in part.lower() or "11-partners" in part.lower():
+            # Next non-trivial directory is the partner (e.g. "US", "France")
+            # Then the one after that is the partner name
+            remaining = parts[i + 1:]
+            if len(remaining) >= 2:
+                country_or_partner = remaining[0]
+                # If it's a country code dir (US, France, Canada, etc.), take the next
+                if country_or_partner in ("US", "France", "Canada", "EMEA", "APAC", "UK"):
+                    partner = remaining[1]
+                else:
+                    partner = country_or_partner
+                return _clean_prefix(partner)
+            elif len(remaining) == 1:
+                return _clean_prefix(remaining[0])
 
-    for part in reversed(own_parts):
+    # Strategy 2: Look for a parent named after a known partner keyword
+    _PARTNER_KEYWORDS = {
+        "calian", "lookingpoint", "aqueduct", "oneneck", "winslow",
+        "accounting", "iosecure", "clutch", "actual", "canada computers",
+        "360 visibility", "archwell", "defy", "vervint",
+    }
+    for part in reversed(parts[:-1]):  # exclude filename itself
         part_lower = part.lower()
-        if part_lower in _GENERIC_DIRS:
-            continue
-        # Check whether this component is absent or different in at least one
-        # other file's path — i.e. it actually distinguishes this file
-        others_have_same = all(
-            part in other_parts
-            for other_parts in all_parts
-            if other_parts != own_parts
-        )
-        if not others_have_same:
+        for kw in _PARTNER_KEYWORDS:
+            if kw in part_lower:
+                return _clean_prefix(part)
+
+    # Strategy 3: Use the immediate parent directory if it's not generic
+    _GENERIC_DIRS = {"meeting notes", "meetings", "documents", "notes", "docs"}
+    for part in reversed(parts[:-1]):
+        if part.lower() not in _GENERIC_DIRS and not part.startswith("XI-Growth"):
             return _clean_prefix(part)
 
-    # All ancestors are shared — use the immediate parent as best effort
-    if own_parts:
-        return _clean_prefix(own_parts[-1])
     return None
 
 
 def _clean_prefix(raw: str) -> str:
     """Normalize a directory name into a clean fragment prefix."""
     import re
+    # Strip common project prefixes
+    cleaned = re.sub(r"^XI-Growth-Factory\s*-?\s*", "", raw)
     # Replace spaces and special chars with hyphens
-    cleaned = re.sub(r"[\s/\\]+", "-", raw.strip())
+    cleaned = re.sub(r"[\s/\\]+", "-", cleaned.strip())
     # Collapse multiple hyphens
     cleaned = re.sub(r"-{2,}", "-", cleaned)
-    # Strip leading/trailing hyphens
+    # Strip trailing hyphens
     cleaned = cleaned.strip("-")
     return cleaned
 
@@ -1882,6 +2068,11 @@ def main():
     parser.add_argument(
         '--clean', action='store_true',
         help="Remove fragments for documents that no longer exist in the scan directory",
+    )
+    parser.add_argument(
+        '--whisper', action='store_true',
+        help="Always use Whisper for videos without transcripts, without prompting "
+             "(implied when stdin is not a terminal)",
     )
     parser.add_argument(
         '--whisper-model', type=str, default="base",
@@ -2048,6 +2239,37 @@ def main():
     display_names = _compute_display_names(all_files)
 
     # ------------------------------------------------------------------ #
+    # Video pre-scan: locate missing transcripts, prompt if interactive   #
+    # ------------------------------------------------------------------ #
+    # Collect only video files that actually need processing this run.
+    pending_videos = [
+        f for f in all_files
+        if SUPPORTED_EXTENSIONS.get(f.suffix.lower()) == 'video'
+        and needs_processing(f, manifest, args.force, file_key=_manifest_key(f))
+    ]
+
+    # whisper_video_set: videos for which Whisper transcription will run.
+    # All other videos either have transcripts or Whisper was declined.
+    whisper_video_set: set = set()
+
+    if pending_videos:
+        missing = _collect_videos_missing_transcripts(
+            pending_videos, display_names, args.fragments_dir,
+        )
+        if not missing:
+            logger.info(f"✓ All {len(pending_videos)} video(s) have transcripts — Whisper not needed")
+        elif args.whisper or not sys.stdin.isatty():
+            # Non-interactive run or explicit --whisper flag: behave like before
+            whisper_video_set = {vid for vid, _ in missing}
+            logger.info(
+                f"  {len(missing)} video(s) without transcript — "
+                f"Whisper will be used ({'--whisper flag' if args.whisper else 'non-interactive'})"
+            )
+        else:
+            # Interactive: let the user decide
+            whisper_video_set = _prompt_for_transcripts(missing)
+
+    # ------------------------------------------------------------------ #
     # Process regular documents                                            #
     # ------------------------------------------------------------------ #
     for doc_path in sorted(all_files):
@@ -2060,10 +2282,16 @@ def main():
         # Use collision-safe display name (includes partner prefix when needed)
         label = display_names.get(doc_path)
 
+        # Whisper is allowed only for video files that were confirmed in the pre-scan.
+        # For non-video files the flag is irrelevant (True by default).
+        is_video = SUPPORTED_EXTENSIONS.get(doc_path.suffix.lower()) == 'video'
+        whisper_ok = (doc_path in whisper_video_set) if is_video else True
+
         try:
             results = process_document(
                 doc_path, args.fragments_dir, manifest, args.force,
                 source_label=label,
+                whisper_allowed=whisper_ok,
             )
             manifest["files"][file_key] = results
 
