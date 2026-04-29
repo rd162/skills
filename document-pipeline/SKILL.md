@@ -13,7 +13,7 @@ description: >-
   (one partner, one product) with structured §1–§12 sections, source
   traceability, gap/contradiction/ambiguity catalogue, and prioritized
   clarification questions with default assumptions. Both modes emit
-  source-tier frontmatter on outputs (T3 for fragments, T4 for surveys).
+  source-tier frontmatter on outputs (fragments inherit source tier; surveys are T3).
   Use when user says "convert documents", "ingest documents", "create
   fragments", "process specs", "run the converter", "process videos",
   "extract subtitles", "build survey", "analyze documents", "extract
@@ -39,9 +39,9 @@ Two modes — invoked separately or chained.
 | "Ingest X and produce survey for Y" | **Both, sequenced** | Run Ingestion first, then Survey |
 
 Both modes share `__FRAGMENTS__/` as the canonical interchange format.
-Ingestion emits `tier: T3, source_class: fragment` frontmatter on every
-fragment markdown. Survey emits `tier: T4, source_class: generated` on
-the survey/questions output. See
+Ingestion emits `tier: <inherits source>, source_class: fragment` frontmatter on every
+fragment markdown (T2 when source is from `__SPECS__/`). Survey emits
+`tier: T3, source_class: generated` on the survey/questions output. See
 `deep-research-t1/references/source-tiering.md` for the full policy.
 
 ---
@@ -55,16 +55,19 @@ Scans project directories recursively — not limited to `__SPECS__/`.
 Domain-agnostic: works for any document type and any downstream analysis.
 
 **Frontmatter on emitted fragments:** `scripts/doc_converter.py` writes
-this YAML block at the top of every fragment markdown:
+this YAML block at the top of every fragment markdown. The `tier` key
+is inherited from the source document — T2 for sources under `__SPECS__/`,
+T1 for saved public official docs, etc.:
 
 ```yaml
 ---
-tier: T3
+tier: T2                  # inherits source tier (T2 for __SPECS__/, T1 for public docs, etc.)
 source_class: fragment
 version: "1.0"
 last_updated: <ISO date>
 description: <converter> output for <source filename>
 source_file: <relative path to source under __SPECS__/ or scan root>
+converter: markitdown | docling | drawio-xml-parser
 ---
 ```
 

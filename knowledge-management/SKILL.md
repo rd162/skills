@@ -270,8 +270,9 @@ see @references/sub-agent-guide.md.
 
 ## Unified Artifact Template
 
-Knowledge artifacts produced by this skill are `tier: T4, source_class:
-generated` per the source-tiering policy
+Knowledge artifacts produced by this skill are `tier: T3, source_class:
+generated` per the source-tiering policy. Use `tier: T4` only if the
+artifact was produced by a weak model or contains no verified sources.
 (`~/.claude/skills/deep-research-t1/references/source-tiering.md`).
 On every write, EMIT the tier keys; on every revision, ADD missing
 tier keys without overwriting existing values (additivity rule).
@@ -280,7 +281,7 @@ tier keys without overwriting existing values (additivity rule).
 ---
 title: [Type] - [Name]
 type: [fact|concept|procedure|narrative|ontology]
-tier: T4
+tier: T3
 source_class: generated
 version: "1.0"
 last_updated: YYYY-MM-DD

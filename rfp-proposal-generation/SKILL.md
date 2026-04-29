@@ -663,14 +663,14 @@ For small RFPs (short survey, ≤ 3 documents): often fits in one session.
 
 Write to files using edit_file — do NOT output proposal content to chat.
 
-**Frontmatter (source-tiering):** Both files are `tier: T4, source_class:
+**Frontmatter (source-tiering):** Both files are `tier: T3, source_class:
 generated`. Prepend on first write; on re-runs, ADD missing keys only —
 preserve any human-edited values. See
 `~/.claude/skills/deep-research-t1/references/source-tiering.md`.
 
 ```yaml
 ---
-tier: T4
+tier: T3
 source_class: generated
 version: "1.0"
 last_updated: YYYY-MM-DD

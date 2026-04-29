@@ -13,7 +13,7 @@ Loaded on demand from the main SKILL.md.
 
 ```markdown
 ---
-tier: T4
+tier: T3
 source_class: generated
 version: "1.0"
 last_updated: YYYY-MM-DD
@@ -39,8 +39,10 @@ description: <one-line purpose>
 _Captured: YYYY-MM-DD_
 ```
 
-A research playbook is `tier: T4, source_class: generated` even when it
+A research playbook is `tier: T3, source_class: generated` even when it
 cites T1 sources internally — the playbook itself is a derived artifact.
+Use `tier: T4` only if the output is known to be low quality (weak model,
+no sources cited, or based on outdated material).
 
 Rules:
 

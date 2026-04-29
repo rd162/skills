@@ -4,10 +4,11 @@ Targeted survey generation from `__FRAGMENTS__/`. Loaded on demand by the
 parent skill when the user asks to build a survey, summarize specs, or
 extract structured knowledge — typically after ingestion completes.
 
-A **survey** is `tier: T4, source_class: generated`. Even though it cites
-T1–T3 sources internally, the survey itself is a derived artifact. Emit
-the frontmatter when writing the output file (see `source-tiering.md`
-in `deep-research-t1/references/`).
+A **survey** is `tier: T3, source_class: generated`. Even though it synthesizes
+T1–T2 sources, the survey itself is an LLM-produced derived artifact — not
+a raw source. Use `tier: T4` only if the survey was produced by a weak model
+or contains no cited sources. Emit the frontmatter when writing the output
+file (see `source-tiering.md` in `deep-research-t1/references/`).
 
 ## When to Use This Mode
 

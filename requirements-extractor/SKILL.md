@@ -238,13 +238,13 @@ This makes the specification auditable and challengeable.
 ### Output Template
 
 When the spec is written to a file, prepend the source-tier frontmatter
-(`tier: T4, source_class: generated`) per
+(`tier: T3, source_class: generated`) per
 `~/.claude/skills/deep-research-t1/references/source-tiering.md`. If the
 target file already has frontmatter, ADD missing keys only.
 
 ```text
 ---
-tier: T4
+tier: T3
 source_class: generated
 version: "1.0"
 last_updated: YYYY-MM-DD

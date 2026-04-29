@@ -415,23 +415,35 @@ def extract_archive(filepath: Path, dest_dir: Path) -> List[Path]:
 # Fragment frontmatter (source-tiering policy)
 # ---------------------------------------------------------------------------
 # Every fragment markdown emits a YAML frontmatter block declaring its
-# tier (T3) and source_class (fragment). Policy reference:
+# tier (inherited from the source) and source_class (fragment). Policy:
 # ~/.claude/skills/deep-research-t1/references/source-tiering.md
 # ---------------------------------------------------------------------------
 
 
-def _fragment_frontmatter(source_filepath: Path, converter: str) -> str:
+def _source_tier(filepath: Path) -> str:
+    """Infer the tier of a source document from its path."""
+    path_str = str(filepath).lower()
+    if '__specs__' in path_str or '/specs/' in path_str:
+        return "T2"
+    # Public docs saved locally could be T1; unknown sources default to T2
+    # (conservative — most sources in this pipeline are internal partner docs)
+    return "T2"
+
+
+def _fragment_frontmatter(source_filepath: Path, converter: str,
+                           source_tier: str = "T2") -> str:
     """
     Build the YAML frontmatter block for a generated fragment markdown.
 
-    Fragments are T3 (extract/summary of prior tiers) per the source-tiering
-    policy. The block is additive-by-design; downstream tools that re-emit
+    Fragments inherit the tier of their source document (not a fixed T3).
+    A fragment of a T2 spec is T2; a fragment of a T1 public doc is T1.
+    The block is additive-by-design; downstream tools that re-emit
     fragment files should preserve any user-edited keys (additivity rule).
     """
     today = datetime.now().date().isoformat()
     return (
         "---\n"
-        "tier: T3\n"
+        f"tier: {source_tier}\n"
         "source_class: fragment\n"
         "version: \"1.0\"\n"
         f"last_updated: {today}\n"
@@ -464,7 +476,7 @@ def convert_with_markitdown(filepath: Path, output_dir: Path) -> Optional[Path]:
         result = md.convert(str(filepath))
         output_file = output_dir / f"{filepath.stem}_markitdown.md"
         with open(output_file, 'w', encoding='utf-8') as fh:
-            fh.write(_fragment_frontmatter(filepath, 'markitdown'))
+            fh.write(_fragment_frontmatter(filepath, 'markitdown', _source_tier(filepath)))
             fh.write(result.text_content)
         logger.info(f"  ✓ markitdown → {output_file.name}")
         return output_file
@@ -493,6 +505,7 @@ def convert_with_docling(filepath: Path, output_dir: Path) -> Optional[Path]:
     """
     import subprocess, sys
     output_file = output_dir / f"{filepath.stem}_docling.md"
+    source_tier = _source_tier(filepath)
 
     script = f"""
 import sys
@@ -502,13 +515,14 @@ from docling.document_converter import DocumentConverter
 
 filepath = Path({str(filepath)!r})
 output_file = Path({str(output_file)!r})
+source_tier = {source_tier!r}
 converter = DocumentConverter()
 result = converter.convert(str(filepath))
 markdown_content = result.document.export_to_markdown()
 today = datetime.now().date().isoformat()
 frontmatter = (
     "---\\n"
-    "tier: T3\\n"
+    f"tier: {{source_tier}}\\n"
     "source_class: fragment\\n"
     "version: \\"1.0\\"\\n"
     f"last_updated: {{today}}\\n"
@@ -709,7 +723,7 @@ def convert_drawio_to_markdown(filepath: Path, output_dir: Path) -> Optional[Pat
         markdown_content = _parse_drawio_xml(filepath)
         output_file = output_dir / f"{filepath.stem}_drawio_parsed.md"
         with open(output_file, 'w', encoding='utf-8') as fh:
-            fh.write(_fragment_frontmatter(filepath, 'drawio-xml-parser'))
+            fh.write(_fragment_frontmatter(filepath, 'drawio-xml-parser', _source_tier(filepath)))
             fh.write(markdown_content)
         logger.info(f"  ✓ drawio-xml-parser → {output_file.name}")
         return output_file

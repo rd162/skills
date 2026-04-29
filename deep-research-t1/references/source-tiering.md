@@ -10,12 +10,17 @@ short summary; this file is the source of truth.
 | Tier | Description | Default Confidence | Weight in Conflicts |
 | ---- | ----------- | ------------------ | ------------------- |
 | T1 | Peer-reviewed papers, official vendor docs, RFCs, standards bodies | HIGH | Strongest |
-| T2 | Expert blogs, established trade press, primary partner documents (`__SPECS__/`), authoritative books | MED | Strong |
-| T3 | Community forums, Stack Overflow, fragments/extracts (`__FRAGMENTS__/`), summaries of prior tiers | LOW | Weak |
-| T4 | Opinions, unverified claims, AI-generated content, project-internal generated docs (surveys, playbooks, memory) | LOW | Weakest |
+| T2 | Expert/established sources, primary partner documents (`__SPECS__/`), authoritative books | MED | Strong |
+| T3 | Syntheses and generated artifacts — surveys, playbooks, discovery reports, memory entries, LLM-produced structured output | LOW | Weak |
+| T4 | Low-quality materials: opinions, unverified claims, weak-model AI output, outdated sources, draft scratchpads | VERY LOW | Weakest |
 
 **T1 is reserved for true public sources.** Internal/closed documents
 never qualify as T1, even if authoritative inside the organization.
+
+**T4 is reserved for genuinely low-quality material.** Most LLM-generated
+structured output from capable models is T3, not T4. Use T4 only when
+there is a specific quality reason: weak/old model, no sources cited,
+known-outdated, or explicitly unverified claim.
 
 When sources conflict, higher tier + more recent = stronger evidence.
 
@@ -27,19 +32,24 @@ Every generated or curated markdown document declares one of:
 | ----- | ------- | ------------ |
 | `public` | Unmodified content from external sources (web, vendor docs, GitHub, Confluence, Jira) — kept verbatim with link | T1–T2 (rarely worth saving lower) |
 | `specs` | Internal/closed primary documents — partner-supplied PDFs, RFPs, contracts, transcripts, screenshots (`__SPECS__/`) | T2 default |
-| `fragment` | Extract, index, summary, or transform of `public` + `specs` — no new intent, just restructured prior tiers (`__FRAGMENTS__/`) | T3 default |
-| `generated` | Final-for-purpose product of a job — surveys, blueprints, playbooks, discovery reports, memory entries | T4 default |
+| `fragment` | Extract or machine transform of `public` + `specs` — produced by a converter (MarkItDown, Docling), not an LLM; **inherits the tier of its source** (`__FRAGMENTS__/`) | Inherits source tier (usually T2) |
+| `generated` | Final-for-purpose artifact produced by an LLM — surveys, blueprints, playbooks, discovery reports, memory entries | T3 default; T4 if low quality |
 
-**Pipeline:** `external (public) + internal (specs) → fragments → generated`
+**Pipeline:** `external (public) + internal (specs) → fragments (inherit source tier) → generated (T3 default)`
+
+**Why fragments inherit tier:** fragments are machine-produced restructurings of the source
+(MarkItDown, Docling, XML parse) — they carry no new claims. A fragment of a T2 spec is
+T2. A fragment of a T1 public RFC is T1. The converter is a lossless transform, not a
+knowledge generation step.
 
 ## 3. Default Tier by Path
 
 When a frontmatter `tier` is missing, apply these defaults — in order:
 
 1. Path under `__SPECS__/` → `tier: T2`, `source_class: specs`
-2. Path under `__FRAGMENTS__/` → `tier: T3`, `source_class: fragment`
-3. Path under `.agents/memory/` (or `.claude/memory/`) → `tier: T4`, `source_class: generated`
-4. Project-root generated docs (surveys, discovery reports, playbooks) → `tier: T4`, `source_class: generated`
+2. Path under `__FRAGMENTS__/` → `tier: inherits from source_file frontmatter` (fall back to T2 if source is `__SPECS__/`, else run inference); `source_class: fragment`
+3. Path under `.agents/memory/` (or `.claude/memory/`) → `tier: T3`, `source_class: generated`
+4. Project-root generated docs (surveys, discovery reports, playbooks) → `tier: T3`, `source_class: generated`
 5. Anything else → run inference (§5)
 
 ## 4. Frontmatter Schema (additive)
@@ -48,11 +58,14 @@ A skill that creates or updates a markdown file MUST emit at least:
 
 ```yaml
 ---
-tier: T4                       # T1 | T2 | T3 | T4
+tier: T3                       # T1 | T2 | T3 | T4  (fragments inherit source tier; generated = T3 default)
 source_class: generated        # public | specs | fragment | generated
 version: "1.0"                 # bump on substantive content change
 last_updated: 2026-04-29       # ISO date
 description: <one-line>        # human-readable purpose
+# optional flags:
+# tier_inferred: true          # added when tier was guessed by inference, not explicitly set
+# human_reviewed: true         # generated doc was reviewed/corrected by human — tier more confident
 ---
 ```
 
@@ -78,8 +91,8 @@ When a local document has no `tier` and §3 default doesn't apply:
    (markdown bullets, em dashes, "It's important to note", "In summary",
     no concrete data, no source links)
    → likely AI-generated; downgrade by inferred model quality:
-   - weak/old model output (verbose, generic) → T4
-   - premium model output (concise, sourced, structured) → T3
+   - weak/old model output (verbose, generic, no sources) → T4
+   - premium model output (concise, sourced, structured) → T3 (default for capable-model output)
 4. Else if content is clearly human-authored
    (rough notes, typos, idiosyncratic voice, references to people/dates)
    → T2 by default; T1 only if it cites external authority
@@ -89,6 +102,11 @@ When a local document has no `tier` and §3 default doesn't apply:
 The inference is heuristic; mark inferred tier as `tier_inferred: true`
 in the frontmatter when a skill writes it, so future passes know it
 was guessed and can be refined.
+
+If a human has reviewed and corrected a generated document, add
+`human_reviewed: true` to the frontmatter. This does not automatically
+upgrade the tier, but it signals that the content is more reliable than
+a raw LLM output and downstream skills should weight it accordingly.
 
 ## 6. Conflict Resolution
 
