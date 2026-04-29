@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: presentation guide
+---
+
 # Proposal Presentation Guide — Diagrams, PDF Export & Content Placement
 
 > **Scope:** This guide governs the visual presentation of the **final proposal document** only.

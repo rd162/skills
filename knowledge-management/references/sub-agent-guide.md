@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: sub agent guide
+---
+
 # Sub-Agent Guide — knowledge-management
 
 Patterns for parallelizing artifact materialization via sub-agents,

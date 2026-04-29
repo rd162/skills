@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: file output protocol
+---
+
 # File Output Protocol — deep-research-t1
 
 Full create/update protocols for persistent markdown playbook generation.
@@ -14,7 +21,7 @@ Loaded on demand from the main SKILL.md.
 ```markdown
 ---
 tier: T3
-source_class: generated
+source_class: llm
 version: "1.0"
 last_updated: YYYY-MM-DD
 description: <one-line purpose>
@@ -39,7 +46,7 @@ description: <one-line purpose>
 _Captured: YYYY-MM-DD_
 ```
 
-A research playbook is `tier: T3, source_class: generated` even when it
+A research playbook is `tier: T3, source_class: llm` even when it
 cites T1 sources internally — the playbook itself is a derived artifact.
 Use `tier: T4` only if the output is known to be low quality (weak model,
 no sources cited, or based on outdated material).

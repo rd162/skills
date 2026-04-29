@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: conventions
+---
+
 # Skill Conventions
 
 Extended reference for authoring skills in this ecosystem.

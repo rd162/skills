@@ -13,6 +13,9 @@ version: "2.1"
 metadata:
   author: rd162@hotmail.com
   tags: knowledge-management, artifacts, revision, materialization, Basic-Memory, source-tiering
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
 ---
 
 # Knowledge Management
@@ -282,7 +285,7 @@ tier keys without overwriting existing values (additivity rule).
 title: [Type] - [Name]
 type: [fact|concept|procedure|narrative|ontology]
 tier: T3
-source_class: generated
+source_class: llm
 version: "1.0"
 last_updated: YYYY-MM-DD
 description: <one-line — what this artifact captures>

@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: phase detail
+---
+
 # Phase 2.5 and Extended Protocol Reference — adversarial-thinking
 
 Full detail for Phase 2.5 post-refinement checks and the example execution trace.

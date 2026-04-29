@@ -5,6 +5,9 @@ version: "3.0"
 metadata:
   author: rd162@hotmail.com
   tags: prompt-engineering, self-refine, iterative-improvement, quality, multi-agent
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
 ---
 
 # Adversarial Self-Refine Loop

@@ -5,6 +5,9 @@ version: "8.0"
 metadata:
   author: rd162@hotmail.com
   tags: adversarial-refinement, blind-attack, solution-quality, deep-thinking, cross-platform
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
 ---
 
 # Adversarial Solution Refinement

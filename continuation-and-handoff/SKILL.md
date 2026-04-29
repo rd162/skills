@@ -5,6 +5,9 @@ version: "2.0"
 metadata:
   author: rd162@hotmail.com
   tags: continuation, handoff, multi-session, cross-vendor, pipeline
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
 ---
 
 # Continuation and Handoff

@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: templates
+---
+
 # Sub-Agent Templates and Model Selection — adversarial-self-refine
 
 Prompt templates for CRITIC and AUTHOR sub-agents,

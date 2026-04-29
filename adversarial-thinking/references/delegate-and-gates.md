@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: delegate and gates
+---
+
 # Sub-Agent Dispatch, Gates, Anti-Patterns, and Composition Reference
 
 Extended reference for adversarial-thinking.

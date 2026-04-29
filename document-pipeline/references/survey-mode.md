@@ -1,10 +1,17 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: survey mode
+---
+
 # Survey Mode — document-pipeline
 
 Targeted survey generation from `__FRAGMENTS__/`. Loaded on demand by the
 parent skill when the user asks to build a survey, summarize specs, or
 extract structured knowledge — typically after ingestion completes.
 
-A **survey** is `tier: T3, source_class: generated`. Even though it synthesizes
+A **survey** is `tier: T3, source_class: llm`. Even though it synthesizes
 T1–T2 sources, the survey itself is an LLM-produced derived artifact — not
 a raw source. Use `tier: T4` only if the survey was produced by a weak model
 or contains no cited sources. Emit the frontmatter when writing the output
@@ -151,7 +158,7 @@ Copy to `{Project}_Survey.md` and populate in place. **Emit frontmatter:**
 ```yaml
 ---
 tier: T4
-source_class: generated
+source_class: llm
 version: "1.0"
 last_updated: YYYY-MM-DD
 description: <one-line — e.g., "Winslow technical discovery survey">
@@ -260,7 +267,7 @@ transparent (state what changes if wrong).
 | `{Project}_Survey.md` | Structured knowledge extraction (§1–§12) | Internal |
 | `{Project}_Clarification_Questions.md` | Prioritized questions + defaults | External |
 
-Both files: `tier: T4, source_class: generated`. Emit frontmatter; never
+Both files: `tier: T4, source_class: llm`. Emit frontmatter; never
 overwrite existing frontmatter on a re-run — add missing keys only.
 
 Write via Edit/Write — do NOT output survey content to chat. Report

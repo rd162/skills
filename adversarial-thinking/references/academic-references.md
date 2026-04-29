@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: academic references
+---
+
 # Academic References — adversarial-thinking
 
 Supporting literature for the adversarial-thinking skill's design decisions.

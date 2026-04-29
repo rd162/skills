@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: change tracking
+---
+
 # Change Tracking & Incremental Processing
 
 The converter is designed to run repeatedly as documents are added, modified, or removed.

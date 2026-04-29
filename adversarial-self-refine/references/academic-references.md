@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: academic references
+---
+
 # Academic References — adversarial-self-refine
 
 Supporting literature for the adversarial-self-refine skill's design decisions.

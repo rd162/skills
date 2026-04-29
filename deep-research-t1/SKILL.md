@@ -21,6 +21,9 @@ allowed-tools: WebSearch, WebFetch, Read, Write, Edit, Grep, Glob, AskUserQuesti
 metadata:
   author: rd162@hotmail.com
   tags: chain-of-knowledge, web-search, source-tiering, deep-research, high-stakes, sub-agent-dispatch, graceful-degradation, domain-escalation, playbook-generation
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
 ---
 
 # Deep Research
@@ -226,7 +229,7 @@ When citing a local file (project doc, fragment, memory entry):
 2. If absent, apply default-by-path:
    - `__SPECS__/**` → T2 (`source_class: specs`)
    - `__FRAGMENTS__/**` → T3 (`source_class: fragment`)
-   - `.agents/memory/**`, `.claude/memory/**` → T4 (`source_class: generated`)
+   - `.agents/memory/**`, `.claude/memory/**` → T4 (`source_class: llm`)
    - Project-root generated docs (surveys, playbooks, discovery reports) → T4
 3. If still unresolved, infer from git history + content:
    - `git log --diff-filter=A -- <file>` for first-add date and message
@@ -236,8 +239,8 @@ When citing a local file (project doc, fragment, memory entry):
    - Clearly human-authored (typos, idiosyncratic voice, named refs) →
      T2 default; T1 only if it cites external public authority
    - Unclear → T4 (safe conservative default)
-4. When a skill writes an inferred tier, add `tier_inferred: true` to
-   the frontmatter so future passes can refine it.
+4. Tier inference is implicit — no flag is written. To signal human
+   review, change `source_class: llm` → `source_class: llm_human`.
 
 See `references/source-tiering.md` §5 for the full inference algorithm.
 

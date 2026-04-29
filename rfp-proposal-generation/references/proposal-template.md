@@ -1,6 +1,9 @@
 ---
 typora-copy-images-to: ./assets
 typora-root-url: ./
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
 ---
 
 <!-- PDF EXPORT SETTINGS (Typora)

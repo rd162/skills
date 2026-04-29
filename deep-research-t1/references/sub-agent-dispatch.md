@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: sub agent dispatch
+---
+
 # Sub-Agent Dispatch and Polling — deep-research-t1
 
 Extended reference for multi-subject sub-agent fan-out,

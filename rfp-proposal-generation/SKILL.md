@@ -21,6 +21,9 @@ description: >-
 metadata:
   author: rd162@hotmail.com
   tags: rfp, proposal, feasibility, requirements-coverage, wbs, gantt, team-composition, consistency
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
 ---
 
 # RFP Proposal Generation
@@ -671,7 +674,7 @@ preserve any human-edited values. See
 ```yaml
 ---
 tier: T3
-source_class: generated
+source_class: llm
 version: "1.0"
 last_updated: YYYY-MM-DD
 description: <Project> RFP proposal response

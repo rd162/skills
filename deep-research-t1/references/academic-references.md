@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: academic references
+---
+
 # Academic References — deep-research-t1
 
 Supporting literature for the deep-research-t1 skill's design decisions.

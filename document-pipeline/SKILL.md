@@ -23,6 +23,9 @@ description: >-
 metadata:
   author: rd162@hotmail.com
   tags: document-conversion, ingestion, survey, knowledge-extraction, markitdown, docling, drawio, webp, vips, pdf, fragments, libreoffice, chrome, video, whisper, scenedetect, vtt, source-tiering
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
 ---
 
 # Document Pipeline — Ingestion + Targeted Survey
@@ -41,7 +44,7 @@ Two modes — invoked separately or chained.
 Both modes share `__FRAGMENTS__/` as the canonical interchange format.
 Ingestion emits `tier: <inherits source>, source_class: fragment` frontmatter on every
 fragment markdown (T2 when source is from `__SPECS__/`). Survey emits
-`tier: T3, source_class: generated` on the survey/questions output. See
+`tier: T3, source_class: llm` on the survey/questions output. See
 `deep-research-t1/references/source-tiering.md` for the full policy.
 
 ---

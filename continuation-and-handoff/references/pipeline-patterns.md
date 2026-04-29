@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: pipeline patterns
+---
+
 # Pipeline Patterns Reference
 
 Detailed design patterns for composing continuations and handoffs into pipelines.

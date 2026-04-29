@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: source tiering
+---
+
 # Source Tiering Policy
 
 Authoritative reference for tier (T1–T4) assignment and `source_class`
@@ -33,9 +40,15 @@ Every generated or curated markdown document declares one of:
 | `public` | Unmodified content from external sources (web, vendor docs, GitHub, Confluence, Jira) — kept verbatim with link | T1–T2 (rarely worth saving lower) |
 | `specs` | Internal/closed primary documents — partner-supplied PDFs, RFPs, contracts, transcripts, screenshots (`__SPECS__/`) | T2 default |
 | `fragment` | Extract or machine transform of `public` + `specs` — produced by a converter (MarkItDown, Docling), not an LLM; **inherits the tier of its source** (`__FRAGMENTS__/`) | Inherits source tier (usually T2) |
-| `generated` | Final-for-purpose artifact produced by an LLM — surveys, blueprints, playbooks, discovery reports, memory entries | T3 default; T4 if low quality |
+| `llm` | Final-for-purpose artifact produced by an LLM — surveys, blueprints, playbooks, discovery reports, memory entries | T3 default; T4 if low quality |
+| `llm_human` | Same origin as `llm`, subsequently read, corrected, and validated by a human | T3 (higher confidence) |
+| `human` | Human-authored content — rough notes, transcripts, emails, decisions written by people | T2 default |
 
-**Pipeline:** `external (public) + internal (specs) → fragments (inherit source tier) → generated (T3 default)`
+**Pipeline:** `external (public) + internal (specs) → fragments (inherit source tier) → llm (T3) → llm_human (T3, human-validated)`
+
+**These labels are best-effort approximations, not forensic classifications.** A file marked
+`human` may still contain quoted LLM output; `llm` may have been manually edited. Use the
+labels to weight evidence in conflicts — not as hard provenance guarantees.
 
 **Why fragments inherit tier:** fragments are machine-produced restructurings of the source
 (MarkItDown, Docling, XML parse) — they carry no new claims. A fragment of a T2 spec is
@@ -48,8 +61,8 @@ When a frontmatter `tier` is missing, apply these defaults — in order:
 
 1. Path under `__SPECS__/` → `tier: T2`, `source_class: specs`
 2. Path under `__FRAGMENTS__/` → `tier: inherits from source_file frontmatter` (fall back to T2 if source is `__SPECS__/`, else run inference); `source_class: fragment`
-3. Path under `.agents/memory/` (or `.claude/memory/`) → `tier: T3`, `source_class: generated`
-4. Project-root generated docs (surveys, discovery reports, playbooks) → `tier: T3`, `source_class: generated`
+3. Path under `.agents/memory/` (or `.claude/memory/`) → `tier: T3`, `source_class: llm`
+4. Project-root generated docs (surveys, discovery reports, playbooks) → `tier: T3`, `source_class: llm`
 5. Anything else → run inference (§5)
 
 ## 4. Frontmatter Schema (additive)
@@ -59,15 +72,16 @@ A skill that creates or updates a markdown file MUST emit at least:
 ```yaml
 ---
 tier: T3                       # T1 | T2 | T3 | T4  (fragments inherit source tier; generated = T3 default)
-source_class: generated        # public | specs | fragment | generated
+source_class: llm              # public | specs | fragment | llm | llm_human | human
 version: "1.0"                 # bump on substantive content change
 last_updated: 2026-04-29       # ISO date
 description: <one-line>        # human-readable purpose
-# optional flags:
-# tier_inferred: true          # added when tier was guessed by inference, not explicitly set
-# human_reviewed: true         # generated doc was reviewed/corrected by human — tier more confident
 ---
 ```
+
+`source_class: llm_human` is the signal that an LLM-produced doc was read and corrected by a human.
+Change `source_class: llm` → `source_class: llm_human` manually after review. Never set it automatically.
+`source_class: human` is for documents primarily authored by a person (notes, transcripts, decisions).
 
 **Additivity rule (NEVER violate):** If a file already has frontmatter
 (any keys), the skill ADDS missing keys only. It does not replace or
@@ -99,14 +113,9 @@ When a local document has no `tier` and §3 default doesn't apply:
 5. If still unclear → T4 (safe default; conservative for conflicts)
 ```
 
-The inference is heuristic; mark inferred tier as `tier_inferred: true`
-in the frontmatter when a skill writes it, so future passes know it
-was guessed and can be refined.
-
-If a human has reviewed and corrected a generated document, add
-`human_reviewed: true` to the frontmatter. This does not automatically
-upgrade the tier, but it signals that the content is more reliable than
-a raw LLM output and downstream skills should weight it accordingly.
+Tier inference is implicit — no flag is written. If you later review and
+correct an inferred document, change `source_class: llm` →
+`source_class: llm_human`. That is the signal. No secondary flag needed.
 
 ## 6. Conflict Resolution
 
@@ -114,7 +123,7 @@ When two sources disagree on a fact:
 
 1. Compare `tier` — higher wins
 2. If equal — compare `last_updated` — newer wins
-3. If still tied — prefer `public` > `specs` > `fragment` > `generated`
+3. If still tied — prefer `public` > `specs` > `fragment` > `reviewed` > `generated`
 4. If still tied — surface the contradiction in the output; do not
    silently resolve
 

@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: refactoring system rules
+---
+
 # Refactoring System Rules into Skills
 
 Detailed guide for decomposing monolithic system rule files

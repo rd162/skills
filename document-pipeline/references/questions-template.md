@@ -1,3 +1,10 @@
+---
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
+description: questions template
+---
+
 # {{PROJECT_NAME}} — Clarification Questions
 
 **Document Purpose:**

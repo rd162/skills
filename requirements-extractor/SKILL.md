@@ -15,6 +15,9 @@ version: "3.1"
 metadata:
   author: rd162@hotmail.com
   tags: requirements, discovery, CoK, prompt-engineering
+tier: T3
+source_class: llm
+last_updated: 2026-04-29
 ---
 
 # Requirements Extractor
@@ -238,14 +241,14 @@ This makes the specification auditable and challengeable.
 ### Output Template
 
 When the spec is written to a file, prepend the source-tier frontmatter
-(`tier: T3, source_class: generated`) per
+(`tier: T3, source_class: llm`) per
 `~/.claude/skills/deep-research-t1/references/source-tiering.md`. If the
 target file already has frontmatter, ADD missing keys only.
 
 ```text
 ---
 tier: T3
-source_class: generated
+source_class: llm
 version: "1.0"
 last_updated: YYYY-MM-DD
 description: Requirements specification for <subject>
