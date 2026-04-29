@@ -1,0 +1,39 @@
+{
+  "eval_id": 0,
+  "eval_name": "plane-web-app",
+  "prompt": "Extract a full structured requirements spec from the Plane project management tool. The GitHub repo is at https://github.com/makeplane/plane — read the README and any architecture or feature docs you can find there. I want Mission, Goals, Premises, and Constraints clearly separated.",
+  "assertions": [
+    {
+      "id": "has-four-sections",
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections"
+    },
+    {
+      "id": "mission-is-singular",
+      "text": "Mission section contains a single sentence or short statement (not a list), expressing the core invariant purpose"
+    },
+    {
+      "id": "goals-are-measurable",
+      "text": "Goals section contains specific, measurable outcomes (e.g. feature capabilities, user actions) rather than vague aspirations"
+    },
+    {
+      "id": "constraints-are-non-negotiable",
+      "text": "Constraints section captures actual hard boundaries (e.g. deployment model, license, tech stack, integrations) distinct from goals"
+    },
+    {
+      "id": "sources-from-repo",
+      "text": "Output references specific content from the Plane GitHub repo (e.g. specific features, project structure, technology choices) — not just generic PM tool boilerplate"
+    },
+    {
+      "id": "implicit-requirements-surfaced",
+      "text": "At least one Premise or Constraint is implicit (not stated word-for-word in the source) — e.g. assumptions about users, deployment environment, or integration ecosystem"
+    },
+    {
+      "id": "cok-expansion-documented",
+      "text": "Output shows evidence of bottom-up Chain of Knowledge expansion with multiple levels visible (e.g. L5 Topics through L1 Domains, or equivalent layered knowledge build-up from raw facts to domain-level synthesis)"
+    },
+    {
+      "id": "constraints-have-source-citation",
+      "text": "Every constraint (both hard and soft) cites its source — who or what imposed it (e.g. 'MIT license', 'README', 'architecture doc', 'inferred from tech stack') — not just the constraint text alone"
+    }
+  ]
+}

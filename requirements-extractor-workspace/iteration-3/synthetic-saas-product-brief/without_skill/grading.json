@@ -1,0 +1,74 @@
+{
+  "expectations": [
+    {
+      "text": "Output identifies at least one risk that could invalidate the entire project or mission — not just a feature-level issue. Examples: food safety law might prohibit the model in some cities, driver platform ToS might forbid add-on deliveries, insufficient driver density near independent restaurants at closing time.",
+      "passed": true,
+      "evidence": "OQ-1 states: 'What is the specific driver integration mechanism? (API integration with Uber Eats/DoorDash, standalone notification system, or browser overlay?) -- This affects feasibility given gig platform API restrictions.' This surfaces the existential risk that gig platforms may restrict or prohibit the add-on delivery model, which would invalidate the core driver-side proposition. However, the risk is framed as an open question rather than explicitly called out as project-threatening, making this a borderline pass."
+    },
+    {
+      "text": "Output explicitly flags at least 3 things the brief does NOT address that need answers before implementation — e.g., monetization model, dispute resolution, driver compensation, insurance/liability, city selection criteria, customer acquisition strategy.",
+      "passed": true,
+      "evidence": "Section 7 'Open Questions and Risks' lists 7 unstated gaps: OQ-1 driver integration mechanism, OQ-2 which 3 cities to target, OQ-3 driver compensation structure, OQ-4 per-city food safety metadata requirements, OQ-5 cancellation/fallback routing policy, OQ-6 liability/insurance for food safety incidents, OQ-7 inventory sell-out handling. All are genuinely absent from the input brief."
+    },
+    {
+      "text": "Output contains at least 3 requirements that are genuinely inferred and not just restated from the brief. Examples: real-time inventory expiry enforcement, geofencing/proximity filtering, allergen labeling, server-side clock authority, push notifications, multi-role UX separation. A requirement counts as 'inferred' if you cannot find the exact concept stated in the input brief.",
+      "passed": true,
+      "evidence": "At least 5 inferred requirements found: (1) FR-R3 'Listings automatically expire at restaurant closing time' — automatic expiry enforcement is not stated in the brief. (2) FR-R5 'Restaurants receive notifications when an order is placed' — push notifications not mentioned. (3) FR-C4 'Customers receive order confirmation and delivery status updates' — not in brief. (4) FR-P1 proximity-based matching of listings to nearby customers — geofencing inferred. (5) FR-P2 route-compatible driver matching — routing logic inferred. (6) FR-P5 detailed GDPR sub-requirements (consent management, data access requests, right to deletion, data portability) inferred from the brief's single sentence 'GDPR applies.'"
+    },
+    {
+      "text": "The Mission statement is NOT just a restatement of the brief's first sentence ('help independent restaurants cut food waste and delivery costs'). It should be derived through deeper reasoning — either more abstract (connecting to a broader value like food sustainability) or more precise (identifying the specific mechanism that makes this valuable). Simply rewording the brief's opening does not count.",
+      "passed": false,
+      "evidence": "The Mission reads: 'Reduce food waste and delivery costs for independent restaurants by connecting surplus inventory with nearby customers through drivers already on the road.' This is a near-verbatim restatement of the brief's opening ('help independent restaurants cut food waste and delivery costs') with the mechanism ('surplus inventory... drivers already on the road') summarized from the brief's second paragraph. There is no deeper abstraction (e.g., food sustainability, circular economy) or sharper precision (e.g., quantifying the value gap). 'Reduce food waste and delivery costs' is a synonym swap for 'cut food waste and delivery costs.'"
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 1,
+    "total": 4,
+    "pass_rate": 0.75
+  },
+  "execution_metrics": {},
+  "timing": {
+    "total_duration_seconds": 55.5
+  },
+  "claims": [
+    {
+      "claim": "The output covers 3 distinct user roles (restaurant, customer, driver) with separate functional requirements",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Sections 5.1 (Restaurant App, 5 requirements), 5.2 (Customer App, 4 requirements), 5.3 (Driver Experience, 3 requirements) each address a distinct role"
+    },
+    {
+      "claim": "Revenue model is implied as marketplace commission (G-B3 states 'marketplace commission model implied')",
+      "type": "factual",
+      "verified": false,
+      "evidence": "The brief never mentions a commission model. The output correctly marks it as 'implied' but this is an assumption, not an extraction. It is also not flagged as an open question, which would be more appropriate."
+    },
+    {
+      "claim": "7 open questions are identified",
+      "type": "factual",
+      "verified": true,
+      "evidence": "OQ-1 through OQ-7 are listed in Section 7, each addressing a genuine gap in the brief"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Output identifies at least one risk that could invalidate the entire project or mission",
+        "reason": "The assertion accepts risks framed as open questions. An output that lists 'which cities should we pick?' as an open question technically touches on regulatory risk without actually articulating it as existential. Consider requiring the risk to be explicitly labeled as high-severity or project-threatening, not just mentioned in passing."
+      },
+      {
+        "reason": "No assertion checks whether the output distinguishes between must-have and nice-to-have requirements, or applies any prioritization. The output lists 20+ requirements with no priority ranking — a real requirements spec for a 4-person team with a 6-month deadline would need aggressive scoping. This is a significant quality gap that goes undetected."
+      },
+      {
+        "reason": "No assertion checks whether the output addresses the tension between the 4-person team / 6-month timeline and the scope of requirements produced. The output lists 6 non-functional requirements, 15+ functional requirements, and multi-city deployment — but never flags whether this scope is realistic for the stated constraints. A strong requirements extraction should surface this."
+      }
+    ],
+    "overall": "Assertions are well-targeted at content depth. The mission-derivation assertion is particularly discriminating. Main gap is that no assertion checks scope realism against stated resource constraints — a key dimension of requirements quality for this brief."
+  }
+}

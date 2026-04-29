@@ -1,0 +1,82 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "Output has '## Mission', '## Goals', '## Premises', and '## Constraints' as distinct labeled sections."
+    },
+    {
+      "text": "Mission captures the core intent (replace legacy Access reporting tool for finance) — not just a list of features",
+      "passed": false,
+      "evidence": "Mission: 'Replace the legacy Microsoft Access-based internal reporting tool (circa 2009) with a modern web-based reporting system that eliminates performance bottlenecks, supports concurrent multi-user access for the finance team, and meets current compliance obligations -- delivered within budget by end of Q3.' This reads as a feature list embedded in a sentence rather than an invariant purpose. It lists specific solutions (eliminate performance bottlenecks, support concurrent access, meet compliance) rather than expressing the core purpose (enable reliable financial reporting/decision-making). Including delivery timeline in the mission conflates project scope with purpose."
+    },
+    {
+      "text": "Goals include both quantified performance targets from the transcript: 15+ concurrent users AND <2 minute report runtime",
+      "passed": true,
+      "evidence": "G1: 'Reduce the monthly report generation time from the current ~45 minutes to under 2 minutes.' G2: 'Support at least 15 simultaneous users (full finance team) without degradation or crashes'. Both targets present. Note: the '~45 minutes' baseline appears nowhere in the transcript (Sarah says 20 minutes); this is a factual error but the assertion only checks that the targets are present."
+    },
+    {
+      "text": "Constraints capture both hard constraints stated explicitly: on-prem only AND $50k budget cap",
+      "passed": true,
+      "evidence": "C1: 'Total project cost must not exceed $50,000, including all infrastructure expenditures.' C2: 'The system must be hosted on-premises. Cloud hosting is prohibited for financial data per legal policy.' Both present."
+    },
+    {
+      "text": "Constraints or Premises capture that SAP and Salesforce integrations cannot be changed (IT constraint, not just a technical choice)",
+      "passed": true,
+      "evidence": "C3: 'SAP and Salesforce integrations cannot be altered. The new system must work with the existing data pipelines as-is.' P1: 'The system will continue to pull data from the existing SAP and Salesforce integrations. These integrations are fixed and cannot be modified (IT policy).' Correctly frames it as IT policy."
+    },
+    {
+      "text": "Audit trail requirement is included with its compliance motivation (not just listed as a feature) — the 'incident last year' context signals regulatory/compliance driver",
+      "passed": true,
+      "evidence": "C5: 'Every report run must produce an immutable audit log entry containing: user identity, timestamp, and report executed. This is a compliance-driven hard requirement.' G5: 'Log every report execution with the identity of the user who initiated it and a timestamp, satisfying compliance requirements identified after a prior incident.' The compliance motivation and 'prior incident' context are captured."
+    },
+    {
+      "text": "Premises are presented in a table format that includes a 'Risk if false' or 'Consequence if false' column assessing what breaks if each assumption is wrong",
+      "passed": false,
+      "evidence": "Premises are presented as subsections (P1 through P5) with narrative paragraphs, not in a table format. There is no 'Risk if false' or consequence assessment for any premise."
+    },
+    {
+      "text": "Output includes a Mission Space or Solution Space section that presents evaluated alternatives (e.g. COTS vs custom build, reporting platform options), domain context, or identified knowledge gaps",
+      "passed": false,
+      "evidence": "No Mission Space, Solution Space, or alternatives section. The output ends at section 4 (Constraints) with C6. No evaluated alternatives, domain context, or knowledge gaps are presented."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 3,
+    "total": 8,
+    "pass_rate": 0.625
+  },
+  "execution_metrics": {},
+  "timing": {
+    "executor_duration_seconds": 34.7,
+    "total_duration_seconds": 34.7
+  },
+  "claims": [
+    {
+      "claim": "Current report generation takes ~45 minutes",
+      "type": "factual",
+      "verified": false,
+      "evidence": "The transcript says current reports 'take 20 minutes when they don't crash' (Sarah). The 45-minute figure appears nowhere in the transcript. This appears to be an error."
+    },
+    {
+      "claim": "The Access database is circa 2009",
+      "type": "factual",
+      "verified": false,
+      "evidence": "Sarah says 'eight years now' which from 2026 would be ~2018, not 2009. The '2009' claim is likely an error."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "Both with_skill and without_skill outputs fabricate a '45-minute' baseline that doesn't appear in the transcript (actual: 20 minutes from Sarah). A factual accuracy assertion checking key numbers against the source would catch this."
+      }
+    ],
+    "overall": "Reasonable content extraction but missing structural elements (risk assessment, alternatives, mission quality). The mission reads as a project description rather than an invariant purpose statement."
+  }
+}

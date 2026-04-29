@@ -1,0 +1,31 @@
+{
+  "eval_id": 4,
+  "eval_name": "stakeholder-interview-transcript",
+  "prompt": "Extract MGPC requirements from the finance reporting tool stakeholder interview transcript.",
+  "assertions": [
+    {
+      "id": "has-four-mgpc-sections",
+      "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections"
+    },
+    {
+      "id": "mission-is-replacement-not-feature-list",
+      "text": "Mission captures the core intent (replace legacy Access reporting tool for finance) — not just a list of features"
+    },
+    {
+      "id": "goals-include-performance-targets",
+      "text": "Goals include both quantified performance targets from the transcript: 15+ concurrent users AND <2 minute report runtime"
+    },
+    {
+      "id": "constraints-include-on-prem-and-budget",
+      "text": "Constraints capture both hard constraints stated explicitly: on-prem only AND $50k budget cap"
+    },
+    {
+      "id": "constraints-include-fixed-integrations",
+      "text": "Constraints or Premises capture that SAP and Salesforce integrations cannot be changed (IT constraint, not just a technical choice)"
+    },
+    {
+      "id": "implicit-audit-trail-motivation-captured",
+      "text": "Audit trail requirement is included with its compliance motivation (not just listed as a feature) — the 'incident last year' context signals regulatory/compliance driver"
+    }
+  ]
+}

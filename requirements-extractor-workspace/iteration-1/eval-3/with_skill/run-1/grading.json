@@ -1,0 +1,95 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "The output contains clearly labeled sections: '### M — Mission', '### G — Goals', '### P — Premises', and '### C — Constraints' as distinct top-level sections under Phase 1."
+    },
+    {
+      "text": "Mission centers on reducing restaurant food waste / monetizing surplus inventory — not generic 'delivery platform'",
+      "passed": true,
+      "evidence": "Mission text reads: 'Reduce food waste and strengthen independent restaurant viability by connecting surplus end-of-day inventory to nearby customers through existing delivery infrastructure — turning a daily loss into value for restaurants, drivers, and communities.' Explicitly food-waste focused, not generic delivery."
+    },
+    {
+      "text": "Goals section captures specific measurable targets from the brief: onboarding <10 minutes, 60-minute ordering window, 3-city launch",
+      "passed": true,
+      "evidence": "G3 states 'under 10 minutes with no training required'; G1 states 'within 60 minutes of closing, visible to nearby customers in a real-time last-hour feed'; G4 states 'Go live in 3 cities within 6 months'. All three specific metrics are present."
+    },
+    {
+      "text": "Constraints include both GDPR compliance and no-card-data-storage (Stripe delegation) as hard constraints",
+      "passed": true,
+      "evidence": "Under Hard Constraints: C1 = 'FreshRoute must not store, process, or transmit raw payment card data — all card handling via Stripe-hosted fields and tokenization'; C2 = 'GDPR compliance required: explicit consent at signup, data minimization in collection, right-to-erasure flow, processor agreement with Stripe'. Both appear as hard constraints."
+    },
+    {
+      "text": "Premises capture the dependency on existing delivery ecosystems (Uber Eats / DoorDash driver network) as an assumption",
+      "passed": true,
+      "evidence": "P2 reads: 'Delivery drivers on Uber Eats / DoorDash are physically near independent restaurants in dense urban areas during the close-time window' with falsification risk 'Medium — depends on driver density and routing patterns by city'. This directly captures the ecosystem dependency as an assumption."
+    },
+    {
+      "text": "Food safety regulatory variance by city is identified — either as a Constraint or an implicit Premise requiring handling",
+      "passed": true,
+      "evidence": "Surfaced in two places: (1) C3 as a Hard Constraint: 'Food safety labeling information (ingredients, allergens, preparation method) must be captured at listing creation and surfaced to customers — specific rules must be validated per city before launch'; (2) P6 as a Premise: 'Food safety regulations in the 3 target cities do not prohibit resale of prepared restaurant surplus via a third-party platform' with falsification risk 'Medium-High — must be validated per city before launch'."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "output_chars": 9823,
+    "transcript_chars": null
+  },
+  "timing": {
+    "executor_duration_seconds": 137.3,
+    "grader_duration_seconds": null,
+    "total_duration_seconds": 137.3
+  },
+  "claims": [
+    {
+      "claim": "Extracted via requirements-extractor v2.0 (Phase 0 CoK + Phase 1 Intent Inference)",
+      "type": "process",
+      "verified": true,
+      "evidence": "The document header states this and the content structure matches a two-phase CoK + MGPC extraction pattern with L5→L1 saturation in Phase 0 and MGPC specification in Phase 1."
+    },
+    {
+      "claim": "The premises include high-risk items requiring early validation",
+      "type": "quality",
+      "verified": true,
+      "evidence": "The document identifies P6 (food safety legality), P7 (team capacity), and P2 (driver proximity) as highest-risk premises and recommends early validation — this is substantively correct and adds value beyond the brief."
+    },
+    {
+      "claim": "Solution space alternatives are provided",
+      "type": "quality",
+      "verified": true,
+      "evidence": "A 5-dimension solution space table is provided covering app architecture, live feed mechanism, driver integration, infrastructure, and city onboarding options — all plausible alternatives consistent with the brief."
+    },
+    {
+      "claim": "Hard and soft constraints are distinguished",
+      "type": "factual",
+      "verified": true,
+      "evidence": "The Constraints section separates 7 Hard Constraints (violation = rejection/non-launch) from 7 Soft Constraints (violation = penalty/degraded experience), each with source attribution."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Goals section captures specific measurable targets from the brief: onboarding <10 minutes, 60-minute ordering window, 3-city launch",
+        "reason": "This assertion checks presence of three specific numbers but a model that simply copies those numbers verbatim from the brief without understanding their significance would also pass. Consider requiring that each metric appears in the correct MGPC element — e.g., that the 60-minute window also appears as a Hard Constraint (C6), not only as a Goal, demonstrating that the skill understood its dual role as both goal and enforced rule."
+      },
+      {
+        "reason": "No assertion checks that the Premises are genuinely falsifiable assumptions (not restated goals or constraints). The skill produced high-quality premises with explicit falsification risks and supporting goals — but none of the evals would catch a low-quality output that listed premises as vague truisms or restated the goals. An assertion like 'Each premise identifies a condition that, if false, undermines a named goal' would be discriminating."
+      },
+      {
+        "reason": "No assertion checks the Phase 0 CoK expansion — the skill is supposed to surface implicit requirements through bottom-up topic expansion. The eval only tests the final MGPC output. If the skill skipped Phase 0 and went straight to MGPC, all assertions would still pass. Adding an assertion that at least one implicit/non-obvious requirement (e.g., server-side close-time enforcement, allergen labeling) appears in the output would test the Phase 0 contribution."
+      }
+    ],
+    "overall": "All assertions pass with strong evidence. The evals cover the key MGPC structural requirements well. Main gaps: no check that metrics appear in the correct MGPC tier (goal vs. constraint), no test of premise quality/falsifiability, and no test that Phase 0 CoK expansion actually contributed implicit requirements beyond what the brief states explicitly."
+  }
+}

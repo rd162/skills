@@ -1,0 +1,94 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "requirements.md contains clearly labeled H2 sections: '## Mission', '## Goals', '## Premises', and '## Constraints', each with explanatory sub-content."
+    },
+    {
+      "text": "Mission or Premises captures that Godot is free/open-source and community-driven (not just 'a game engine')",
+      "passed": true,
+      "evidence": "Mission section explicitly states: 'Godot exists to provide a free, fully open-source, community-owned game engine' and describes governance by 'the Godot Foundation (a non-profit) and shaped by contributors who benefit equally from one another's work.' Also reinforced in P6 (community sustains the project) and C9 (no single-company control)."
+    },
+    {
+      "text": "Goals section mentions cross-platform export (e.g. desktop, mobile, web) as a key capability goal",
+      "passed": true,
+      "evidence": "G1 — Universal cross-platform deployment: 'Export projects to all major desktop OS (Windows, macOS, Linux), mobile (Android, iOS), web (HTML5/WebAssembly), and consoles (via third-party exporters), from a single unified project and editor.'"
+    },
+    {
+      "text": "Constraints section includes the MIT license or equivalent open-source licensing as a hard constraint",
+      "passed": true,
+      "evidence": "C1 states: 'The engine source code must remain licensed under the MIT license. Any dependency added to the core engine must be compatible with MIT distribution. Closed-source SDKs may not be integrated into the core repository.' Also supported by C2 (no royalties, no usage fees)."
+    },
+    {
+      "text": "The spec reflects game-engine-specific concerns (scripting language, editor, 2D/3D, physics, audio) — not generic software requirements",
+      "passed": true,
+      "evidence": "GDScript covered in G3 and C7; editor architecture in G4, P8, C8; 2D/3D pipeline in G2 and C5; physics/audio server architecture in P5 ('physics server, rendering server, audio server as singleton objects communicating via command buffers'); scene/node composition in G6."
+    },
+    {
+      "text": "At least one non-obvious requirement is inferred (e.g. GDScript design goals, no royalties constraint, community governance implications)",
+      "passed": true,
+      "evidence": "Multiple non-obvious inferences are present: C4 (no built-in software rendering fallback, derived from hardware architecture decisions), C7 (GDScript integration constraints that ruled out Lua/Python/JavaScript), C8 (editor/runtime binary separation as hard architectural boundary), P8 (editor is itself a Godot application enabling constant dogfooding), C9 (non-profit governance as a structural rather than cultural constraint preventing acquisition)."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": null,
+  "timing": {
+    "executor_duration_seconds": 185.0,
+    "grader_duration_seconds": null,
+    "total_duration_seconds": 185.0
+  },
+  "claims": [
+    {
+      "claim": "Sources include Godot README, official docs, Godot Foundation site, contributing docs, and architecture docs",
+      "type": "process",
+      "verified": true,
+      "evidence": "The Sources table at end of requirements.md lists 13 specific URLs including README, docs pages (introduction, FAQ, list_of_features, release_policy, system_requirements, architecture diagram, internal rendering architecture, compatibility breakages), Godot blog articles, and godot.foundation."
+    },
+    {
+      "claim": "The spec is for Godot 4.x",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Header states 'Engine version context: Godot 4.x (stable series at time of extraction).' Constraints like GDExtension API (C3) and GDExtension bindings (G3) are 4.x-specific features."
+    },
+    {
+      "claim": "Console export is only available via third-party exporters because console SDKs are closed-source",
+      "type": "factual",
+      "verified": true,
+      "evidence": "P4 explicitly states this: 'Console platform SDKs (PlayStation, Xbox, Nintendo) cannot be included in an open-source project. First-party console export is structurally impossible; third-party exporters fill the gap.' This is accurate and verifiable against public Godot documentation."
+    },
+    {
+      "claim": "9 Goals, 8 Premises, and 9 Constraints are enumerated",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Counting items in each section: Goals G1-G9 (9), Premises P1-P8 (8), Constraints C1-C9 (9). Summary table confirms these counts."
+    },
+    {
+      "claim": "GDScript design requirements ruled out Lua, Python, and JavaScript as embedded scripting options",
+      "type": "factual",
+      "verified": false,
+      "evidence": "The output states this in C7 but does not cite a source. This is plausible (Godot FAQ does discuss GDScript rationale) but the specific framing of 'ruled out' these three languages is an inference that cannot be directly verified from the listed sources without reading them."
+    }
+  ],
+  "user_notes_summary": null,
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+        "reason": "This assertion is trivially satisfied by any output that copies the MGPC template headers. It does not verify that the sections have substantive, Godot-specific content. A response with four labeled but empty or generic sections would pass. Consider adding a minimum content check (e.g., at least 3 distinct items per section, or at least one Godot-specific term per section)."
+      },
+      {
+        "reason": "No assertion checks source quality or grounding — the output cites 13 sources and that citation behavior is never evaluated. An executor that hallucinated plausible-sounding content with no actual web fetching would produce the same structure. Consider asserting that at least one source URL was actually accessed (process check) or that the output contains verifiable factual claims traceable to Godot documentation."
+      },
+      {
+        "reason": "No assertion checks for absence of hallucination. The output contains a specific claim (C7: GDScript 'ruled out Lua, Python, and JavaScript') that is stated without a cited source and may be an inference. An assertion checking that constraints are grounded in actual project documentation (not just plausible inference) would catch this class of fabrication."
+      }
+    ],
+    "overall": "All six assertions pass and the output is genuinely high quality — detailed, well-sourced, and game-engine-specific. The main weakness in the eval set is that assertions 1 and 5 are structure/presence checks that would also pass for a lower-quality output that merely mimics the format. The evals would benefit from at least one content-verification or source-grounding assertion."
+  }
+}

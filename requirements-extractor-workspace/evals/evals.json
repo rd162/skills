@@ -1,0 +1,170 @@
+{
+  "skill_name": "requirements-extractor",
+  "evals": [
+    {
+      "id": 0,
+      "name": "plane-web-app",
+      "prompt": "Extract a full MGPC requirements spec from the Plane project management tool. The GitHub repo is at https://github.com/makeplane/plane — read the README and any architecture or feature docs you can find there. I want Mission, Goals, Premises, and Constraints clearly separated.",
+      "expected_output": "A structured MGPC specification with Mission (single invariant purpose), Goals (measurable outcomes), Premises (assumptions), and Constraints (non-negotiable boundaries) derived from the Plane web app project.",
+      "files": [],
+      "assertions": [
+        {
+          "id": "has-four-mgpc-sections",
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections"
+        },
+        {
+          "id": "mission-is-singular",
+          "text": "Mission section contains a single sentence or short statement (not a list), expressing the core invariant purpose"
+        },
+        {
+          "id": "goals-are-measurable",
+          "text": "Goals section contains specific, measurable outcomes (feature capabilities, user actions) rather than vague aspirations"
+        },
+        {
+          "id": "constraints-are-non-negotiable",
+          "text": "Constraints section captures actual hard boundaries (deployment model, license, tech stack, integrations) distinct from goals"
+        },
+        {
+          "id": "sources-from-repo",
+          "text": "Output references specific content from the Plane GitHub repo (specific features, project structure, technology choices) — not just generic PM tool boilerplate"
+        },
+        {
+          "id": "implicit-requirements-surfaced",
+          "text": "At least one Premise or Constraint is implicit (not stated word-for-word in the source) — e.g. assumptions about users, deployment environment, or integration ecosystem"
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "godot-game-engine",
+      "prompt": "I need a structured requirements spec for the Godot game engine (https://github.com/godotengine/godot). Use the repo README and any architecture or design docs you can find. Extract MGPC: what is Godot's core mission, what goals does it pursue, what assumptions does it operate on, and what are its hard constraints?",
+      "expected_output": "A structured MGPC specification for Godot Engine: Mission (why it exists), Goals (feature/capability goals), Premises (platform, user, technical assumptions), Constraints (license, performance, compatibility constraints).",
+      "files": [],
+      "assertions": [
+        {
+          "id": "has-four-mgpc-sections",
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections"
+        },
+        {
+          "id": "mission-captures-open-source-independence",
+          "text": "Mission or Premises captures that Godot is free/open-source and community-driven (not just 'a game engine')"
+        },
+        {
+          "id": "goals-cover-multiple-platforms",
+          "text": "Goals section mentions cross-platform export (desktop, mobile, web) as a key capability goal"
+        },
+        {
+          "id": "constraints-include-license",
+          "text": "Constraints section includes the MIT license or equivalent open-source licensing as a hard constraint"
+        },
+        {
+          "id": "domain-divergence-recognized",
+          "text": "The spec reflects game-engine-specific concerns (scripting language, editor, 2D/3D, physics, audio) — not generic software requirements"
+        },
+        {
+          "id": "implicit-requirements-surfaced",
+          "text": "At least one non-obvious requirement is inferred (e.g. GDScript design goals, no royalties constraint, community governance implications)"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "opentelemetry-architecture-spec",
+      "prompt": "Extract requirements from the OpenTelemetry architecture specification at https://opentelemetry.io/docs/specs/otel/overview/ — give me a full MGPC spec. What is the system designed to do, what are its goals for implementors, what assumptions does it make, and what are the non-negotiable design constraints?",
+      "expected_output": "MGPC specification derived from the OpenTelemetry spec: Mission (observability portability), Goals (signal types, SDK/API separation), Premises (language-agnostic, collector model), Constraints (backwards compatibility, vendor neutrality).",
+      "files": [],
+      "assertions": [
+        {
+          "id": "has-four-mgpc-sections",
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections"
+        },
+        {
+          "id": "mission-captures-vendor-neutrality",
+          "text": "Mission captures vendor-neutral observability portability as the core purpose (not just 'collect telemetry')"
+        },
+        {
+          "id": "goals-cover-three-signals",
+          "text": "Goals mention at least two of the three signal types: traces, metrics, and logs"
+        },
+        {
+          "id": "constraints-include-api-sdk-separation",
+          "text": "Constraints or Premises captures the API/SDK separation — that the API must be stable and separately versionable from the SDK"
+        },
+        {
+          "id": "premises-include-language-agnostic",
+          "text": "Premises include that the specification is language-agnostic (implemented across many languages)"
+        },
+        {
+          "id": "architectural-doc-treated-differently",
+          "text": "The spec correctly treats this as a design/architecture document — requirements reflect implementor constraints, not end-user features"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "synthetic-saas-product-brief",
+      "prompt": "Extract MGPC requirements from this product brief:\n\n---\nFreshRoute is a platform we're building to help independent restaurants cut food waste and delivery costs...\n---\n\nGive me a complete MGPC spec.",
+      "expected_output": "MGPC spec: Mission (cut food waste via last-minute surplus marketplace), Goals (restaurant onboarding <10min, driver add-on workflow, 60-min last-hour feed, 3-city launch), Premises (urban density, Uber Eats/DoorDash ecosystem, small team), Constraints (no card data storage, GDPR, food safety regs, 6-month timeline).",
+      "files": [],
+      "assertions": [
+        {
+          "id": "has-four-mgpc-sections",
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections"
+        },
+        {
+          "id": "mission-captures-food-waste-core-purpose",
+          "text": "Mission centers on reducing restaurant food waste / monetizing surplus inventory — not generic 'delivery platform'"
+        },
+        {
+          "id": "goals-include-specific-metrics",
+          "text": "Goals section captures specific measurable targets: onboarding <10 minutes, 60-minute ordering window, 3-city launch"
+        },
+        {
+          "id": "constraints-include-gdpr-and-stripe",
+          "text": "Constraints include both GDPR compliance and no-card-data-storage (Stripe delegation) as hard constraints"
+        },
+        {
+          "id": "premises-capture-ecosystem-dependency",
+          "text": "Premises capture the dependency on existing delivery ecosystems (Uber Eats / DoorDash driver network) as an assumption"
+        },
+        {
+          "id": "implicit-food-safety-constraint-surfaced",
+          "text": "Food safety regulatory variance by city is identified — either as a Constraint or an implicit Premise requiring handling"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "stakeholder-interview-transcript",
+      "prompt": "Extract MGPC requirements from this stakeholder meeting transcript. Requirements are implicit — you'll need to infer them:\n\n---\n[Finance reporting tool replacement meeting transcript]\n---\n\nGive me a complete MGPC spec.",
+      "expected_output": "MGPC spec: Mission (replace legacy Access reporting tool for finance), Goals (15-user concurrent access, <2min monthly report, inline filtering, scheduled reports with email), Premises (SAP + Salesforce as fixed data sources), Constraints ($50k budget, on-prem only, audit trail required, no mobile, Q3 deadline).",
+      "files": [],
+      "assertions": [
+        {
+          "id": "has-four-mgpc-sections",
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections"
+        },
+        {
+          "id": "mission-is-replacement-not-feature-list",
+          "text": "Mission captures the core intent (replace legacy Access reporting tool for finance) — not just a list of features"
+        },
+        {
+          "id": "goals-include-performance-targets",
+          "text": "Goals include both quantified performance targets: 15+ concurrent users AND <2 minute report runtime"
+        },
+        {
+          "id": "constraints-include-on-prem-and-budget",
+          "text": "Constraints capture both hard constraints: on-prem only AND $50k budget cap"
+        },
+        {
+          "id": "constraints-include-fixed-integrations",
+          "text": "Constraints or Premises capture that SAP and Salesforce integrations cannot be changed (IT constraint)"
+        },
+        {
+          "id": "implicit-audit-trail-motivation-captured",
+          "text": "Audit trail requirement is included with its compliance motivation (not just listed as a feature) — signals regulatory/compliance driver from 'the incident last year'"
+        }
+      ]
+    }
+  ]
+}

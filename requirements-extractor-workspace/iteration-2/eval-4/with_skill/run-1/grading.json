@@ -1,0 +1,88 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "Output has '## Mission', '## Goals', '## Premises', and '## Constraints' as distinct labeled sections."
+    },
+    {
+      "text": "Mission captures the core intent (replace legacy Access reporting tool for finance) — not just a list of features",
+      "passed": true,
+      "evidence": "Mission: 'Enable timely, reliable financial reporting so the organization can make sound financial decisions.' This captures the intent (reliable financial reporting) without listing features. The W-functor chain confirms: 'replace reporting tool -> unblock finance team -> enable timely, reliable access to financial reports -> support accurate financial decision-making -> organizational viability'."
+    },
+    {
+      "text": "Goals include both quantified performance targets from the transcript: 15+ concurrent users AND <2 minute report runtime",
+      "passed": true,
+      "evidence": "Goal 2: 'Support concurrent usage by the full finance team (minimum 15 simultaneous users) without crashes or degradation'. Goal 3: 'Reduce monthly report generation time from 45 minutes to under 2 minutes'. Both quantified targets present."
+    },
+    {
+      "text": "Constraints capture both hard constraints stated explicitly: on-prem only AND $50k budget cap",
+      "passed": true,
+      "evidence": "Hard constraint C1: 'Total budget must not exceed $50,000 including infrastructure' (Source: PM stated). C2: 'System must run entirely on-premises -- no cloud hosting for financial data' (Source: Legal department). Both present as hard constraints with sources."
+    },
+    {
+      "text": "Constraints or Premises capture that SAP and Salesforce integrations cannot be changed (IT constraint, not just a technical choice)",
+      "passed": true,
+      "evidence": "Hard constraint C3: 'Data sources limited to existing SAP and Salesforce integrations -- no new integrations permitted' (Source: IT policy). P1: 'SAP and Salesforce APIs will remain available and accessible from the new system' (Source: Dev lead stated; PM confirmed integrations locked). P6: 'IT will support the new system's integration with SAP/Salesforce (same connectors, no new ones)'. All frame it as an IT policy constraint."
+    },
+    {
+      "text": "Audit trail requirement is included with its compliance motivation (not just listed as a feature) — the 'incident last year' context signals regulatory/compliance driver",
+      "passed": true,
+      "evidence": "Hard constraint C4: 'Every report run must be logged with user identity and timestamp (audit trail)' (Source: 'Compliance department (stated via PM -- triggered by prior incident)'). Goal 6: 'Maintain full audit trail of every report execution -- who ran it, when, and what was generated'. Domain Context: 'Compliance's audit trail request was triggered by a specific incident. The requirement may expand over time.' The compliance motivation and incident context are captured."
+    },
+    {
+      "text": "Premises are presented in a table format that includes a 'Risk if false' or 'Consequence if false' column assessing what breaks if each assumption is wrong",
+      "passed": true,
+      "evidence": "Premises table has columns: #, Premise, Source, Risk if false. Examples: P1 'if APIs change or access is revoked, no data flows into the system at all; reporting is impossible' (HIGH RISK), P3 'rebuild effort and timeline explode', P4 'the $50K budget may be consumed by infrastructure alone' (HIGH RISK). All 7 premises have risk assessments."
+    },
+    {
+      "text": "Output includes a Mission Space or Solution Space section that presents evaluated alternatives (e.g. COTS vs custom build, reporting platform options), domain context, or identified knowledge gaps",
+      "passed": true,
+      "evidence": "Mission Space section contains: 'Evaluated Alternatives' table with 4 options (Commercial BI tool, Custom-built web app, Upgraded Access/SharePoint, SSRS) each assessed against hard constraints. 'Domain Context' with 4 insights. 'Knowledge Gaps' with 8 identified gaps (data migration, authentication, report complexity, RBAC, backup, browser requirements, maintenance model, alerting)."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {},
+  "timing": {
+    "executor_duration_seconds": 94.9,
+    "total_duration_seconds": 94.9
+  },
+  "claims": [
+    {
+      "claim": "The current system is a single-user Access database from 2009",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Transcript says 'eight years now' (from Sarah); the '2009' is approximate but reasonable. Transcript says it 'crashes if more than three people open it at once', confirming severe concurrency limits."
+    },
+    {
+      "claim": "The monthly close report currently takes Lisa two full days",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Lisa says in transcript: 'The monthly close report takes me two full days.' Correctly captured."
+    },
+    {
+      "claim": "Current report runtime is about 20 minutes when it doesn't crash",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Sarah says: 'our current ones take 20 minutes when they don't crash.' The output's Goal 3 says 'from 45 minutes' which is slightly inconsistent -- the transcript says 20 minutes for report runtime. The '45 minutes' may include the full close process or be an error."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "Goal 3 says 'Reduce monthly report generation time from 45 minutes to under 2 minutes' but the transcript says current runtime is 20 minutes (Sarah: 'our current ones take 20 minutes'). The 45-minute figure appears nowhere in the transcript. This factual inaccuracy passed all assertions. Consider adding a factual accuracy assertion that checks extracted numbers against the source."
+      }
+    ],
+    "overall": "Strong pass on all assertions. One factual accuracy issue (45 min vs 20 min baseline) that no assertion catches. Consider adding a numerical accuracy assertion."
+  }
+}

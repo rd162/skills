@@ -1,0 +1,553 @@
+{
+  "metadata": {
+    "skill_name": "requirements-extractor",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-04-08T18:51:29Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 185.6,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+          "passed": true,
+          "evidence": "The output has '## MGPC Specification' containing '### M \u2014 Mission', '### G \u2014 Goals', '### P \u2014 Premises', and '### C \u2014 Constraints' as clearly distinct labeled sections."
+        },
+        {
+          "text": "Mission section contains a single sentence or short statement (not a list), expressing the core invariant purpose",
+          "passed": true,
+          "evidence": "Mission reads: 'Enable software teams to deliver value to the people they serve by providing a low-friction, fully controllable project management platform \u2014 one that stays out of the way of the work itself.' \u2014 a single sentence followed by an italicized fixed-point note. No list."
+        },
+        {
+          "text": "Goals section contains specific, measurable outcomes (e.g. feature capabilities, user actions) rather than vague aspirations",
+          "passed": true,
+          "evidence": "Goals are concrete: G1 specifies 'full issue lifecycle (create, triage, estimate, assign, track, close) with rich metadata (labels, states, priorities, relations, sub-issues, custom types)'; G2 names 'burn-down charts' and 'Cycles (sprints)'; G5 specifies 'Docker Compose, Kubernetes'; G6 specifies 'REST API with token auth, webhooks'. All are specific feature capabilities, not aspirations."
+        },
+        {
+          "text": "Constraints section captures actual hard boundaries (e.g. deployment model, license, tech stack, integrations) distinct from goals",
+          "passed": true,
+          "evidence": "Hard Constraints table includes H2 (AGPL-3.0 license with copyright headers), H4 (PostgreSQL 14+ only; no SQLite or MySQL), H3 (API rate limit 60 req/min), H5 (unit tests required per CONTRIBUTING.md), H6 (security@plane.so private disclosure). These are genuine technical/legal hard limits, clearly distinct from the Goals section."
+        },
+        {
+          "text": "Output references specific content from the Plane GitHub repo (e.g. specific features, project structure, technology choices) \u2014 not just generic PM tool boilerplate",
+          "passed": true,
+          "evidence": "References version '0.24.0 (web app v1.3.0)', specific tech (Hocuspocus/Yjs, MobX, React Router v7, openpyxl, DRF-spectacular, RabbitMQ), specific files (`.env.example`, `CONTRIBUTING.md`, `COPYRIGHT_CHECK.md`, `SECURITY.md`, `LICENSE.txt`), and specific numeric values (OxLint max-warnings threshold '11,957 for web app, 119 for live server', 60-day hard-delete TTL, 5 MB upload limit, 3600s signed URL expiry)."
+        },
+        {
+          "text": "At least one Premise or Constraint is implicit (not stated word-for-word in the source) \u2014 e.g. assumptions about users, deployment environment, or integration ecosystem",
+          "passed": true,
+          "evidence": "Multiple implicit premises are surfaced: P1 ('Teams have internet-connected browsers' \u2014 an assumption about users not stated in the repo); P3 ('Workspaces map to organizations' \u2014 a design assumption inferred from the multi-tenancy model); P5 ('Celery background workers are always running' \u2014 an operational assumption derived from the architecture); P6 ('Real-time editing requires a live WebSocket server' \u2014 inferred from Hocuspocus dependency). None of these are quoted literally from the repo docs."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 179.4,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+          "passed": true,
+          "evidence": "requirements.md contains four clearly labeled sections: '### M \u2014 Mission', '### G \u2014 Goals', '### P \u2014 Premises', and '### C \u2014 Constraints', each with substantive content."
+        },
+        {
+          "text": "Mission or Premises captures that Godot is free/open-source and community-driven (not just 'a game engine')",
+          "passed": true,
+          "evidence": "Mission states: 'Democratize interactive media creation by giving every developer \u2014 regardless of resources, geography, or commercial backing \u2014 the means to build, distribute, and own professional-quality 2D and 3D games without restriction.' G3 adds 'Remain completely free and MIT-licensed with zero royalties and full source ownership' and G4 adds 'Be community-driven and independently governed through the Godot Foundation.' P2 covers community sustainability. The open-source and community-driven nature is woven throughout."
+        },
+        {
+          "text": "Goals section mentions cross-platform export (e.g. desktop, mobile, web) as a key capability goal",
+          "passed": true,
+          "evidence": "G2 explicitly states: 'Enable one-click cross-platform export to all major desktop, mobile, web, and console targets' with evidence cited from the README."
+        },
+        {
+          "text": "Constraints section includes the MIT license or equivalent open-source licensing as a hard constraint",
+          "passed": true,
+          "evidence": "C-H2 states: 'All core code must be MIT-licensed. Third-party libraries must be compatible; incompatible licenses require isolation.' Sourced from LICENSE.txt and FAQ."
+        },
+        {
+          "text": "The spec reflects game-engine-specific concerns (scripting language, editor, 2D/3D, physics, audio) \u2014 not generic software requirements",
+          "passed": true,
+          "evidence": "The spec explicitly covers: GDScript/C#/GDExtension scripting stack (G6, L5), unified 2D and 3D editor (G1), physics simulation (L5 topics), audio system (L5 topics), rendering pipeline with Forward+/Mobile/Compatibility renderers (L4 area), XR/AR/VR (L5), scene-node architecture (L5), and the 'dogfood editor' design (G7). These are all game-engine-specific concerns with no generic enterprise/web-app framing."
+        },
+        {
+          "text": "At least one non-obvious requirement is inferred (e.g. GDScript design goals, no royalties constraint, community governance implications)",
+          "passed": true,
+          "evidence": "Multiple non-obvious requirements are surfaced: C-H3 (no C++ exceptions \u2014 binary size and crash avoidance rationale inferred from FAQ), C-H4 (no STL \u2014 memory tracking and debug binary size), C-H5 (no ECS \u2014 inheritance-based model is a hard constraint, not just a preference), C-H7 (fully reproducible builds, no network downloads at build time), C-H6 (editor usable without admin privileges), and the GDExtension stable ABI rationale in the Solution Space table. These go well beyond what the README surface text says."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 201.6,
+        "tokens": 19980,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+          "passed": true,
+          "evidence": "The output contains clearly labeled sections: '### M \u2014 Mission', '### G \u2014 Goals', '### P \u2014 Premises', and '### C \u2014 Constraints', each with substantive content."
+        },
+        {
+          "text": "Mission captures vendor-neutral observability portability as the core purpose (not just 'collect telemetry')",
+          "passed": true,
+          "evidence": "Mission reads: 'Provide a universal, vendor-neutral observability infrastructure that makes any software system \u2014 regardless of language, framework, or backend \u2014 fully observable through standardized, composable telemetry primitives, without requiring lock-in to any proprietary monitoring ecosystem.' The summary also reinforces this: 'The system's mission is not merely \"telemetry collection\" \u2014 it is to make observability a universal, portable infrastructure primitive.'"
+        },
+        {
+          "text": "Goals mention at least two of the three signal types: traces, metrics, and logs",
+          "passed": true,
+          "evidence": "Goal 1 explicitly names all three: 'Define a portable, multi-signal telemetry API covering traces, metrics, logs, and baggage as independent but composable signals.' Goals 3 and 4 further elaborate on traces and metrics specifically."
+        },
+        {
+          "text": "Constraints or Premises captures the API/SDK separation \u2014 that the API must be stable and separately versionable from the SDK",
+          "passed": true,
+          "evidence": "Hard constraint H1 states 'Instrumentation authors MUST NOT directly reference any SDK package \u2014 only the API.' Goal 2 says 'Enforce strict API/SDK separation so that instrumentation code depends only on the zero-cost API, while applications control which SDK implementation is installed.' Goal 8 states 'Guarantee API stability and backward compatibility.' The separate versionability is implied by the separation + stability guarantee, though not stated in those exact words."
+        },
+        {
+          "text": "Premises include that the specification is language-agnostic (implemented across many languages)",
+          "passed": true,
+          "evidence": "Premise 4 states: 'YAML is a stable, language-agnostic schema format \u2014 Semantic conventions defined in YAML can be reliably parsed and code-generated into idiomatic constants for all target languages.' Premise 7 states 'Instrumentation libraries can observe library behavior non-invasively... in most language ecosystems.' The Mission also states 'regardless of language, framework, or backend.' The concept is present though it is embedded within other premises rather than stated as a standalone language-agnosticism premise."
+        },
+        {
+          "text": "The spec correctly treats this as a design/architecture document rather than a user-facing product \u2014 requirements reflect implementor constraints, not end-user features",
+          "passed": true,
+          "evidence": "All constraints and goals are framed around implementors: H1 ('Instrumentation authors MUST NOT...'), H2 ('SpanContext MUST be propagated'), H3/H4 (byte-level ID format requirements), H5/H6 (code generation from YAML). There are no end-user UI/UX requirements. The output explicitly frames requirements as 'non-negotiable design constraints' and 'implementor constraints.'"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 137.3,
+        "tokens": 9823,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+          "passed": true,
+          "evidence": "The output contains clearly labeled sections: '### M \u2014 Mission', '### G \u2014 Goals', '### P \u2014 Premises', and '### C \u2014 Constraints' as distinct top-level sections under Phase 1."
+        },
+        {
+          "text": "Mission centers on reducing restaurant food waste / monetizing surplus inventory \u2014 not generic 'delivery platform'",
+          "passed": true,
+          "evidence": "Mission text reads: 'Reduce food waste and strengthen independent restaurant viability by connecting surplus end-of-day inventory to nearby customers through existing delivery infrastructure \u2014 turning a daily loss into value for restaurants, drivers, and communities.' Explicitly food-waste focused, not generic delivery."
+        },
+        {
+          "text": "Goals section captures specific measurable targets from the brief: onboarding <10 minutes, 60-minute ordering window, 3-city launch",
+          "passed": true,
+          "evidence": "G3 states 'under 10 minutes with no training required'; G1 states 'within 60 minutes of closing, visible to nearby customers in a real-time last-hour feed'; G4 states 'Go live in 3 cities within 6 months'. All three specific metrics are present."
+        },
+        {
+          "text": "Constraints include both GDPR compliance and no-card-data-storage (Stripe delegation) as hard constraints",
+          "passed": true,
+          "evidence": "Under Hard Constraints: C1 = 'FreshRoute must not store, process, or transmit raw payment card data \u2014 all card handling via Stripe-hosted fields and tokenization'; C2 = 'GDPR compliance required: explicit consent at signup, data minimization in collection, right-to-erasure flow, processor agreement with Stripe'. Both appear as hard constraints."
+        },
+        {
+          "text": "Premises capture the dependency on existing delivery ecosystems (Uber Eats / DoorDash driver network) as an assumption",
+          "passed": true,
+          "evidence": "P2 reads: 'Delivery drivers on Uber Eats / DoorDash are physically near independent restaurants in dense urban areas during the close-time window' with falsification risk 'Medium \u2014 depends on driver density and routing patterns by city'. This directly captures the ecosystem dependency as an assumption."
+        },
+        {
+          "text": "Food safety regulatory variance by city is identified \u2014 either as a Constraint or an implicit Premise requiring handling",
+          "passed": true,
+          "evidence": "Surfaced in two places: (1) C3 as a Hard Constraint: 'Food safety labeling information (ingredients, allergens, preparation method) must be captured at listing creation and surfaced to customers \u2014 specific rules must be validated per city before launch'; (2) P6 as a Premise: 'Food safety regulations in the 3 target cities do not prohibit resale of prepared restaurant surplus via a third-party platform' with falsification risk 'Medium-High \u2014 must be validated per city before launch'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 88.3,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+          "passed": true,
+          "evidence": "requirements.md contains '### M \u2014 Mission', '### G \u2014 Goals', '### P \u2014 Premises', and '### C \u2014 Constraints' as clearly distinct labeled sections under '## Phase 1 \u2014 MGPC Specification'."
+        },
+        {
+          "text": "Mission captures the core intent (replace legacy Access reporting tool for finance) \u2014 not just a list of features",
+          "passed": true,
+          "evidence": "Mission reads: 'Enable the organization to operate, govern, and make decisions with reliable, timely, and compliant access to its financial data.' The W-functor chain documents how it was elevated from 'replace reporting tool' \u2192 'support financial operations and decision-making' \u2192 'keep the organization operationally sound and compliant'. This is a purposeful organizational statement, not a feature list."
+        },
+        {
+          "text": "Goals include both quantified performance targets from the transcript: 15+ concurrent users AND <2 minute report runtime",
+          "passed": true,
+          "evidence": "Goal 2: 'Deliver monthly financial reports in under 2 minutes (down from 45 minutes).' Goal 3: 'Support the full finance team (~15 users) working simultaneously without degradation or crashes.' Both quantified targets are present with context."
+        },
+        {
+          "text": "Constraints capture both hard constraints stated explicitly: on-prem only AND $50k budget cap",
+          "passed": true,
+          "evidence": "C1: 'Must run entirely on-premises \u2014 no cloud hosting of financial data' (Source: Legal). C2: 'Total cost (infrastructure + development) must not exceed $50,000' (Source: PM/Finance). Both listed as Hard Constraints."
+        },
+        {
+          "text": "Constraints or Premises capture that SAP and Salesforce integrations cannot be changed (IT constraint, not just a technical choice)",
+          "passed": true,
+          "evidence": "C3: 'SAP and Salesforce integrations must not be changed or replaced' with Source explicitly labeled as 'IT policy (stated)'. The IT constraint framing distinguishes this from a mere technical preference."
+        },
+        {
+          "text": "Audit trail requirement is included with its compliance motivation (not just listed as a feature) \u2014 the 'incident last year' context signals regulatory/compliance driver",
+          "passed": true,
+          "evidence": "C4 is classified as a Hard Constraint sourced to 'Compliance (stated)': 'Every report execution must be logged with user identity and timestamp.' Goal 7 also frames it as 'tamper-evident audit log of every report execution.' S4 notes it is 'Inferred from compliance context.' The requirement is clearly labeled compliance-driven rather than feature-listed. However, the specific 'incident last year' narrative that reveals a regulatory/compliance incident trigger is not surfaced \u2014 the compliance motivation is captured at a categorical level but not the specific driver. This is a borderline pass: the compliance framing is present and clear, even if the incident context is not cited."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.83,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 165.7,
+        "tokens": 5830,
+        "tool_calls": null,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+          "passed": true,
+          "evidence": "requirements.md has clearly labeled H2 sections: '## Mission', '## Goals', '## Premises', and '## Constraints', each with distinct content."
+        },
+        {
+          "text": "Mission section contains a single sentence or short statement (not a list), expressing the core invariant purpose",
+          "passed": false,
+          "evidence": "The Mission section opens with one sentence ('Plane's core invariant purpose is to provide an open-source, AI-native project management platform...') but then continues with 'The mission has two inseparable halves:' followed by a numbered list (Product utility, Structural openness). The assertion explicitly requires 'not a list' \u2014 the section contains a list."
+        },
+        {
+          "text": "Goals section contains specific, measurable outcomes (e.g. feature capabilities, user actions) rather than vague aspirations",
+          "passed": true,
+          "evidence": "Each of the six goals (G1\u2013G6) includes an explicit 'Proxy measure' with concrete, testable criteria, e.g. G2: 'Workspace analytics are current to within seconds', G6: 'Pull requests from external contributors are merged monthly; the ecosystem includes importers from all major competitors'."
+        },
+        {
+          "text": "Constraints section captures actual hard boundaries (e.g. deployment model, license, tech stack, integrations) distinct from goals",
+          "passed": true,
+          "evidence": "Ten constraints (C1\u2013C10) cover: AGPL-3.0 license, AES-256/TLS 1.3 security baseline, mandatory RBAC, self-hosting as a fully supported path, monorepo integrity, versioned REST API, TypeScript strict mode, required unit tests, minimum runtime versions (Node.js 20+, Python 3.8+, PostgreSQL 14+, Redis 6.2.7+), and no telemetry without opt-in. These are non-negotiable boundaries clearly distinct from the goal statements."
+        },
+        {
+          "text": "Output references specific content from the Plane GitHub repo (e.g. specific features, project structure, technology choices) \u2014 not just generic PM tool boilerplate",
+          "passed": true,
+          "evidence": "The output cites repo-specific details including: pnpm monorepo structure, packages '@plane/ui', 'packages/shared-state', MobX for shared state, OxLint/oxfmt as CI tools, apps/web, apps/admin, apps/space, Storybook coverage requirement, 180+ REST API endpoints, PostgreSQL 14+ and Redis 6.2.7+ minimum versions, and AGPL-3.0 license. These are verified structural details from the makeplane/plane repository, not generic boilerplate."
+        },
+        {
+          "text": "At least one Premise or Constraint is implicit (not stated word-for-word in the source) \u2014 e.g. assumptions about users, deployment environment, or integration ecosystem",
+          "passed": true,
+          "evidence": "Multiple implicit premises are present: P1 ('Teams are the primary unit of use, not individual contributors') is an inference about design intent; P3 ('Users have reliable internet connectivity') is an assumption not typically stated explicitly; P4 ('State, labels, types, and priorities are meaningful, not decorative') is an assumption about user behavior; P8 (infrastructure components treated as commodities) is an architectural assumption. These require inference beyond literal source text."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 185.0,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+          "passed": true,
+          "evidence": "requirements.md contains clearly labeled H2 sections: '## Mission', '## Goals', '## Premises', and '## Constraints', each with explanatory sub-content."
+        },
+        {
+          "text": "Mission or Premises captures that Godot is free/open-source and community-driven (not just 'a game engine')",
+          "passed": true,
+          "evidence": "Mission section explicitly states: 'Godot exists to provide a free, fully open-source, community-owned game engine' and describes governance by 'the Godot Foundation (a non-profit) and shaped by contributors who benefit equally from one another's work.' Also reinforced in P6 (community sustains the project) and C9 (no single-company control)."
+        },
+        {
+          "text": "Goals section mentions cross-platform export (e.g. desktop, mobile, web) as a key capability goal",
+          "passed": true,
+          "evidence": "G1 \u2014 Universal cross-platform deployment: 'Export projects to all major desktop OS (Windows, macOS, Linux), mobile (Android, iOS), web (HTML5/WebAssembly), and consoles (via third-party exporters), from a single unified project and editor.'"
+        },
+        {
+          "text": "Constraints section includes the MIT license or equivalent open-source licensing as a hard constraint",
+          "passed": true,
+          "evidence": "C1 states: 'The engine source code must remain licensed under the MIT license. Any dependency added to the core engine must be compatible with MIT distribution. Closed-source SDKs may not be integrated into the core repository.' Also supported by C2 (no royalties, no usage fees)."
+        },
+        {
+          "text": "The spec reflects game-engine-specific concerns (scripting language, editor, 2D/3D, physics, audio) \u2014 not generic software requirements",
+          "passed": true,
+          "evidence": "GDScript covered in G3 and C7; editor architecture in G4, P8, C8; 2D/3D pipeline in G2 and C5; physics/audio server architecture in P5 ('physics server, rendering server, audio server as singleton objects communicating via command buffers'); scene/node composition in G6."
+        },
+        {
+          "text": "At least one non-obvious requirement is inferred (e.g. GDScript design goals, no royalties constraint, community governance implications)",
+          "passed": true,
+          "evidence": "Multiple non-obvious inferences are present: C4 (no built-in software rendering fallback, derived from hardware architecture decisions), C7 (GDScript integration constraints that ruled out Lua/Python/JavaScript), C8 (editor/runtime binary separation as hard architectural boundary), P8 (editor is itself a Godot application enabling constant dogfooding), C9 (non-profit governance as a structural rather than cultural constraint preventing acquisition)."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.83,
+        "passed": 5,
+        "failed": 1,
+        "total": 6,
+        "time_seconds": 85.5,
+        "tokens": 3850,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "id": "has-four-mgpc-sections",
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+          "passed": true,
+          "evidence": "requirements.md has four clearly labeled H2 sections: '## Mission', '## Goals', '## Premises', and '## Constraints', each separated by horizontal rules."
+        },
+        {
+          "id": "mission-captures-vendor-neutrality",
+          "text": "Mission captures vendor-neutral observability portability as the core purpose (not just 'collect telemetry')",
+          "passed": true,
+          "evidence": "Mission statement reads: '...providing a vendor-neutral, language-agnostic instrumentation framework...enabling distributed traces, metrics, logs, and baggage to be collected, propagated, and exported without locking users into any single observability backend.' This explicitly names vendor-neutrality and portability as the core purpose."
+        },
+        {
+          "id": "goals-cover-three-signals",
+          "text": "Goals mention at least two of the three signal types: traces, metrics, and logs",
+          "passed": true,
+          "evidence": "Goal 1 explicitly names all three: 'Provide a coherent set of signals \u2014 tracing, metrics, logs, and baggage'. Multiple other goals also reference traces and metrics specifically."
+        },
+        {
+          "id": "constraints-include-api-sdk-separation",
+          "text": "Constraints or Premises captures the API/SDK separation \u2014 that the API must be stable and separately versionable from the SDK",
+          "passed": true,
+          "evidence": "Constraint 2 states: 'API and SDK MUST be separately importable packages. The split between API (cross-cutting, safe for library dependencies) and SDK (application-managed, full implementation) is a structural requirement, not a guideline. They cannot be merged into a single distribution.' Constraint 1 reinforces this by prohibiting instrumentation authors from referencing the SDK directly. Goals item 7 also mentions 'stability guarantees' for versioning."
+        },
+        {
+          "id": "premises-include-language-agnostic",
+          "text": "Premises include that the specification is language-agnostic (implemented across many languages)",
+          "passed": false,
+          "evidence": "None of the 8 Premises explicitly state that the specification is language-agnostic or implemented across many languages. Language-agnosticism appears only in the Mission statement ('language-agnostic instrumentation framework') and is referenced in Premise 6 indirectly ('each language defining its own conventions'). The Premises section does not contain a dedicated premise asserting language-agnostic scope as an assumption. This is a genuine gap."
+        },
+        {
+          "id": "architectural-doc-treated-differently",
+          "text": "The spec correctly treats this as a design/architecture document rather than a user-facing product \u2014 requirements reflect implementor constraints, not end-user features",
+          "passed": true,
+          "evidence": "Throughout the document, requirements are framed from the implementor/instrumentation-author perspective. Constraints use 'MUST' language directed at SDK/API implementors (e.g., 'Instrumentation authors MUST NOT reference the SDK', 'API and SDK MUST be separately importable packages'). Goals reference 'library and application code', 'instrumentation authors', 'application owners', and 'plugin authors' \u2014 not end users. The Premises section identifies 'distinct roles \u2014 instrumentation authors, plugin authors, and application owners' as the intended audience."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 43.8,
+        "tokens": 2843,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+          "passed": true,
+          "evidence": "requirements.md has four clearly labeled H2 sections: '## Mission', '## Goals', '## Premises', and '## Constraints', each separated by horizontal rules."
+        },
+        {
+          "text": "Mission centers on reducing restaurant food waste / monetizing surplus inventory \u2014 not generic 'delivery platform'",
+          "passed": true,
+          "evidence": "Mission reads: 'Connect independent urban restaurants with nearby customers and opportunistic delivery drivers to redistribute surplus food before it is discarded, reducing restaurant food waste while lowering last-mile delivery costs.' Clearly food-waste-centric, not generic delivery platform language."
+        },
+        {
+          "text": "Goals section captures specific measurable targets from the brief: onboarding <10 minutes, 60-minute ordering window, 3-city launch",
+          "passed": true,
+          "evidence": "G2 captures '<10 minutes': 'Any restaurant can complete setup and list their first item in under 10 minutes'; G4 captures the 60-minute ordering window: 'Customers can discover and order available surplus items up to 60 minutes before the listing restaurant's closing time'; G1 captures 3-city launch: 'Live and transacting in 3 cities within 6 months of development start'."
+        },
+        {
+          "text": "Constraints include both GDPR compliance and no-card-data-storage (Stripe delegation) as hard constraints",
+          "passed": true,
+          "evidence": "C1 states: 'Must not store payment card data on FreshRoute infrastructure \u2014 Explicitly ruled out; Stripe handles card data and tokenisation.' C2 states: 'Must comply with GDPR for all personal data collection, processing, storage, and deletion \u2014 Legal obligation; violation risk is existential for a funded startup.'"
+        },
+        {
+          "text": "Premises capture the dependency on existing delivery ecosystems (Uber Eats / DoorDash driver network) as an assumption",
+          "passed": true,
+          "evidence": "P2 reads: 'Drivers are already active on Uber Eats or DoorDash when they accept FreshRoute jobs \u2014 Integration model is add-on / side-channel, not a standalone driver dispatch system.' This explicitly frames the Uber Eats/DoorDash driver network as a founding assumption."
+        },
+        {
+          "text": "Food safety regulatory variance by city is identified \u2014 either as a Constraint or an implicit Premise requiring handling",
+          "passed": true,
+          "evidence": "Addressed twice: P6 as Premise ('Food safety regulations differ meaningfully across target cities \u2014 Compliance work must be treated as a per-city variable, not a single global ruleset') and C3 as Constraint ('Must comply with applicable food safety regulations in each launch city \u2014 Non-compliance blocks operations; regulations vary and must be assessed city by city')."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 30.2,
+        "tokens": 0,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+          "passed": true,
+          "evidence": "requirements.md contains four clearly labeled H2 sections: '## Mission', '## Goals', '## Premises', '## Constraints'"
+        },
+        {
+          "text": "Mission captures the core intent (replace legacy Access reporting tool for finance) \u2014 not just a list of features",
+          "passed": true,
+          "evidence": "Mission reads: 'Replace the legacy Access-based internal reporting tool with a reliable, performant web application that enables the finance team...' \u2014 a single purposeful statement, not a feature list"
+        },
+        {
+          "text": "Goals include both quantified performance targets from the transcript: 15+ concurrent users AND <2 minute report runtime",
+          "passed": true,
+          "evidence": "G1: 'Runs complete in under 2 minutes (down from ~45 min)'; G2: 'Supports at least 15 simultaneous users without degradation or crash' \u2014 both quantified targets present"
+        },
+        {
+          "text": "Constraints capture both hard constraints stated explicitly: on-prem only AND $50k budget cap",
+          "passed": true,
+          "evidence": "C1: 'Total budget cap: $50,000 (including infrastructure)'; C2: 'Deployment must be on-premises \u2014 no cloud hosting permitted for financial data' \u2014 both present with attribution"
+        },
+        {
+          "text": "Constraints or Premises capture that SAP and Salesforce integrations cannot be changed (IT constraint, not just a technical choice)",
+          "passed": true,
+          "evidence": "C3: 'SAP and Salesforce integrations must be preserved exactly as-is \u2014 IT will not approve changes' with source labeled 'IT policy' \u2014 correctly framed as an organizational constraint"
+        },
+        {
+          "text": "Audit trail requirement is included with its compliance motivation (not just listed as a feature) \u2014 the 'incident last year' context signals regulatory/compliance driver",
+          "passed": true,
+          "evidence": "G5 mentions 'compliance log'; P5 explicitly states 'The compliance audit requirement was triggered by a prior incident, making it a pre-existing organisational need rather than a new feature ask' \u2014 motivation captured"
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 158.44,
+        "stddev": 45.8429,
+        "min": 88.3,
+        "max": 201.6
+      },
+      "tokens": {
+        "mean": 5960.6,
+        "stddev": 8916.9497,
+        "min": 0,
+        "max": 19980
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.932,
+        "stddev": 0.0931,
+        "min": 0.83,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 102.04,
+        "stddev": 70.2876,
+        "min": 30.2,
+        "max": 185.0
+      },
+      "tokens": {
+        "mean": 2504.6,
+        "stddev": 2526.3087,
+        "min": 0,
+        "max": 5830
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.07",
+      "time_seconds": "+56.4",
+      "tokens": "+3456"
+    }
+  },
+  "notes": []
+}

@@ -1,0 +1,104 @@
+{
+  "expectations": [
+    {
+      "id": "has-four-mgpc-sections",
+      "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "requirements.md has four clearly labeled H2 sections: '## Mission', '## Goals', '## Premises', and '## Constraints', each separated by horizontal rules."
+    },
+    {
+      "id": "mission-captures-vendor-neutrality",
+      "text": "Mission captures vendor-neutral observability portability as the core purpose (not just 'collect telemetry')",
+      "passed": true,
+      "evidence": "Mission statement reads: '...providing a vendor-neutral, language-agnostic instrumentation framework...enabling distributed traces, metrics, logs, and baggage to be collected, propagated, and exported without locking users into any single observability backend.' This explicitly names vendor-neutrality and portability as the core purpose."
+    },
+    {
+      "id": "goals-cover-three-signals",
+      "text": "Goals mention at least two of the three signal types: traces, metrics, and logs",
+      "passed": true,
+      "evidence": "Goal 1 explicitly names all three: 'Provide a coherent set of signals — tracing, metrics, logs, and baggage'. Multiple other goals also reference traces and metrics specifically."
+    },
+    {
+      "id": "constraints-include-api-sdk-separation",
+      "text": "Constraints or Premises captures the API/SDK separation — that the API must be stable and separately versionable from the SDK",
+      "passed": true,
+      "evidence": "Constraint 2 states: 'API and SDK MUST be separately importable packages. The split between API (cross-cutting, safe for library dependencies) and SDK (application-managed, full implementation) is a structural requirement, not a guideline. They cannot be merged into a single distribution.' Constraint 1 reinforces this by prohibiting instrumentation authors from referencing the SDK directly. Goals item 7 also mentions 'stability guarantees' for versioning."
+    },
+    {
+      "id": "premises-include-language-agnostic",
+      "text": "Premises include that the specification is language-agnostic (implemented across many languages)",
+      "passed": false,
+      "evidence": "None of the 8 Premises explicitly state that the specification is language-agnostic or implemented across many languages. Language-agnosticism appears only in the Mission statement ('language-agnostic instrumentation framework') and is referenced in Premise 6 indirectly ('each language defining its own conventions'). The Premises section does not contain a dedicated premise asserting language-agnostic scope as an assumption. This is a genuine gap."
+    },
+    {
+      "id": "architectural-doc-treated-differently",
+      "text": "The spec correctly treats this as a design/architecture document rather than a user-facing product — requirements reflect implementor constraints, not end-user features",
+      "passed": true,
+      "evidence": "Throughout the document, requirements are framed from the implementor/instrumentation-author perspective. Constraints use 'MUST' language directed at SDK/API implementors (e.g., 'Instrumentation authors MUST NOT reference the SDK', 'API and SDK MUST be separately importable packages'). Goals reference 'library and application code', 'instrumentation authors', 'application owners', and 'plugin authors' — not end users. The Premises section identifies 'distinct roles — instrumentation authors, plugin authors, and application owners' as the intended audience."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 1,
+    "total": 6,
+    "pass_rate": 0.83
+  },
+  "execution_metrics": {
+    "total_tokens": 26857,
+    "output_chars": 3850,
+    "transcript_chars": null
+  },
+  "timing": {
+    "executor_duration_seconds": 85.5,
+    "grader_duration_seconds": null,
+    "total_duration_seconds": 85.5
+  },
+  "claims": [
+    {
+      "claim": "Source is https://opentelemetry.io/docs/specs/otel/overview/",
+      "type": "process",
+      "verified": true,
+      "evidence": "Stated in the document header: 'Source: https://opentelemetry.io/docs/specs/otel/overview/' — consistent with the eval prompt."
+    },
+    {
+      "claim": "The spec covers four signal types including baggage",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Goal 1 and the Mission both list 'traces, metrics, logs, and baggage' as the four signals. This is accurate per the OTel specification."
+    },
+    {
+      "claim": "Semantic conventions are generated from YAML in a canonical repository",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Premise 6 and Constraint 4 both assert YAML in the semantic-conventions repository as the single source of truth — consistent with actual OTel architecture."
+    },
+    {
+      "claim": "SpanContext requires TraceId (16 bytes), SpanId (8 bytes), TraceFlags, and Tracestate",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Constraint 3 specifies these fields with their byte sizes, which matches the W3C TraceContext spec that OTel implements."
+    },
+    {
+      "claim": "The output covers all major architectural constraints from the source",
+      "type": "quality",
+      "verified": true,
+      "evidence": "10 constraints are listed covering API/SDK separation, span context propagation, semantic conventions, required plugins, context sharing, baggage scope, span links, and Collector topology — comprehensive coverage of the architectural spec."
+    }
+  ],
+  "user_notes_summary": null,
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "premises-include-language-agnostic",
+        "reason": "This assertion fails here because 'language-agnostic' appears only in the Mission, not the Premises. The assertion is too prescriptive about which section must contain the concept. A better assertion might be: 'The output acknowledges that the specification is implemented across multiple programming languages as a given constraint on design' — which would pass if it appears in any section. Alternatively, the eval should reflect what the OTel spec actually emphasizes as a Premise vs. a fundamental design fact."
+      },
+      {
+        "reason": "No assertion checks the quality of the Constraints section — specifically whether MUST-level constraints are framed as hard requirements vs. soft guidelines. The output uses 'MUST' language throughout Constraints, which is the correct level of obligation, but nothing checks for this. An assertion like 'Constraints use normative language (MUST/SHALL) rather than advisory language (SHOULD/MAY)' would distinguish a genuine implementor-spec output from a summary."
+      },
+      {
+        "reason": "No assertion checks whether the output correctly captures the API/SDK split in Premises as well as Constraints. Premise 3 ('Multiple runtime roles exist') is the foundational assumption that motivates Constraint 2 — the eval only checks the constraint side, missing the assumption that drives it."
+      }
+    ],
+    "overall": "Assertions are generally well-targeted and discriminating. The language-agnostic premise assertion is the only one that creates a false fail — the concept is present in the document but placed in the Mission rather than Premises. The other five assertions require genuine understanding of OTel architecture to satisfy. Consider adding a constraint-quality assertion."
+  }
+}

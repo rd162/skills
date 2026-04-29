@@ -1,0 +1,39 @@
+{
+  "eval_id": 3,
+  "eval_name": "synthetic-saas-product-brief",
+  "prompt": "Extract requirements from this product brief:\n\n---\nFreshRoute is a platform we're building to help independent restaurants cut food waste and delivery costs. The idea: restaurants list surplus ingredients or prepared dishes at a discount in the last hour before close. Nearby customers see a real-time \"last-hour feed\" and order for delivery. Drivers already doing Uber Eats or DoorDash runs can opt in to FreshRoute pickups as add-ons to their existing routes.\n\nKey details:\n- Restaurant onboarding must take under 10 minutes, no training required\n- 60-minute ordering window before restaurant close time\n- Payments via Stripe — we never store card data\n- React Native mobile apps, Python/FastAPI backend\n- GDPR compliant (we're EU-based)\n- Food safety regulations vary by city\n- Launch target: 3 cities in 6 months (Series A milestone)\n- Team: 4 engineers\n- Target: independent restaurants only, dense urban areas\n---\n\nGive me a complete requirements spec.",
+  "assertions": [
+    {
+      "id": "has-four-sections",
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections"
+    },
+    {
+      "id": "mission-captures-food-waste-core-purpose",
+      "text": "Mission centers on reducing restaurant food waste / monetizing surplus inventory — not generic 'delivery platform'"
+    },
+    {
+      "id": "goals-include-specific-metrics",
+      "text": "Goals section captures specific measurable targets from the brief: onboarding <10 minutes, 60-minute ordering window, 3-city launch"
+    },
+    {
+      "id": "constraints-include-gdpr-and-stripe",
+      "text": "Constraints include both GDPR compliance and no-card-data-storage (Stripe delegation) as hard constraints"
+    },
+    {
+      "id": "premises-capture-ecosystem-dependency",
+      "text": "Premises capture the dependency on existing delivery ecosystems (Uber Eats / DoorDash driver network) as an assumption"
+    },
+    {
+      "id": "implicit-food-safety-constraint-surfaced",
+      "text": "Food safety regulatory variance by city is identified — either as a Constraint or an implicit Premise requiring handling"
+    },
+    {
+      "id": "premises-have-risk-column",
+      "text": "Premises are presented in a table format that includes a 'Risk if false' or 'Consequence if false' column assessing what breaks if each assumption is wrong"
+    },
+    {
+      "id": "mission-space-present",
+      "text": "Output includes a Mission Space or Solution Space section that presents evaluated alternatives (e.g. architectural options, delivery model variants), domain context, or identified knowledge gaps"
+    }
+  ]
+}

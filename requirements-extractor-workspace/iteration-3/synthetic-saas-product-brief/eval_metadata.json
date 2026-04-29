@@ -1,0 +1,23 @@
+{
+  "eval_id": 0,
+  "eval_name": "synthetic-saas-product-brief-content-quality",
+  "prompt": "Extract requirements from this product brief:\n\n---\nFreshRoute is a platform we're building to help independent restaurants cut food waste and delivery costs. The idea started when our founder kept seeing local restaurants throw out unsold inventory at the end of the night. We want restaurants to be able to list surplus ingredients or prepared dishes at a discount, and let delivery drivers who are already out on the road pick up and deliver them to nearby customers.\n\nWe're targeting small independent restaurants (not chains) in dense urban areas. They need something they can set up in under 10 minutes — no training required. Drivers should be able to opt into FreshRoute deliveries as add-ons to their existing Uber Eats or DoorDash runs without switching apps. Customers browse a 'last hour' feed of available items and can order up to 60 minutes before restaurant close.\n\nWe have to be live in 3 cities within 6 months for our Series A. The tech stack is React Native for the mobile apps and a Python/FastAPI backend. We're a 4-person team. We absolutely cannot store payment card data ourselves — we'll use Stripe. Food safety regulations vary by city so we need to be careful there. GDPR applies because we're EU-based.\n---\n\nGive me a complete requirements spec.",
+  "assertions": [
+    {
+      "id": "surfaces-existential-risk",
+      "text": "Output identifies at least one risk that could invalidate the entire project or mission — not just a feature-level issue. Examples: food safety law might prohibit the model in some cities, driver platform ToS might forbid add-on deliveries, insufficient driver density near independent restaurants at closing time."
+    },
+    {
+      "id": "identifies-unstated-knowledge-gaps",
+      "text": "Output explicitly flags at least 3 things the brief does NOT address that need answers before implementation — e.g., monetization model, dispute resolution, driver compensation, insurance/liability, city selection criteria, customer acquisition strategy."
+    },
+    {
+      "id": "implicit-requirements-beyond-paraphrase",
+      "text": "Output contains at least 3 requirements that are genuinely inferred and not just restated from the brief. Examples: real-time inventory expiry enforcement, geofencing/proximity filtering, allergen labeling, server-side clock authority, push notifications, multi-role UX separation. A requirement counts as 'inferred' if you cannot find the exact concept stated in the input brief."
+    },
+    {
+      "id": "mission-derived-not-paraphrased",
+      "text": "The Mission statement is NOT just a restatement of the brief's first sentence ('help independent restaurants cut food waste and delivery costs'). It should be derived through deeper reasoning — either more abstract (connecting to a broader value like food sustainability) or more precise (identifying the specific mechanism that makes this valuable). Simply rewording the brief's opening does not count."
+    }
+  ]
+}

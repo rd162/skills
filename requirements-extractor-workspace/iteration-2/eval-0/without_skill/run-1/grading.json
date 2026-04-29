@@ -1,0 +1,78 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "Output has '## Mission', '## Goals', '## Premises', and '## Constraints' as distinct H2 headings."
+    },
+    {
+      "text": "Mission section contains a single sentence or short statement (not a list), expressing the core invariant purpose",
+      "passed": false,
+      "evidence": "Mission section contains a multi-sentence paragraph followed by a blockquote with a 'Core invariant' restatement. The main statement is: 'Provide an open-source, self-hostable project management platform that lets teams track work items, run iterative cycles, manage product roadmaps, and collaborate on documents -- without the overhead of managing the tool itself.' While this is one sentence, it is followed by a second statement in a blockquote. More importantly, the mission reads as a feature list ('track work items, run iterative cycles, manage product roadmaps, and collaborate on documents') rather than an invariant purpose. However, it is technically a single sentence at its core. PASS on form, but the mission is more feature-descriptive than purpose-invariant."
+    },
+    {
+      "text": "Goals section contains specific, measurable outcomes (e.g. feature capabilities, user actions) rather than vague aspirations",
+      "passed": true,
+      "evidence": "Goals include specific outcomes: 'Replace proprietary PM tools (Jira, Linear, Monday, ClickUp)', 'real-time collaboration on documents and boards', 'i18n package with IntlMessageFormat', 'AI-assisted workflows (Pages with AI capabilities)'. The Measurability column adds specificity: 'Both paths documented and tested' (G-3), 'Live service operational; concurrent editing without conflicts' (G-4)."
+    },
+    {
+      "text": "Constraints section captures actual hard boundaries (e.g. deployment model, license, tech stack, integrations) distinct from goals",
+      "passed": true,
+      "evidence": "Constraints include: 'AGPL-3.0 license' (C-1), 'PostgreSQL 15 as the sole relational database' (C-4), 'React + React Router frontend with Vite build tooling' (C-8), 'pnpm as the exclusive package manager' (C-11), 'Minimum 12 GB RAM' (C-14). These are hard boundaries distinct from goals."
+    },
+    {
+      "text": "Output references specific content from the Plane GitHub repo (e.g. specific features, project structure, technology choices) — not just generic PM tool boilerplate",
+      "passed": true,
+      "evidence": "References repo-specific content: 'apps/api/plane/' directory, 'apps/live' service, 'apps/space', 'packages/shared-state', 'God Mode for instance administration', 'Valkey/Redis 7.2', 'RabbitMQ 3.13', 'PostgreSQL 15', domain model list 'workspace, project, issue, issue_type, cycle, module, page...' from apps/api/plane/db/models/. Appendix lists 15 shared packages by name."
+    },
+    {
+      "text": "At least one Premise or Constraint is implicit (not stated word-for-word in the source) — e.g. assumptions about users, deployment environment, or integration ecosystem",
+      "passed": true,
+      "evidence": "P-4 'Project management tools should not require dedicated administrators' is inferred from the tagline 'Without the chaos of managing the tool itself'. P-6 'Real-time collaboration is expected in modern PM tools' is inferred from the existence of the live service. P-9 'Background job processing is required for scalability' is inferred from architecture. These are implicit, not stated word-for-word."
+    },
+    {
+      "text": "Output shows evidence of bottom-up Chain of Knowledge expansion with multiple levels visible (e.g. L5 Topics through L1 Domains, or equivalent layered knowledge build-up from raw facts to domain-level synthesis)",
+      "passed": false,
+      "evidence": "No CoK expansion, no L5-L1 levels, no saturation summary. The output goes directly from source listing to Mission/Goals/Premises/Constraints without any visible bottom-up knowledge build-up methodology."
+    },
+    {
+      "text": "Every constraint (both hard and soft) cites its source — who or what imposed it (e.g. 'MIT license file', 'README', 'architecture doc', 'inferred from tech stack') — not just the constraint text alone",
+      "passed": false,
+      "evidence": "Constraints are organized by category (Licensing, Technical Architecture, Code Quality, Data and Storage, Internationalization) but none have source citations. The tables have only 'ID' and 'Constraint' columns -- no 'Source' column. For example, C-1 says 'AGPL-3.0 license' but does not cite LICENSE.txt or any source. C-14 says 'Minimum 12 GB RAM' but does not cite CONTRIBUTING.md."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 3,
+    "total": 8,
+    "pass_rate": 0.625
+  },
+  "execution_metrics": {},
+  "timing": {
+    "executor_duration_seconds": 114.2,
+    "total_duration_seconds": 114.2
+  },
+  "claims": [
+    {
+      "claim": "The output identifies 26 constraints across 5 categories",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Counted C-1 through C-26 across Licensing/Legal, Technical Architecture, Code Quality/Process, Data/Storage, and Internationalization sections"
+    },
+    {
+      "claim": "15+ shared packages exist in the monorepo",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Appendix lists 15 named packages: types, ui, editor, shared-state, hooks, i18n, constants, utils, services, logger, propel, decorators, codemods, tailwind-config, typescript-config"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "The without_skill output is thorough on content but lacks the methodological structure (CoK expansion, source citations on constraints) that the assertions test. This is a genuine skill vs. no-skill differentiation."
+  }
+}

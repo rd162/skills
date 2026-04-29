@@ -1,0 +1,84 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "Output has '### Mission', '### Goals', '### Premises', and '### Constraints' as distinct labeled sections within Phase 1. All four are clearly separated."
+    },
+    {
+      "text": "Mission or Premises captures that Godot is free/open-source and community-driven (not just 'a game engine')",
+      "passed": true,
+      "evidence": "Mission: 'Enable anyone to create games without barriers.' W-functor chain includes 'remove cost and access barriers'. Goal 3: 'Remain completely free and open source under the MIT license -- no royalties, no contracts, no vendor lock-in'. Goal 5: 'Maintain community-driven governance'. P2: 'A permissive (MIT) license is more valuable than a copyleft or source-available model'. P3: 'Community volunteers and donation-funded developers can sustain engine development'."
+    },
+    {
+      "text": "Goals section mentions cross-platform export (e.g. desktop, mobile, web) as a key capability goal",
+      "passed": true,
+      "evidence": "Goal 2: 'Support cross-platform export from a single project -- games export with one click to desktop (Linux, macOS, Windows), mobile (Android, iOS), web, and XR platforms; console export available via third-party partners.'"
+    },
+    {
+      "text": "Constraints section includes the MIT license or equivalent open-source licensing as a hard constraint",
+      "passed": true,
+      "evidence": "Hard constraint C1: 'MIT license for all engine code -- no copyleft, no proprietary dependencies in core' (Source: 'Stated (README, LICENSE.txt, design philosophy)'). C2: 'All bundled third-party libraries must be MIT-compatible'."
+    },
+    {
+      "text": "The spec reflects game-engine-specific concerns (scripting language, editor, 2D/3D, physics, audio) — not generic software requirements",
+      "passed": true,
+      "evidence": "Game-engine-specific throughout: GDScript as purpose-built language (P4), node-based scene composition vs ECS (P5), separate 2D and 3D rendering pipelines (P8), 'built-in scripting, animation, tilemap, shader, debugger, and profiler editors' (Goal 4), 'editor runs on the game engine' (S8), Vulkan/D3D12/Metal/OpenGL rendering (L5), GDExtension API (Goal 6)."
+    },
+    {
+      "text": "At least one non-obvious requirement is inferred (e.g. GDScript design goals, no royalties constraint, community governance implications)",
+      "passed": true,
+      "evidence": "P3: 'Community volunteers and donation-funded developers can sustain engine development at competitive quality' (inferred from foundation funding model). P5: 'Node-based inheritance is a viable alternative to entity-component-system (ECS) architecture' (inferred from design philosophy contrast). P6: 'Console manufacturers will continue allowing third-party porting' (inferred from console support page). P7: 'The SCons build system can scale to the project's growing codebase' (inferred from SConstruct 52KB build file)."
+    },
+    {
+      "text": "Output shows evidence of bottom-up Chain of Knowledge expansion with multiple levels visible (e.g. L5 Topics through L1 Domains, or equivalent layered knowledge build-up from raw facts to domain-level synthesis)",
+      "passed": true,
+      "evidence": "Phase 0 contains full CoK expansion: L5 (Topics) with 22 items from README/design philosophy/features page/contributing/license/foundation/version.py/platform dir/modules dir, L4 (Areas) with patterns, L3 (Fields) with implementation mechanisms, L2 (Disciplines) with mandates, L1 (Domains) with disjointness verification. Saturation summary consolidates all levels."
+    },
+    {
+      "text": "Every constraint (both hard and soft) cites its source — who or what imposed it (e.g. 'MIT license file', 'README', 'governance docs', 'inferred from project history') — not just the constraint text alone",
+      "passed": true,
+      "evidence": "Every hard constraint has Source column: C1 'Stated (README, LICENSE.txt, design philosophy)', C4 'Stated (proposals evaluation criterion #4)', C6 'Inferred from .clang-format, .clang-tidy, .pre-commit-config.yaml in repo root', C7 'Stated (console page)', C8 'Inferred from SConstruct (52KB)'. Every soft constraint: S1 'Stated (CONTRIBUTING.md)', S6 'Inferred from platform directory and README', S8 'Stated (design philosophy)'."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {},
+  "timing": {
+    "executor_duration_seconds": 196.2,
+    "total_duration_seconds": 196.2
+  },
+  "claims": [
+    {
+      "claim": "Godot uses MIT license for all engine code",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Well-known fact about Godot; cited from README and LICENSE.txt"
+    },
+    {
+      "claim": "Console ports require third-party partners due to NDA conflicts with open-source model",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Cited from godotengine.org/consoles page; this is a well-documented Godot limitation"
+    },
+    {
+      "claim": "The Godot Foundation is a legally independent Dutch entity (Stichting Godot)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Cited from godot.foundation; this is publicly documented"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Assertions are well-targeted. The combination of domain-specificity checks, implicit requirement checks, and methodological checks (CoK, source citations) provides good discrimination."
+  }
+}

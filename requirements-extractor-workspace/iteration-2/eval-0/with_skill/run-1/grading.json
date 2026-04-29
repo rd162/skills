@@ -1,0 +1,84 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "Output has clearly labeled '## Mission', '## Goals', '## Premises', and '## Constraints' sections, each as distinct H2 headings."
+    },
+    {
+      "text": "Mission section contains a single sentence or short statement (not a list), expressing the core invariant purpose",
+      "passed": true,
+      "evidence": "Mission is a single sentence: 'Maximize team effectiveness in planning and shipping work while preserving freedom of choice over tools, data, and process.' Followed by a W-functor chain annotation, not a list."
+    },
+    {
+      "text": "Goals section contains specific, measurable outcomes (e.g. feature capabilities, user actions) rather than vague aspirations",
+      "passed": true,
+      "evidence": "Goals are specific and feature-oriented: 'Multi-layout (Kanban, list, calendar, Gantt, spreadsheet) work item management', 'Import from Jira, Linear, Asana, Notion, ClickUp, Confluence, CSV', 'Docker Compose, Kubernetes, Swarm, Podman, and airgapped deployment options'. These are concrete capabilities, not vague aspirations."
+    },
+    {
+      "text": "Constraints section captures actual hard boundaries (e.g. deployment model, license, tech stack, integrations) distinct from goals",
+      "passed": true,
+      "evidence": "Hard constraints include: 'AGPL-3.0' (C1), 'PostgreSQL 15 is the sole supported RDBMS' (C4), 'React 18 with TypeScript in strict mode' (C3), 'API key rate limit enforced at 60 requests/minute' (C6). These are clearly boundaries, not goals."
+    },
+    {
+      "text": "Output references specific content from the Plane GitHub repo (e.g. specific features, project structure, technology choices) — not just generic PM tool boilerplate",
+      "passed": true,
+      "evidence": "References repo-specific content throughout: 'docker-compose.yml postgres:15.7-alpine', '.env.example API_KEY_RATE_LIMIT=\"60/minute\"', 'apps/api/pyproject.toml', 'AGENTS.md code style', 'packages/i18n locale structure', 'turbo.json globalEnv SENTRY_* variables', 'SECURITY.md policy', 'Turborepo monorepo, pnpm workspaces, OxLint, oxfmt, Husky'. Highly specific to the Plane repo."
+    },
+    {
+      "text": "At least one Premise or Constraint is implicit (not stated word-for-word in the source) — e.g. assumptions about users, deployment environment, or integration ecosystem",
+      "passed": true,
+      "evidence": "Multiple implicit premises: P1 'Target users are software/product teams already familiar with issue-tracking paradigms' (source: 'Inferred from README tagline'), P3 'The AGPL-3.0 license is acceptable to the target audience, including enterprises' (inferred), P4 'A Django + React monorepo architecture can scale to serve the full feature surface' (inferred from tech stack)."
+    },
+    {
+      "text": "Output shows evidence of bottom-up Chain of Knowledge expansion with multiple levels visible (e.g. L5 Topics through L1 Domains, or equivalent layered knowledge build-up from raw facts to domain-level synthesis)",
+      "passed": true,
+      "evidence": "Phase 0 contains explicit CoK expansion with all five levels: L5 (Topics) listing explicit and implicit topics, L4 (Areas) with patterns, L3 (Fields) with mechanisms, L2 (Disciplines) with concerns, and L1 (Domains) with disjointness verification. Saturation summary consolidates all levels."
+    },
+    {
+      "text": "Every constraint (both hard and soft) cites its source — who or what imposed it (e.g. 'MIT license', 'README', 'architecture doc', 'inferred from tech stack') — not just the constraint text alone",
+      "passed": true,
+      "evidence": "Every hard constraint has a Source column: C1 'LICENSE.txt -- legal mandate', C2 'CONTRIBUTING.md system requirements; apps/api/pyproject.toml', C4 'docker-compose.yml postgres:15.7-alpine; .env.example', C8 'Inferred from developer docs SSO/auth section; .env.example CORS settings'. Every soft constraint also has source: S1 'CONTRIBUTING.md warning', S7 'turbo.json globalEnv SENTRY_* variables', etc."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {},
+  "timing": {
+    "executor_duration_seconds": 861.4,
+    "total_duration_seconds": 861.4
+  },
+  "claims": [
+    {
+      "claim": "The Plane repo uses AGPL-3.0 license",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Referenced as LICENSE.txt; consistent with known Plane project licensing"
+    },
+    {
+      "claim": "PostgreSQL 15 is the sole supported RDBMS with max_connections=1000",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Cited from docker-compose.yml and .env.example; specific version and config detail"
+    },
+    {
+      "claim": "The repo uses Turborepo with pnpm workspaces and 15+ shared packages",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Consistent with known Plane monorepo architecture; specific package names listed match repo structure"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Strong assertion set. The CoK and source-citation assertions are discriminating — they test structural methodology, not just surface features. No gaps identified."
+  }
+}

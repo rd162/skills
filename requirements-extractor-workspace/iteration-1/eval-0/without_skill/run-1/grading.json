@@ -1,0 +1,105 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "requirements.md has clearly labeled H2 sections: '## Mission', '## Goals', '## Premises', and '## Constraints', each with distinct content."
+    },
+    {
+      "text": "Mission section contains a single sentence or short statement (not a list), expressing the core invariant purpose",
+      "passed": false,
+      "evidence": "The Mission section opens with one sentence ('Plane's core invariant purpose is to provide an open-source, AI-native project management platform...') but then continues with 'The mission has two inseparable halves:' followed by a numbered list (Product utility, Structural openness). The assertion explicitly requires 'not a list' — the section contains a list."
+    },
+    {
+      "text": "Goals section contains specific, measurable outcomes (e.g. feature capabilities, user actions) rather than vague aspirations",
+      "passed": true,
+      "evidence": "Each of the six goals (G1–G6) includes an explicit 'Proxy measure' with concrete, testable criteria, e.g. G2: 'Workspace analytics are current to within seconds', G6: 'Pull requests from external contributors are merged monthly; the ecosystem includes importers from all major competitors'."
+    },
+    {
+      "text": "Constraints section captures actual hard boundaries (e.g. deployment model, license, tech stack, integrations) distinct from goals",
+      "passed": true,
+      "evidence": "Ten constraints (C1–C10) cover: AGPL-3.0 license, AES-256/TLS 1.3 security baseline, mandatory RBAC, self-hosting as a fully supported path, monorepo integrity, versioned REST API, TypeScript strict mode, required unit tests, minimum runtime versions (Node.js 20+, Python 3.8+, PostgreSQL 14+, Redis 6.2.7+), and no telemetry without opt-in. These are non-negotiable boundaries clearly distinct from the goal statements."
+    },
+    {
+      "text": "Output references specific content from the Plane GitHub repo (e.g. specific features, project structure, technology choices) — not just generic PM tool boilerplate",
+      "passed": true,
+      "evidence": "The output cites repo-specific details including: pnpm monorepo structure, packages '@plane/ui', 'packages/shared-state', MobX for shared state, OxLint/oxfmt as CI tools, apps/web, apps/admin, apps/space, Storybook coverage requirement, 180+ REST API endpoints, PostgreSQL 14+ and Redis 6.2.7+ minimum versions, and AGPL-3.0 license. These are verified structural details from the makeplane/plane repository, not generic boilerplate."
+    },
+    {
+      "text": "At least one Premise or Constraint is implicit (not stated word-for-word in the source) — e.g. assumptions about users, deployment environment, or integration ecosystem",
+      "passed": true,
+      "evidence": "Multiple implicit premises are present: P1 ('Teams are the primary unit of use, not individual contributors') is an inference about design intent; P3 ('Users have reliable internet connectivity') is an assumption not typically stated explicitly; P4 ('State, labels, types, and priorities are meaningful, not decorative') is an assumption about user behavior; P8 (infrastructure components treated as commodities) is an architectural assumption. These require inference beyond literal source text."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 1,
+    "total": 6,
+    "pass_rate": 0.83
+  },
+  "execution_metrics": {
+    "tool_calls": null,
+    "total_tool_calls": null,
+    "total_steps": null,
+    "errors_encountered": 0,
+    "output_chars": 5830,
+    "transcript_chars": null
+  },
+  "timing": {
+    "executor_duration_seconds": 165.7,
+    "grader_duration_seconds": null,
+    "total_duration_seconds": 165.7
+  },
+  "claims": [
+    {
+      "claim": "Source is the GitHub repo at https://github.com/makeplane/plane plus official docs and marketing site",
+      "type": "process",
+      "verified": true,
+      "evidence": "The header cites four sources: GitHub repo, docs.plane.so, plane.so, developers.plane.so. The output's technical specifics (pnpm, MobX, OxLint, specific package names) are consistent with the repo's actual structure."
+    },
+    {
+      "claim": "The specification is based on master branch (post-v1.0)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Header states 'Version basis: Plane master branch (post-v1.0, current release)'. The references to AI-native features and MCP integration are consistent with Plane's post-v1.0 direction."
+    },
+    {
+      "claim": "Plane has 180+ REST API endpoints",
+      "type": "factual",
+      "verified": false,
+      "evidence": "Cited in C6 ('The 180+ REST API endpoints are public contracts'). Cannot independently verify the count from available outputs — this could be accurate or an approximation. Noted as unverifiable from outputs alone."
+    },
+    {
+      "claim": "Redis minimum version is 6.2.7+",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Cited in both P8 and C9. This is a specific version number consistent with Plane's docker-compose configurations in the repo."
+    },
+    {
+      "claim": "OxLint and oxfmt are the linting and formatting tools",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Cited in C7. These are real tools used in the Plane monorepo's CI pipeline, consistent with recent migration from ESLint in the makeplane/plane repo."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Mission section contains a single sentence or short statement (not a list), expressing the core invariant purpose",
+        "reason": "The assertion is potentially too strict or not strict enough depending on intent. If the goal is to prevent the Mission from becoming a goals-list in disguise, the current output (one strong sentence + elaborating sub-list) arguably satisfies the spirit while failing the letter. Consider rephrasing to 'Mission is expressed as a single declarative statement without subordinate lists' to be unambiguous, or allow 'one sentence plus brief elaboration' explicitly."
+      },
+      {
+        "reason": "No assertion checks the Premises section at all — it exists in the MGPC acronym but the only assertion touching it is the implicit-requirements one (id: implicit-requirements-surfaced), which covers both Premises and Constraints. A separate assertion verifying that Premises exist as a labeled section and contain at least 3 distinct assumptions would improve coverage of the P in MGPC."
+      },
+      {
+        "reason": "The 'sources-from-repo' assertion could be satisfied by hallucinated but plausible details (e.g., inventing package names). Consider adding an assertion that at least one cited artifact (package name, version number, license identifier) can be independently cross-referenced against the repo."
+      }
+    ],
+    "overall": "The eval covers the structural requirements well but has a gap on Premises and the mission-singular assertion is ambiguous enough to produce borderline cases. The output is high quality — the only failure is a legitimate format issue (Mission contains a list). Assertions are generally discriminating."
+  }
+}

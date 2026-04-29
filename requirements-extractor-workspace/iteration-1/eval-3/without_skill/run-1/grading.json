@@ -1,0 +1,95 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "requirements.md has four clearly labeled H2 sections: '## Mission', '## Goals', '## Premises', and '## Constraints', each separated by horizontal rules."
+    },
+    {
+      "text": "Mission centers on reducing restaurant food waste / monetizing surplus inventory — not generic 'delivery platform'",
+      "passed": true,
+      "evidence": "Mission reads: 'Connect independent urban restaurants with nearby customers and opportunistic delivery drivers to redistribute surplus food before it is discarded, reducing restaurant food waste while lowering last-mile delivery costs.' Clearly food-waste-centric, not generic delivery platform language."
+    },
+    {
+      "text": "Goals section captures specific measurable targets from the brief: onboarding <10 minutes, 60-minute ordering window, 3-city launch",
+      "passed": true,
+      "evidence": "G2 captures '<10 minutes': 'Any restaurant can complete setup and list their first item in under 10 minutes'; G4 captures the 60-minute ordering window: 'Customers can discover and order available surplus items up to 60 minutes before the listing restaurant's closing time'; G1 captures 3-city launch: 'Live and transacting in 3 cities within 6 months of development start'."
+    },
+    {
+      "text": "Constraints include both GDPR compliance and no-card-data-storage (Stripe delegation) as hard constraints",
+      "passed": true,
+      "evidence": "C1 states: 'Must not store payment card data on FreshRoute infrastructure — Explicitly ruled out; Stripe handles card data and tokenisation.' C2 states: 'Must comply with GDPR for all personal data collection, processing, storage, and deletion — Legal obligation; violation risk is existential for a funded startup.'"
+    },
+    {
+      "text": "Premises capture the dependency on existing delivery ecosystems (Uber Eats / DoorDash driver network) as an assumption",
+      "passed": true,
+      "evidence": "P2 reads: 'Drivers are already active on Uber Eats or DoorDash when they accept FreshRoute jobs — Integration model is add-on / side-channel, not a standalone driver dispatch system.' This explicitly frames the Uber Eats/DoorDash driver network as a founding assumption."
+    },
+    {
+      "text": "Food safety regulatory variance by city is identified — either as a Constraint or an implicit Premise requiring handling",
+      "passed": true,
+      "evidence": "Addressed twice: P6 as Premise ('Food safety regulations differ meaningfully across target cities — Compliance work must be treated as a per-city variable, not a single global ruleset') and C3 as Constraint ('Must comply with applicable food safety regulations in each launch city — Non-compliance blocks operations; regulations vary and must be assessed city by city')."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "output_chars": 2843,
+    "transcript_chars": null
+  },
+  "timing": {
+    "executor_duration_seconds": 43.8,
+    "grader_duration_seconds": null,
+    "total_duration_seconds": 43.8
+  },
+  "claims": [
+    {
+      "claim": "The output correctly structures requirements using an MGPC framework",
+      "type": "quality",
+      "verified": true,
+      "evidence": "All four sections are present, properly labeled, and semantically correct: Mission is a single-statement purpose, Goals are measurable outcomes with success metrics, Premises are assumptions and their implications, Constraints are hard limits with sources and rationale."
+    },
+    {
+      "claim": "Goals and Constraints contain overlapping entries (e.g., 10-minute onboarding appears in both G2 and C7; 3-city in G1 and C6; 60-minute window in G4 and C8)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "The same specific metrics appear in both Goals and Constraints tables — Goals frame them as aspirational outcomes, Constraints frame them as non-negotiable limits. This is a deliberate design choice that reflects the dual nature of these requirements, but could introduce redundancy for consumers of the document."
+    },
+    {
+      "claim": "The output identifies the food safety issue as both a Premise (regulatory variance) and a Constraint (compliance obligation)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "P6 covers the variance assumption; C3 covers the compliance obligation. The distinction is substantive and adds value."
+    },
+    {
+      "claim": "Tech stack constraints (React Native, Python/FastAPI) are surfaced from the brief",
+      "type": "factual",
+      "verified": true,
+      "evidence": "C4 and C5 explicitly list React Native and Python/FastAPI as constraints, sourced from the existing team/stack decision. P4 provides the corresponding premise about team size and stack."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "reason": "All six assertions pass for a genuinely high-quality output, which is encouraging. However, all assertions are presence/mention checks — none verify structural correctness. For example, 'has-four-mgpc-sections' would also pass if GDPR appeared under Mission rather than Constraints, or if Goals contained no metrics at all and only qualitative statements. Consider adding an assertion that Goals entries include quantitative success metrics (not just that specific numbers appear somewhere in the document)."
+      },
+      {
+        "assertion": "goals-include-specific-metrics",
+        "reason": "This assertion checks that three specific values appear in the Goals section, but the same values also appear in Constraints (C6, C7, C8). An output that placed all three only in Constraints and omitted them from Goals would technically fail this assertion correctly — but the current assertion wording doesn't preclude passing via Constraints text. Tighten to specify the Goals section explicitly if section-placement matters."
+      },
+      {
+        "reason": "No assertion checks the Premises section for completeness or correctness beyond the delivery-ecosystem dependency. The output surfaces seven distinct premises (small independents, driver add-on model, urgency pricing, small team, Stripe outsourcing, food safety variance, EU domicile) — none of these beyond P2 are evaluated. An assertion covering at least one additional non-obvious premise (e.g., P3 on urgency-driven demand, or P5 on Stripe outsourcing the payment stack) would add discriminating power."
+      }
+    ],
+    "overall": "Assertions cover the most important outcomes but are presence-only checks. The output quality is genuinely strong (all 6 pass with solid evidence), so the evals are not falsely passing a weak output here — but they would not catch a structurally malformed document that contained the right keywords in the wrong places."
+  }
+}

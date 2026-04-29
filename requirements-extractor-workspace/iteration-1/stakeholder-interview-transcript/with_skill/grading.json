@@ -1,0 +1,100 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "requirements.md contains '### M — Mission', '### G — Goals', '### P — Premises', and '### C — Constraints' as clearly distinct labeled sections under '## Phase 1 — MGPC Specification'."
+    },
+    {
+      "text": "Mission captures the core intent (replace legacy Access reporting tool for finance) — not just a list of features",
+      "passed": true,
+      "evidence": "Mission reads: 'Enable the organization to operate, govern, and make decisions with reliable, timely, and compliant access to its financial data.' The W-functor chain documents how it was elevated from 'replace reporting tool' → 'support financial operations and decision-making' → 'keep the organization operationally sound and compliant'. This is a purposeful organizational statement, not a feature list."
+    },
+    {
+      "text": "Goals include both quantified performance targets from the transcript: 15+ concurrent users AND <2 minute report runtime",
+      "passed": true,
+      "evidence": "Goal 2: 'Deliver monthly financial reports in under 2 minutes (down from 45 minutes).' Goal 3: 'Support the full finance team (~15 users) working simultaneously without degradation or crashes.' Both quantified targets are present with context."
+    },
+    {
+      "text": "Constraints capture both hard constraints stated explicitly: on-prem only AND $50k budget cap",
+      "passed": true,
+      "evidence": "C1: 'Must run entirely on-premises — no cloud hosting of financial data' (Source: Legal). C2: 'Total cost (infrastructure + development) must not exceed $50,000' (Source: PM/Finance). Both listed as Hard Constraints."
+    },
+    {
+      "text": "Constraints or Premises capture that SAP and Salesforce integrations cannot be changed (IT constraint, not just a technical choice)",
+      "passed": true,
+      "evidence": "C3: 'SAP and Salesforce integrations must not be changed or replaced' with Source explicitly labeled as 'IT policy (stated)'. The IT constraint framing distinguishes this from a mere technical preference."
+    },
+    {
+      "text": "Audit trail requirement is included with its compliance motivation (not just listed as a feature) — the 'incident last year' context signals regulatory/compliance driver",
+      "passed": true,
+      "evidence": "C4 is classified as a Hard Constraint sourced to 'Compliance (stated)': 'Every report execution must be logged with user identity and timestamp.' Goal 7 also frames it as 'tamper-evident audit log of every report execution.' S4 notes it is 'Inferred from compliance context.' The requirement is clearly labeled compliance-driven rather than feature-listed. However, the specific 'incident last year' narrative that reveals a regulatory/compliance incident trigger is not surfaced — the compliance motivation is captured at a categorical level but not the specific driver. This is a borderline pass: the compliance framing is present and clear, even if the incident context is not cited."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": null,
+  "timing": {
+    "executor_duration_seconds": 88.3,
+    "grader_duration_seconds": null,
+    "total_duration_seconds": 88.3
+  },
+  "claims": [
+    {
+      "claim": "Output was produced by 'Requirements Extractor v2.0 (CoK bottom-up saturation + W-functor top-down inference)'",
+      "type": "process",
+      "verified": true,
+      "evidence": "Header of requirements.md states the method. CoK saturation evidence is shown in Phase 0 with L5→L1 expansion, and Phase 1 shows W-functor chain for mission derivation."
+    },
+    {
+      "claim": "CoK saturation reached L5→L1 with 19+ distinct concepts identified",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Phase 0 shows L5 with 19 named concepts, L4 with 5 clusters, L3 with 5 clusters, L2 with 4 engineering domains, L1 tautology. Count is consistent with a genuine saturation pass."
+    },
+    {
+      "claim": "Hard vs. soft constraints are distinguished",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Constraints section separates 'Hard Constraints (violation = rejection)' (C1–C7) from 'Soft Constraints (violation = penalty / demotion)' (S1–S6) with explicit labeling and sourcing."
+    },
+    {
+      "claim": "Performance target of <2 minutes is correctly classified — as a soft constraint (S1) rather than hard",
+      "type": "quality",
+      "verified": true,
+      "evidence": "S1 notes 'Monthly report should complete in under 2 minutes' with the qualifier 'PM performance target (stated as \"ideally\")'. This nuanced distinction (it was stated as aspirational, not mandatory) is an accurate reading of the transcript context. It also appears in Goals (G2), which appropriately captures it as an objective even if it isn't a hard rejection criterion."
+    },
+    {
+      "claim": "Premises table includes 'consequence if false' column showing risk awareness",
+      "type": "quality",
+      "verified": true,
+      "evidence": "P1–P7 each have a 'Consequence if false' column, e.g., P2: 'Performance goal becomes unachievable without cloud or additional budget.' This demonstrates genuine premise analysis, not just assumption listing."
+    },
+    {
+      "claim": "Solution space is provided with concrete candidates and fit ratings",
+      "type": "quality",
+      "verified": true,
+      "evidence": "A solution space table with 5 candidates (Metabase/Redash, Superset+Airflow, JasperReports/BIRT, Custom app, Power BI Report Server) each with Fit (High/Medium) and Notes columns. A recommended candidate is stated."
+    }
+  ],
+  "user_notes_summary": null,
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Audit trail requirement is included with its compliance motivation (not just listed as a feature) — the 'incident last year' context signals regulatory/compliance driver",
+        "reason": "The assertion is satisfied by labeling the requirement as 'Compliance (stated)' — but the specific 'incident last year' context that was presumably in the transcript as the motivation for the requirement is not surfaced. An output that simply tagged any requirement as 'compliance' would also pass. Consider asserting that the output references the specific triggering event (incident, regulatory context, or named regulation) rather than just the category label 'Compliance'."
+      },
+      {
+        "reason": "No assertion checks whether the Mission was derived from the stated core problem (replacing a 2009 Access-based tool) vs. hallucinated from generic BI project templates. The mission in the output is organizational-capability-level and does not explicitly mention the Access tool — a valid abstraction, but an assertion verifying the chain of reasoning (W-functor chain visible in output) would make this more discriminating."
+      },
+      {
+        "reason": "No assertion checks whether the Premises section exists and contains meaningful risk/assumption content. The Premises section in this output is genuinely strong (7 premises with consequence analysis), but nothing in the evals would catch a run that omitted Premises entirely or produced a trivial one-liner."
+      }
+    ],
+    "overall": "Assertions cover the key MGPC structural requirements and the most important content checkpoints. The audit-trail assertion is the weakest — it passes on category labeling rather than requiring the specific motivating context. Adding assertions for Premises existence/quality and mission-to-source traceability would make the eval set more discriminating."
+  }
+}

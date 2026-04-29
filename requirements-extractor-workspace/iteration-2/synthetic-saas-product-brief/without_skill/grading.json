@@ -1,0 +1,72 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "Output has '## 1. Mission', '## 2. Goals', '## 3. Premises', and '## 4. Constraints' as distinct labeled sections."
+    },
+    {
+      "text": "Mission centers on reducing restaurant food waste / monetizing surplus inventory — not generic 'delivery platform'",
+      "passed": true,
+      "evidence": "Mission: 'Reduce food waste and delivery costs for independent restaurants by connecting surplus inventory with nearby customers through drivers already on the road.' Centers on food waste and surplus, not generic delivery."
+    },
+    {
+      "text": "Goals section captures specific measurable targets from the brief: onboarding <10 minutes, 60-minute ordering window, 3-city launch",
+      "passed": true,
+      "evidence": "G-B1: 'Launch in 3 cities within 6 months'. G-P3: 'orderable up to 60 minutes before restaurant close'. G-P4/G-UX1: 'restaurant onboarding in under 10 minutes with zero training required'. All three targets present."
+    },
+    {
+      "text": "Constraints include both GDPR compliance and no-card-data-storage (Stripe delegation) as hard constraints",
+      "passed": true,
+      "evidence": "C-R1: 'GDPR compliance is mandatory -- the company is EU-based'. C-R3: 'No storage of payment card data -- PCI DSS scope must be avoided entirely; all payment processing delegated to Stripe.' Both present."
+    },
+    {
+      "text": "Premises capture the dependency on existing delivery ecosystems (Uber Eats / DoorDash driver network) as an assumption",
+      "passed": true,
+      "evidence": "P3: 'Delivery drivers on existing gig platforms (Uber Eats, DoorDash) will opt into additional FreshRoute pickups for incremental earnings.' Captures the driver ecosystem dependency."
+    },
+    {
+      "text": "Food safety regulatory variance by city is identified — either as a Constraint or an implicit Premise requiring handling",
+      "passed": true,
+      "evidence": "C-R2: 'City-specific food safety regulations must be respected -- regulations vary by city; the platform must accommodate per-city compliance rules (e.g., labeling, temperature handling, shelf-life disclosure, permitted food types)'. FR-P4: 'Support per-city configuration for food safety compliance rules.'"
+    },
+    {
+      "text": "Premises are presented in a table format that includes a 'Risk if false' or 'Consequence if false' column assessing what breaks if each assumption is wrong",
+      "passed": false,
+      "evidence": "Premises are presented as a bulleted list (P1 through P9) with no table format and no 'Risk if false' column. Each premise is a single statement without consequence assessment."
+    },
+    {
+      "text": "Output includes a Mission Space or Solution Space section that presents evaluated alternatives (e.g. architectural options, delivery model variants), domain context, or identified knowledge gaps",
+      "passed": false,
+      "evidence": "No Mission Space, Solution Space, or equivalent section. The output has 'Open Questions and Risks' (section 7) which identifies gaps but does not evaluate alternatives or provide domain context. No architectural options or delivery model variants are compared."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 2,
+    "total": 8,
+    "pass_rate": 0.75
+  },
+  "execution_metrics": {},
+  "timing": {
+    "executor_duration_seconds": 55.5,
+    "total_duration_seconds": 55.5
+  },
+  "claims": [
+    {
+      "claim": "The output includes functional requirements beyond the four-section structure",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Sections 5 (Functional Requirements) and 6 (Non-Functional Requirements) are present with detailed FR-R, FR-C, FR-D, FR-P, and NFR items. This goes beyond what was asked but adds value."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "The without_skill output is solid on content extraction but lacks the analytical layers (risk assessment, alternatives evaluation, domain context) that the skill produces. The functional requirements section is a bonus not tested by assertions."
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "eval_id": 1,
+  "eval_name": "godot-game-engine",
+  "prompt": "I need a structured requirements spec for the Godot game engine (https://github.com/godotengine/godot). Use the repo README and any architecture or design docs you can find. Extract what is Godot's core mission, what goals does it pursue, what assumptions does it operate on, and what are its hard constraints?",
+  "assertions": [
+    {
+      "id": "has-four-sections",
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections"
+    },
+    {
+      "id": "mission-captures-open-source-independence",
+      "text": "Mission or Premises captures that Godot is free/open-source and community-driven (not just 'a game engine')"
+    },
+    {
+      "id": "goals-cover-multiple-platforms",
+      "text": "Goals section mentions cross-platform export (e.g. desktop, mobile, web) as a key capability goal"
+    },
+    {
+      "id": "constraints-include-license",
+      "text": "Constraints section includes the MIT license or equivalent open-source licensing as a hard constraint"
+    },
+    {
+      "id": "domain-divergence-recognized",
+      "text": "The spec reflects game-engine-specific concerns (scripting language, editor, 2D/3D, physics, audio) — not generic software requirements"
+    },
+    {
+      "id": "implicit-requirements-surfaced",
+      "text": "At least one non-obvious requirement is inferred (e.g. GDScript design goals, no royalties constraint, community governance implications)"
+    },
+    {
+      "id": "cok-expansion-documented",
+      "text": "Output shows evidence of bottom-up Chain of Knowledge expansion with multiple levels visible (e.g. L5 Topics through L1 Domains, or equivalent layered knowledge build-up from raw facts to domain-level synthesis)"
+    },
+    {
+      "id": "constraints-have-source-citation",
+      "text": "Every constraint (both hard and soft) cites its source — who or what imposed it (e.g. 'MIT license file', 'README', 'governance docs', 'inferred from project history') — not just the constraint text alone"
+    }
+  ]
+}

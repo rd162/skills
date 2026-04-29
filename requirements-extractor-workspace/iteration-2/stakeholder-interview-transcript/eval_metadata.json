@@ -1,0 +1,39 @@
+{
+  "eval_id": 4,
+  "eval_name": "stakeholder-interview-transcript",
+  "prompt": "Extract requirements from this stakeholder meeting transcript. Requirements are implicit — you'll need to infer them:\n\n---\nMeeting: Finance Reporting Tool Replacement\nAttendees: Sarah (CFO), Mike (IT Director), Lisa (Senior Analyst)\n\nSarah: We've been using this Access database for monthly reporting for eight years now. It crashes if more than three people open it at once. Last month we missed the board deadline because it corrupted during the close process.\n\nMike: IT can't support Access anymore. We need something that runs on our existing infrastructure — and I mean on-prem. Cloud is not an option, the board shot that down after the incident last year. We have budget for about $50K including implementation.\n\nLisa: I need to pull data from SAP and Salesforce into one report. Right now I export CSVs manually and paste them together. The monthly close report takes me two full days. If I could get that under two hours I'd be thrilled.\n\nSarah: We need at least 15 people to be able to use it at the same time during close week. And the reports need to run in under 2 minutes — our current ones take 20 minutes when they don't crash.\n\nMike: Whatever we pick needs to integrate with SAP and Salesforce. Those aren't changing — IT just renewed both contracts for 3 years. Also, we need a full audit trail on every report. After the incident last year, compliance is watching us closely.\n\nLisa: Can we get scheduled reports? I want the daily cash position report to just show up in my email at 7 AM. And inline filtering would save me hours — right now I rebuild the whole report if someone asks for a different date range.\n\nSarah: We need this live by Q3. The board wants to see progress on operational reliability.\n\nMike: No mobile — desktop only is fine. Our people are all in the office.\n---\n\nGive me a complete requirements spec.",
+  "assertions": [
+    {
+      "id": "has-four-sections",
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections"
+    },
+    {
+      "id": "mission-is-replacement-not-feature-list",
+      "text": "Mission captures the core intent (replace legacy Access reporting tool for finance) — not just a list of features"
+    },
+    {
+      "id": "goals-include-performance-targets",
+      "text": "Goals include both quantified performance targets from the transcript: 15+ concurrent users AND <2 minute report runtime"
+    },
+    {
+      "id": "constraints-include-on-prem-and-budget",
+      "text": "Constraints capture both hard constraints stated explicitly: on-prem only AND $50k budget cap"
+    },
+    {
+      "id": "constraints-include-fixed-integrations",
+      "text": "Constraints or Premises capture that SAP and Salesforce integrations cannot be changed (IT constraint, not just a technical choice)"
+    },
+    {
+      "id": "implicit-audit-trail-motivation-captured",
+      "text": "Audit trail requirement is included with its compliance motivation (not just listed as a feature) — the 'incident last year' context signals regulatory/compliance driver"
+    },
+    {
+      "id": "premises-have-risk-column",
+      "text": "Premises are presented in a table format that includes a 'Risk if false' or 'Consequence if false' column assessing what breaks if each assumption is wrong"
+    },
+    {
+      "id": "mission-space-present",
+      "text": "Output includes a Mission Space or Solution Space section that presents evaluated alternatives (e.g. COTS vs custom build, reporting platform options), domain context, or identified knowledge gaps"
+    }
+  ]
+}

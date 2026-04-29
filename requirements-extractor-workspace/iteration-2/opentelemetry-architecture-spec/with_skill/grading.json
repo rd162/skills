@@ -1,0 +1,84 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "Output has '## Mission', '## Goals', '## Premises', and '## Constraints' as distinct labeled sections."
+    },
+    {
+      "text": "Mission captures vendor-neutral observability portability as the core purpose (not just 'collect telemetry')",
+      "passed": true,
+      "evidence": "Mission: 'Enable portable, vendor-neutral generation, collection, and export of telemetry data so that any distributed system can be observed and understood regardless of language, framework, or backend choice.' Explicitly captures vendor-neutrality and portability as the core purpose."
+    },
+    {
+      "text": "Goals mention at least two of the three signal types: traces, metrics, and logs",
+      "passed": true,
+      "evidence": "Goal 1: 'traces (span DAGs), metrics (instrument-based time series), logs (structured log records), and baggage'. All three signals plus baggage are mentioned. Goal 7 explicitly names 'Traces, metrics, and logs' for signal correlation."
+    },
+    {
+      "text": "Constraints or Premises captures the API/SDK separation — that the API must be stable and separately versionable from the SDK",
+      "passed": true,
+      "evidence": "Hard constraint C1: 'API and SDK MUST be provided as independent artifacts; instrumentation authors MUST NOT depend on SDK packages'. C4: 'Backward-incompatible changes to stable API packages MUST NOT occur without a major version bump'. C5: 'Stable API major versions require minimum 3-year long-term support...SDK and contrib require minimum 1-year'. Goal 2: 'Separate API from implementation'. Premise P2: 'Instrumentation authors and application owners are distinct roles with different dependency needs'."
+    },
+    {
+      "text": "Premises include that the specification is language-agnostic (implemented across many languages)",
+      "passed": true,
+      "evidence": "Goal 6: 'Support all major languages and runtimes -- Each language implementation must conform to the same specification while adapting to language-specific idioms'. Premise P6: 'Languages provide sufficient runtime mechanisms for implicit or explicit context propagation (thread-locals, async context, coroutine context)'. Mission Space domain context: 'Each language has a Special Interest Group (SIG) that adapts the specification to language idioms.'"
+    },
+    {
+      "text": "The spec correctly treats this as a design/architecture document rather than a user-facing product — requirements reflect implementor constraints, not end-user features",
+      "passed": true,
+      "evidence": "Constraints are framed as implementor requirements using RFC 2119 language: 'Implementations MUST NOT throw unhandled exceptions', 'All public API surfaces MUST be safe for concurrent use', 'The SDK MUST include OTLP, stdout, and in-memory exporters'. Goals are for 'implementors': 'Separate API from implementation', 'Provide a pluggable, extensible SDK', 'Guarantee backwards compatibility across versions'. No end-user feature language (no 'users can...' goals)."
+    },
+    {
+      "text": "Constraints are explicitly split into Hard constraints (violation = rejection / spec non-compliance) and Soft constraints (violation = penalty / degraded quality) as separate subsections or clearly labeled categories",
+      "passed": true,
+      "evidence": "Constraints section has '### Hard (violation = rejection)' with 20 constraints (C1-C20) and '### Soft (violation = penalty)' with 15 constraints (S1-S15), clearly separated as subsections."
+    },
+    {
+      "text": "Premises are presented in a table format that includes a 'Risk if false' or 'Consequence if false' column assessing what breaks if each assumption is wrong",
+      "passed": true,
+      "evidence": "Premises table has columns: #, Premise, Source, Risk if false. Examples: P6 'Context propagation is impossible in some runtimes; entire correlation model fails' (marked HIGH RISK), P7 'Production systems refuse to enable telemetry; spec becomes academic', P11 'Concurrency bugs in production telemetry code; or excessive locking destroys performance' (marked HIGH RISK)."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {},
+  "timing": {
+    "executor_duration_seconds": 240.0,
+    "total_duration_seconds": 240.0
+  },
+  "claims": [
+    {
+      "claim": "OpenTelemetry spec version is 1.55.0",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Header states 'OpenTelemetry Specification v1.55.0'; consistent with spec source"
+    },
+    {
+      "claim": "The spec uses RFC 2119/8174 compliance keywords",
+      "type": "factual",
+      "verified": true,
+      "evidence": "C19 references this; the OpenTelemetry spec is known to use RFC 2119 normative language"
+    },
+    {
+      "claim": "API packages require minimum 3-year LTS after next major version",
+      "type": "factual",
+      "verified": true,
+      "evidence": "C5 states this; consistent with OpenTelemetry versioning spec"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Strong assertion set. The 'treats as architecture document' assertion is particularly discriminating -- it tests whether the extractor correctly identifies the document type and adjusts its output accordingly."
+  }
+}

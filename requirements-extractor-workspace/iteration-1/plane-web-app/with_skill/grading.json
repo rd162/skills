@@ -1,0 +1,100 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "The output has '## MGPC Specification' containing '### M — Mission', '### G — Goals', '### P — Premises', and '### C — Constraints' as clearly distinct labeled sections."
+    },
+    {
+      "text": "Mission section contains a single sentence or short statement (not a list), expressing the core invariant purpose",
+      "passed": true,
+      "evidence": "Mission reads: 'Enable software teams to deliver value to the people they serve by providing a low-friction, fully controllable project management platform — one that stays out of the way of the work itself.' — a single sentence followed by an italicized fixed-point note. No list."
+    },
+    {
+      "text": "Goals section contains specific, measurable outcomes (e.g. feature capabilities, user actions) rather than vague aspirations",
+      "passed": true,
+      "evidence": "Goals are concrete: G1 specifies 'full issue lifecycle (create, triage, estimate, assign, track, close) with rich metadata (labels, states, priorities, relations, sub-issues, custom types)'; G2 names 'burn-down charts' and 'Cycles (sprints)'; G5 specifies 'Docker Compose, Kubernetes'; G6 specifies 'REST API with token auth, webhooks'. All are specific feature capabilities, not aspirations."
+    },
+    {
+      "text": "Constraints section captures actual hard boundaries (e.g. deployment model, license, tech stack, integrations) distinct from goals",
+      "passed": true,
+      "evidence": "Hard Constraints table includes H2 (AGPL-3.0 license with copyright headers), H4 (PostgreSQL 14+ only; no SQLite or MySQL), H3 (API rate limit 60 req/min), H5 (unit tests required per CONTRIBUTING.md), H6 (security@plane.so private disclosure). These are genuine technical/legal hard limits, clearly distinct from the Goals section."
+    },
+    {
+      "text": "Output references specific content from the Plane GitHub repo (e.g. specific features, project structure, technology choices) — not just generic PM tool boilerplate",
+      "passed": true,
+      "evidence": "References version '0.24.0 (web app v1.3.0)', specific tech (Hocuspocus/Yjs, MobX, React Router v7, openpyxl, DRF-spectacular, RabbitMQ), specific files (`.env.example`, `CONTRIBUTING.md`, `COPYRIGHT_CHECK.md`, `SECURITY.md`, `LICENSE.txt`), and specific numeric values (OxLint max-warnings threshold '11,957 for web app, 119 for live server', 60-day hard-delete TTL, 5 MB upload limit, 3600s signed URL expiry)."
+    },
+    {
+      "text": "At least one Premise or Constraint is implicit (not stated word-for-word in the source) — e.g. assumptions about users, deployment environment, or integration ecosystem",
+      "passed": true,
+      "evidence": "Multiple implicit premises are surfaced: P1 ('Teams have internet-connected browsers' — an assumption about users not stated in the repo); P3 ('Workspaces map to organizations' — a design assumption inferred from the multi-tenancy model); P5 ('Celery background workers are always running' — an operational assumption derived from the architecture); P6 ('Real-time editing requires a live WebSocket server' — inferred from Hocuspocus dependency). None of these are quoted literally from the repo docs."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "note": "No metrics.json found in outputs directory"
+  },
+  "timing": {
+    "executor_duration_seconds": 185.6,
+    "total_duration_seconds": 185.6
+  },
+  "claims": [
+    {
+      "claim": "Source is the Plane GitHub repo at version 0.24.0 (web app v1.3.0)",
+      "type": "factual",
+      "verified": false,
+      "evidence": "The version is stated in the document header but cannot be independently verified from the output files alone — no transcript is available showing the actual GitHub fetch. However, the specificity of tech stack details (exact OxLint thresholds, specific env var names like HARD_DELETE_AFTER_DAYS) is consistent with genuine repo inspection."
+    },
+    {
+      "claim": "Phase 0 Bottom-Up CoK Saturation methodology was applied",
+      "type": "process",
+      "verified": true,
+      "evidence": "The output contains a detailed Phase 0 section with L5→L1 CoK hierarchy, triple-notation expansion, saturation summary, and a CoK reasoning log at the end — consistent with the requirements-extractor v2.0 methodology."
+    },
+    {
+      "claim": "Phase 1 Top-Down Intent Inference with 'Why?' recursion was applied",
+      "type": "process",
+      "verified": true,
+      "evidence": "Output contains '## Phase 1: Top-Down Intent Inference' with an explicit W-functor chain of 8 'why?' steps terminating in a tautology, then mapping to Mission."
+    },
+    {
+      "claim": "OxLint max-warnings threshold is 11,957 for web app and 119 for live server",
+      "type": "factual",
+      "verified": false,
+      "evidence": "Highly specific figures that are plausible for a real codebase, but no transcript is available to confirm these were read from the actual repo. Cannot verify from outputs alone."
+    },
+    {
+      "claim": "All translation keys must exist in every supported language file with matching nested structure",
+      "type": "factual",
+      "verified": false,
+      "evidence": "Stated as constraint H10, attributed to 'CONTRIBUTING.md i18n section'. Plausible but unverifiable without the transcript."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": [],
+    "note": "No user_notes.md file found in outputs directory"
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Output references specific content from the Plane GitHub repo (e.g. specific features, project structure, technology choices) — not just generic PM tool boilerplate",
+        "reason": "This assertion passes on presence of specific-looking details (version numbers, filenames), but without a transcript it cannot be verified whether the agent actually fetched the repo or hallucinated plausible-sounding specifics. A stronger assertion would require cross-checking at least one specific claim (e.g. 'OxLint threshold is 11,957') against a live fetch of the repo, or requiring the agent to quote a specific sentence from the README verbatim."
+      },
+      {
+        "reason": "No assertion checks the quality or correctness of the Premises section — e.g. that Premises are genuinely assumptions (not facts or goals), and that they are logically necessary for the Goals to hold. The current Premises are high quality, but the assertion only checks that at least one is implicit, not that all premises are well-formed assumptions vs. restatements of constraints."
+      },
+      {
+        "reason": "No assertion verifies the Solution Space section was produced — the skill appears to generate a Solutions section as part of the MGPC output, and this run produced a good one, but it goes unasserted. If a future run omits it, the current evals won't catch it."
+      }
+    ],
+    "overall": "Evals cover the structural skeleton of MGPC well. The main gap is verifiability of repo-sourcing without a transcript — the specificity check (assertion 5) is the weakest link since a skilled hallucinator could satisfy it. Consider adding a spot-check assertion against a concrete verifiable claim from the repo."
+  }
+}

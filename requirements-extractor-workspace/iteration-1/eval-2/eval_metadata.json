@@ -1,0 +1,31 @@
+{
+  "eval_id": 2,
+  "eval_name": "opentelemetry-architecture-spec",
+  "prompt": "Extract requirements from the OpenTelemetry architecture specification at https://opentelemetry.io/docs/specs/otel/overview/ — give me a full MGPC spec. What is the system designed to do, what are its goals for implementors, what assumptions does it make, and what are the non-negotiable design constraints?",
+  "assertions": [
+    {
+      "id": "has-four-mgpc-sections",
+      "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections"
+    },
+    {
+      "id": "mission-captures-vendor-neutrality",
+      "text": "Mission captures vendor-neutral observability portability as the core purpose (not just 'collect telemetry')"
+    },
+    {
+      "id": "goals-cover-three-signals",
+      "text": "Goals mention at least two of the three signal types: traces, metrics, and logs"
+    },
+    {
+      "id": "constraints-include-api-sdk-separation",
+      "text": "Constraints or Premises captures the API/SDK separation — that the API must be stable and separately versionable from the SDK"
+    },
+    {
+      "id": "premises-include-language-agnostic",
+      "text": "Premises include that the specification is language-agnostic (implemented across many languages)"
+    },
+    {
+      "id": "architectural-doc-treated-differently",
+      "text": "The spec correctly treats this as a design/architecture document rather than a user-facing product — requirements reflect implementor constraints, not end-user features"
+    }
+  ]
+}

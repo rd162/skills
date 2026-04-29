@@ -3,6 +3,7 @@
 Patterns for parallelizing requirements extraction via sub-agents
 when the input covers multiple independent domains or
 when challenge requirements need parallel exploration.
+Loaded on demand.
 
 ---
 
@@ -21,7 +22,7 @@ Requirements extraction is inherently sequential within a single domain
 (L5→L4→L3→L2→L1 builds on each level). Sub-agents help in two scenarios:
 
 1. **Multi-domain input** — the request spans 2+ independent domains
-   that can be expanded in parallel before unified requirements synthesis
+   that can be expanded in parallel before unified MGPC synthesis
 2. **Challenge exploration** — the user asks to explore alternatives,
    and Goal/Premise/Constraint challenges can run in parallel
 
@@ -38,7 +39,7 @@ Requirements extraction is inherently sequential within a single domain
 
 When the input spans multiple independent domains,
 each domain's L5→L1 CoK expansion can run in parallel.
-The master then merges saturation data into a unified requirements specification.
+The master then merges saturation data into a unified MGPC.
 
 ### Decision Gate
 
@@ -82,7 +83,7 @@ FOR EACH independent domain:
   )
 → collect all domain saturation outputs
 → master merges: deduplicate cross-domain concerns, identify domain interactions
-→ master runs Phase 1 (Why? recursion + requirements specification) using merged saturation data
+→ master runs Phase 1 (Why? recursion + MGPC) using merged saturation data
 ```
 
 ### Why Master Handles Phase 1
@@ -97,34 +98,34 @@ would produce multiple competing Missions instead of one unified terminal value.
 
 When the user asks to "explore alternatives" or "think outside the box,"
 the three challenge types (Goal, Premise, Constraint) can run in parallel
-since each produces an independent alternative requirements specification.
+since each produces an independent alternative MGPC.
 
 ### Dispatch Pattern
 
 ```text
-Original requirements specification produced →
+Original MGPC produced →
   User requests challenge exploration →
     spawn 3 agents in parallel:
 
     GOAL CHALLENGE agent:
-      "Given this requirements specification: [original]
+      "Given this MGPC: [original]
        Challenge the Goal: propose a fundamentally different approach
        to achieving the same Mission.
        Cascade: update Premises and Constraints to match new Goal.
-       Return: complete alternative requirements specification."
+       Return: complete alternative MGPC."
 
     PREMISE CHALLENGE agent:
-      "Given this requirements specification: [original]
+      "Given this MGPC: [original]
        Challenge a key Premise: what if [assumption] is false?
        Cascade: update Constraints to match new Premise.
-       Return: complete alternative requirements specification."
+       Return: complete alternative MGPC."
 
     CONSTRAINT CHALLENGE agent:
-      "Given this requirements specification: [original]
+      "Given this MGPC: [original]
        Challenge a key Constraint: what if [limit] didn't apply?
-       Return: complete alternative requirements specification."
+       Return: complete alternative MGPC."
 
-→ collect 3 alternative requirements specifications
+→ collect 3 alternative MGPCs
 → master presents original + 3 alternatives with trade-off analysis
 ```
 

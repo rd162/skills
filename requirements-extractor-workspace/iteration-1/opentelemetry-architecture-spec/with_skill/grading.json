@@ -1,0 +1,111 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "The output contains clearly labeled sections: '### M — Mission', '### G — Goals', '### P — Premises', and '### C — Constraints', each with substantive content."
+    },
+    {
+      "text": "Mission captures vendor-neutral observability portability as the core purpose (not just 'collect telemetry')",
+      "passed": true,
+      "evidence": "Mission reads: 'Provide a universal, vendor-neutral observability infrastructure that makes any software system — regardless of language, framework, or backend — fully observable through standardized, composable telemetry primitives, without requiring lock-in to any proprietary monitoring ecosystem.' The summary also reinforces this: 'The system's mission is not merely \"telemetry collection\" — it is to make observability a universal, portable infrastructure primitive.'"
+    },
+    {
+      "text": "Goals mention at least two of the three signal types: traces, metrics, and logs",
+      "passed": true,
+      "evidence": "Goal 1 explicitly names all three: 'Define a portable, multi-signal telemetry API covering traces, metrics, logs, and baggage as independent but composable signals.' Goals 3 and 4 further elaborate on traces and metrics specifically."
+    },
+    {
+      "text": "Constraints or Premises captures the API/SDK separation — that the API must be stable and separately versionable from the SDK",
+      "passed": true,
+      "evidence": "Hard constraint H1 states 'Instrumentation authors MUST NOT directly reference any SDK package — only the API.' Goal 2 says 'Enforce strict API/SDK separation so that instrumentation code depends only on the zero-cost API, while applications control which SDK implementation is installed.' Goal 8 states 'Guarantee API stability and backward compatibility.' The separate versionability is implied by the separation + stability guarantee, though not stated in those exact words."
+    },
+    {
+      "text": "Premises include that the specification is language-agnostic (implemented across many languages)",
+      "passed": true,
+      "evidence": "Premise 4 states: 'YAML is a stable, language-agnostic schema format — Semantic conventions defined in YAML can be reliably parsed and code-generated into idiomatic constants for all target languages.' Premise 7 states 'Instrumentation libraries can observe library behavior non-invasively... in most language ecosystems.' The Mission also states 'regardless of language, framework, or backend.' The concept is present though it is embedded within other premises rather than stated as a standalone language-agnosticism premise."
+    },
+    {
+      "text": "The spec correctly treats this as a design/architecture document rather than a user-facing product — requirements reflect implementor constraints, not end-user features",
+      "passed": true,
+      "evidence": "All constraints and goals are framed around implementors: H1 ('Instrumentation authors MUST NOT...'), H2 ('SpanContext MUST be propagated'), H3/H4 (byte-level ID format requirements), H5/H6 (code generation from YAML). There are no end-user UI/UX requirements. The output explicitly frames requirements as 'non-negotiable design constraints' and 'implementor constraints.'"
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 0,
+    "total": 6,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {
+    "output_chars": 19980,
+    "transcript_chars": null
+  },
+  "timing": {
+    "executor_duration_seconds": 201.6,
+    "grader_duration_seconds": null,
+    "total_duration_seconds": 201.6
+  },
+  "claims": [
+    {
+      "claim": "Source document is the OpenTelemetry architecture specification at https://opentelemetry.io/docs/specs/otel/overview/",
+      "type": "factual",
+      "verified": true,
+      "evidence": "The output header states 'Source: https://opentelemetry.io/docs/specs/otel/overview/' and all content (TraceId sizes, SpanContext MUST requirements, YAML semantic conventions) is consistent with known OpenTelemetry specification content."
+    },
+    {
+      "claim": "Method used was Requirements Extractor v2.0 with Phase 0 (CoK Bottom-Up) and Phase 1 (Top-Down Intent Inference)",
+      "type": "process",
+      "verified": true,
+      "evidence": "The output explicitly documents both phases: 'Phase 0: Bottom-Up Requirements Saturation' with L5→L1 level progression, and 'Phase 1: Top-Down Intent Inference' with W-Functor Chain recursion."
+    },
+    {
+      "claim": "Instrumentation authors MUST NOT directly reference any SDK package",
+      "type": "factual",
+      "verified": true,
+      "evidence": "This is a documented requirement from the OpenTelemetry specification. Appears as Hard Constraint H1 in the output."
+    },
+    {
+      "claim": "TraceId must be 16 bytes (128-bit) and SpanId must be 8 bytes (64-bit)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Listed as constraints H3 and H4 respectively, and also surfaced at Level 3 in Phase 0. These match the actual OpenTelemetry specification."
+    },
+    {
+      "claim": "The metrics data model must be a superset, not lowest common denominator",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Stated at L4 area constraints and again as Hard Constraint H10: 'The Metrics data model MUST be treated as a superset.' This is a real OTel design principle."
+    },
+    {
+      "claim": "The output is a comprehensive MGPC spec with 10 hard constraints, 8 soft constraints, 10 premises, and 8 goals",
+      "type": "quality",
+      "verified": true,
+      "evidence": "Counted: Goals 1-8, Premises 1-10, Hard Constraints H1-H10, Soft Constraints S1-S8. All present in output. The depth and specificity (e.g., YAML source-of-truth, Baggage scoping, Links vs parent-child for scatter/gather) reflects genuine extraction from source material."
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Premises include that the specification is language-agnostic (implemented across many languages)",
+        "reason": "The output satisfies this assertion by embedding language-agnosticism in Premise 4 (about YAML) and the Mission statement, but there is no dedicated premise asserting 'the specification is designed to be implemented in many programming languages.' A more discriminating assertion would check for an explicit premise about multi-language implementation (e.g., Java, Python, Go, .NET), since that is a foundational architectural assumption of OTel — not merely a property of the YAML schema format."
+      },
+      {
+        "assertion": "Constraints or Premises captures the API/SDK separation — that the API must be stable and separately versionable from the SDK",
+        "reason": "The output captures API/SDK separation and API stability but does not explicitly address *separate versioning* of API vs SDK. The assertion passes because separation + stability is close enough, but the 'separately versionable' aspect is a real OTel architectural constraint that the output omits. A tighter assertion would check for separate versioning specifically."
+      },
+      {
+        "reason": "No assertion checks the quality or specificity of the Constraints section. An output with vague constraints like 'the system must be correct' would still pass all six assertions. Consider an assertion like: 'Hard constraints include concrete, spec-derived MUST requirements with byte-level or structural specificity (not just high-level summaries).' The current output does include this quality, but no assertion would catch an output that doesn't."
+      },
+      {
+        "reason": "No assertion verifies that the Phase 0 CoK bottom-up expansion was actually performed (the skill's distinguishing methodology). The output contains it, but a skill that just wrote a MGPC from general knowledge — skipping the CoK phase — would also pass all six assertions. Consider an assertion like: 'Output documents a bottom-up knowledge expansion process (L5 to L1 levels) before producing MGPC sections.'"
+      }
+    ],
+    "overall": "All six assertions pass with strong evidence. The evals check the right high-level outcomes but miss the skill's core methodology (CoK expansion) and leave gaps around constraint quality/specificity and separate API versioning. Adding 1-2 assertions about the CoK process and constraint concreteness would meaningfully raise the discriminating power of this eval."
+  }
+}

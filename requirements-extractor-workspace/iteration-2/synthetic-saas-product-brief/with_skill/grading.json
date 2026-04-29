@@ -1,0 +1,84 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "Output has '## Mission', '## Goals', '## Premises', '## Constraints' as distinct labeled sections."
+    },
+    {
+      "text": "Mission centers on reducing restaurant food waste / monetizing surplus inventory — not generic 'delivery platform'",
+      "passed": true,
+      "evidence": "Mission: 'Enable sustainable local food ecosystems by connecting surplus restaurant food with nearby customers through efficient last-mile delivery.' W-functor chain: 'reduce food waste and delivery costs for independent restaurants -> help small restaurants survive economically while reducing environmental harm'. Centers on food waste reduction, not generic delivery."
+    },
+    {
+      "text": "Goals section captures specific measurable targets from the brief: onboarding <10 minutes, 60-minute ordering window, 3-city launch",
+      "passed": true,
+      "evidence": "Goal 4: 'Achieve sub-10-minute setup for restaurants with zero training required.' Goal 1: 'time-bounded availability (up to 60 minutes before close)'. Goal 5: 'Go live in 3 dense urban markets within 6 months to meet Series A milestones.' All three specific targets captured."
+    },
+    {
+      "text": "Constraints include both GDPR compliance and no-card-data-storage (Stripe delegation) as hard constraints",
+      "passed": true,
+      "evidence": "Hard constraint C1: 'No storage of payment card data -- all payment processing via Stripe' (Source: Stated explicitly; PCI-DSS regulatory). C2: 'GDPR compliance required (EU-based company)' (Source: Stated explicitly; EU regulatory). Both present as hard constraints."
+    },
+    {
+      "text": "Premises capture the dependency on existing delivery ecosystems (Uber Eats / DoorDash driver network) as an assumption",
+      "passed": true,
+      "evidence": "P2: 'Gig drivers can and will opt into secondary delivery platforms alongside Uber Eats/DoorDash' (Source: Inferred from 'add-on to existing runs' model; Risk: 'No drivers = no delivery; may violate driver exclusivity clauses in gig platform ToS'). Marked HIGH RISK."
+    },
+    {
+      "text": "Food safety regulatory variance by city is identified — either as a Constraint or an implicit Premise requiring handling",
+      "passed": true,
+      "evidence": "Hard constraint C3: 'Food safety regulation compliance per city' (Source: Stated explicitly; local regulatory). Also P7: 'Food safety regulations in initial 3 cities permit resale of surplus prepared food via a platform intermediary' (marked HIGH RISK). Domain context in Mission Space: 'Food surplus resale is regulated differently across EU cities.'"
+    },
+    {
+      "text": "Premises are presented in a table format that includes a 'Risk if false' or 'Consequence if false' column assessing what breaks if each assumption is wrong",
+      "passed": true,
+      "evidence": "Premises table has columns: #, Premise, Source, Risk if false. Examples: P1 'No supply = no marketplace; invalidates the Mission' (HIGH RISK), P4 'Scope must be ruthlessly cut to MVP; any overengineering breaks timeline', P7 'Regulatory block in any city reduces launch count' (HIGH RISK). All 9 premises have risk assessments."
+    },
+    {
+      "text": "Output includes a Mission Space or Solution Space section that presents evaluated alternatives (e.g. architectural options, delivery model variants), domain context, or identified knowledge gaps",
+      "passed": true,
+      "evidence": "Mission Space section contains: 'Evaluated Alternatives' table with 5 alternatives (Surprise-bag model, Driver-independent pickup, Scheduled batch delivery, Platform-integrated driver API, Deep-link/notification overlay) each assessed against hard constraints. 'Domain Context' with 5 items. 'Knowledge Gaps' with 10 identified gaps. Comprehensive."
+    }
+  ],
+  "summary": {
+    "passed": 8,
+    "failed": 0,
+    "total": 8,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {},
+  "timing": {
+    "executor_duration_seconds": 111.0,
+    "total_duration_seconds": 111.0
+  },
+  "claims": [
+    {
+      "claim": "Too Good To Go is identified as the primary competitor with surprise-bag model",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Domain Context: 'Too Good To Go dominates the surplus food space in EU with a surprise-bag model and customer pickup.' This is factually accurate."
+    },
+    {
+      "claim": "France has anti-food-waste legislation (Loi Garot)",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Domain Context mentions this; Loi Garot (2016) is real French legislation against food waste"
+    },
+    {
+      "claim": "Stripe Connect supports marketplace split payouts",
+      "type": "factual",
+      "verified": true,
+      "evidence": "P6 and Knowledge Gap discussion; Stripe Connect is indeed designed for marketplace payment flows"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "Assertions are well-calibrated for this input type. The Mission Space assertion is particularly valuable -- it tests whether the extractor goes beyond extraction to analysis."
+  }
+}

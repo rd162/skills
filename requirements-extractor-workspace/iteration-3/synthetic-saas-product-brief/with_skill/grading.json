@@ -1,0 +1,84 @@
+{
+  "expectations": [
+    {
+      "text": "Output identifies at least one risk that could invalidate the entire project or mission — not just a feature-level issue. Examples: food safety law might prohibit the model in some cities, driver platform ToS might forbid add-on deliveries, insufficient driver density near independent restaurants at closing time.",
+      "passed": true,
+      "evidence": "The output identifies three HIGH RISK premises (P1, P2, P7) and explicitly states 'If any of these is false, the Mission itself is threatened, not just individual goals.' P2 flags 'may violate driver exclusivity clauses in gig platform ToS'; P7 flags 'Regulatory block in any city reduces launch count.' The Domain Context section further elaborates: 'Uber Eats and DoorDash driver agreements may restrict drivers from using competing platforms simultaneously. This is the single largest external dependency risk.'"
+    },
+    {
+      "text": "Output explicitly flags at least 3 things the brief does NOT address that need answers before implementation — e.g., monetization model, dispute resolution, driver compensation, insurance/liability, city selection criteria, customer acquisition strategy.",
+      "passed": true,
+      "evidence": "The Knowledge Gaps section lists 10 unstated items: (1) city selection criteria, (2) monetization model, (3) driver compensation model, (4) food safety liability, (5) insurance requirements, (6) customer acquisition strategy, (7) restaurant churn management, (8) data processing agreements, (9) accessibility requirements, (10) dispute resolution process. All are genuinely absent from the input brief."
+    },
+    {
+      "text": "Output contains at least 3 requirements that are genuinely inferred and not just restated from the brief. Examples: real-time inventory expiry enforcement, geofencing/proximity filtering, allergen labeling, server-side clock authority, push notifications, multi-role UX separation. A requirement counts as 'inferred' if you cannot find the exact concept stated in the input brief.",
+      "passed": true,
+      "evidence": "Multiple inferred requirements appear: (1) S5 'Multi-timezone and multi-locale support for 3-city rollout' — inferred from multi-city, never stated in brief. (2) S6 'Data residency within EU or adequacy-decision countries' — inferred from GDPR, not stated. (3) P6 identifies Stripe Connect for multi-party split payouts (restaurant + driver) — inferred from marketplace structure. (4) S4 'Real-time or near-real-time feed updates for last-hour inventory' — inferred from time-sensitive model. (5) Geofencing and proximity queries appear in the saturation trace. (6) Cold-start problem and the need to seed one side of the marketplace — inferred from two-sided marketplace dynamics. None of these concepts appear in the input brief."
+    },
+    {
+      "text": "The Mission statement is NOT just a restatement of the brief's first sentence ('help independent restaurants cut food waste and delivery costs'). It should be derived through deeper reasoning — either more abstract (connecting to a broader value like food sustainability) or more precise (identifying the specific mechanism that makes this valuable). Simply rewording the brief's opening does not count.",
+      "passed": true,
+      "evidence": "The Mission reads: 'Enable sustainable local food ecosystems by connecting surplus restaurant food with nearby customers through efficient last-mile delivery.' This elevates from the brief's operational framing ('cut food waste and delivery costs') to an ecosystem-level abstraction ('sustainable local food ecosystems'). The W-functor chain further demonstrates derivation: it traces from 'Build FreshRoute platform' through intermediate value steps to 'sustainable local food ecosystems are intrinsically valuable (tautology),' showing the mission was derived, not paraphrased."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1.0
+  },
+  "execution_metrics": {},
+  "timing": {
+    "total_tokens": 22205,
+    "duration_ms": 110977,
+    "total_duration_seconds": 111.0
+  },
+  "claims": [
+    {
+      "claim": "Uses bottom-up CoK expansion + top-down intent inference",
+      "type": "process",
+      "verified": false,
+      "evidence": "No transcript available to verify the process. The output references this methodology in its header but there is no execution log to confirm it was actually followed."
+    },
+    {
+      "claim": "P2 is HIGH RISK because gig platform ToS may prohibit simultaneous use of competing platforms",
+      "type": "factual",
+      "verified": true,
+      "evidence": "This is a well-known concern. Uber and DoorDash driver agreements do contain exclusivity-related clauses, and this has been documented in gig economy litigation and policy discussions."
+    },
+    {
+      "claim": "France has anti-food-waste legislation (Loi Garot) that may help",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Loi Garot (2016) is real French legislation requiring supermarkets to donate unsold food and encouraging food waste reduction. The claim that it 'may help' is reasonable."
+    },
+    {
+      "claim": "Stripe Connect handles marketplace multi-party payouts",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Stripe Connect is designed for marketplace payment flows with split payouts to multiple parties. This is accurate."
+    },
+    {
+      "claim": "EU accessibility directives (EAA 2025) may apply to the mobile apps",
+      "type": "factual",
+      "verified": true,
+      "evidence": "The European Accessibility Act (EAA) does have compliance deadlines in 2025 and applies to digital services including mobile applications."
+    }
+  ],
+  "user_notes_summary": [],
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Output identifies at least one risk that could invalidate the entire project or mission",
+        "reason": "This assertion is easy to satisfy — any mention of a project-level risk passes, even if the analysis is shallow. Consider requiring the output to explain the causal chain (why the risk invalidates the mission, not just that it does) or to identify risks across multiple categories (regulatory, market, operational)."
+      },
+      {
+        "reason": "No assertion checks whether the output covers all three stakeholder perspectives (restaurant, driver, customer). An output that deeply analyzes restaurant requirements but ignores driver or customer needs would pass all four assertions. Consider adding a stakeholder-coverage assertion."
+      },
+      {
+        "reason": "No assertion verifies factual accuracy of domain claims. The output makes specific claims (e.g., Loi Garot, EAA 2025, Stripe Connect capabilities) that could be hallucinated. A factual-accuracy assertion would strengthen confidence."
+      }
+    ],
+    "overall": "Assertions test meaningful content-quality dimensions (risk identification, gap analysis, inference depth, mission derivation) and are not trivially satisfiable. The main gap is stakeholder coverage and factual accuracy verification."
+  }
+}

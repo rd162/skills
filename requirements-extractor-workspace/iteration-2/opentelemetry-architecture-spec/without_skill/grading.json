@@ -1,0 +1,78 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "Output has '## 1. Mission', '## 2. Goals', '## 3. Premises', and '## 4. Constraints' as distinct labeled sections."
+    },
+    {
+      "text": "Mission captures vendor-neutral observability portability as the core purpose (not just 'collect telemetry')",
+      "passed": true,
+      "evidence": "Mission: 'OpenTelemetry exists to provide a single, vendor-neutral, open standard for observability telemetry -- enabling the generation, collection, and export of traces, metrics, and logs from software systems -- so that no organization is locked into a proprietary observability backend and every library author can instrument once for all consumers.' Vendor-neutrality and portability are explicit."
+    },
+    {
+      "text": "Goals mention at least two of the three signal types: traces, metrics, and logs",
+      "passed": true,
+      "evidence": "Goal 2.1: 'Every signal (traces, metrics, logs, baggage) must be independently usable'. All three signals mentioned explicitly."
+    },
+    {
+      "text": "Constraints or Premises captures the API/SDK separation — that the API must be stable and separately versionable from the SDK",
+      "passed": true,
+      "evidence": "Section 4.1 'API/SDK Separation (Architectural Constraint)' with 6 MUST-level rules: 'API and SDK MUST be provided as independent artifacts', 'Instrumentation authors MUST depend only on the API package, never on the SDK', etc. Goal 2.3: 'Zero-Cost When Unused' depends on API/SDK separation."
+    },
+    {
+      "text": "Premises include that the specification is language-agnostic (implemented across many languages)",
+      "passed": true,
+      "evidence": "Premise 3.5: 'Multiple Languages, One Specification -- Each language implementation is independently versioned and may differ in idiom, but all must implement the same specification.' Goal 2.5: 'Interoperability Across Language Ecosystems -- The specification must be implementable in any programming language.'"
+    },
+    {
+      "text": "The spec correctly treats this as a design/architecture document rather than a user-facing product — requirements reflect implementor constraints, not end-user features",
+      "passed": true,
+      "evidence": "Constraints use RFC 2119 MUST/MUST NOT language for implementors: 'Implementations MUST NOT throw unhandled exceptions', 'The library MUST NOT block the end-user application'. Section 6 'Roles and Responsibilities' defines Instrumentation Author, Application Owner, and Plugin Author. Section 9 'Compliance Checklist' is for implementors. No end-user feature language."
+    },
+    {
+      "text": "Constraints are explicitly split into Hard constraints (violation = rejection / spec non-compliance) and Soft constraints (violation = penalty / degraded quality) as separate subsections or clearly labeled categories",
+      "passed": false,
+      "evidence": "Constraints are organized by topic (4.1 API/SDK Separation, 4.2 Error Handling, 4.3 Performance, etc.) with individual rules labeled MUST/MUST NOT/SHOULD. While the MUST vs SHOULD distinction maps conceptually to hard vs soft, they are NOT explicitly split into 'Hard' and 'Soft' subsections. The assertion requires 'separate subsections or clearly labeled categories' for hard vs soft -- the output uses topic-based organization instead."
+    },
+    {
+      "text": "Premises are presented in a table format that includes a 'Risk if false' or 'Consequence if false' column assessing what breaks if each assumption is wrong",
+      "passed": false,
+      "evidence": "Premises are presented as subsections (3.1 through 3.6) with narrative paragraphs, not in a table format. There is no 'Risk if false' column or equivalent consequence assessment for any premise."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 2,
+    "total": 8,
+    "pass_rate": 0.75
+  },
+  "execution_metrics": {},
+  "timing": {
+    "executor_duration_seconds": 171.6,
+    "total_duration_seconds": 171.6
+  },
+  "claims": [
+    {
+      "claim": "The output covers all major constraint categories: API/SDK separation, error handling, performance, context propagation, versioning, configuration, resources, and required exporters",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Sections 4.1 through 4.9 cover all these categories with detailed MUST/SHOULD rules"
+    },
+    {
+      "claim": "The output includes a compliance checklist",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Section 9 'Compliance Checklist (Summary)' lists 10 compliance requirements"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [],
+    "overall": "The without_skill output is remarkably thorough on content -- arguably more detailed on individual constraint rules than the with_skill version. The failures are structural/methodological (no hard/soft split, no risk-if-false table), not content quality."
+  }
+}

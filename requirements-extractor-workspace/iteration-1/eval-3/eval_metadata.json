@@ -1,0 +1,31 @@
+{
+  "eval_id": 3,
+  "eval_name": "synthetic-saas-product-brief",
+  "prompt": "Extract MGPC requirements from the FreshRoute product brief (surplus food delivery SaaS for restaurants).",
+  "assertions": [
+    {
+      "id": "has-four-mgpc-sections",
+      "text": "Output contains all four MGPC sections: Mission, Goals, Premises, and Constraints as distinct labeled sections"
+    },
+    {
+      "id": "mission-captures-food-waste-core-purpose",
+      "text": "Mission centers on reducing restaurant food waste / monetizing surplus inventory — not generic 'delivery platform'"
+    },
+    {
+      "id": "goals-include-specific-metrics",
+      "text": "Goals section captures specific measurable targets from the brief: onboarding <10 minutes, 60-minute ordering window, 3-city launch"
+    },
+    {
+      "id": "constraints-include-gdpr-and-stripe",
+      "text": "Constraints include both GDPR compliance and no-card-data-storage (Stripe delegation) as hard constraints"
+    },
+    {
+      "id": "premises-capture-ecosystem-dependency",
+      "text": "Premises capture the dependency on existing delivery ecosystems (Uber Eats / DoorDash driver network) as an assumption"
+    },
+    {
+      "id": "implicit-food-safety-constraint-surfaced",
+      "text": "Food safety regulatory variance by city is identified — either as a Constraint or an implicit Premise requiring handling"
+    }
+  ]
+}

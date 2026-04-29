@@ -1,0 +1,83 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains all four sections: Mission, Goals, Premises, and Constraints as distinct labeled sections",
+      "passed": true,
+      "evidence": "Output has '## 1. Mission', '## 2. Goals', '## 3. Premises (Assumptions)', and '## 4. Constraints (Non-Negotiable Boundaries)' as distinct labeled sections."
+    },
+    {
+      "text": "Mission or Premises captures that Godot is free/open-source and community-driven (not just 'a game engine')",
+      "passed": true,
+      "evidence": "Mission statement: 'Provide a free, open-source, community-driven game engine...' The three indivisible aspects are 'Free and open', 'All-in-one', and 'Community-governed'. Extensive detail on MIT license, zero royalties, and community governance."
+    },
+    {
+      "text": "Goals section mentions cross-platform export (e.g. desktop, mobile, web) as a key capability goal",
+      "passed": true,
+      "evidence": "G1: 'Cross-platform export with minimal friction -- One-click export to desktop (Windows, macOS, Linux/*BSD), mobile (Android, iOS), and Web. Console support via third-party porting.'"
+    },
+    {
+      "text": "Constraints section includes the MIT license or equivalent open-source licensing as a hard constraint",
+      "passed": true,
+      "evidence": "C1: 'MIT license for all code shipping in core. All technologies bundled with the engine must be legally compatible with the MIT license.' C3: 'No royalties, no usage fees, no strings.'"
+    },
+    {
+      "text": "The spec reflects game-engine-specific concerns (scripting language, editor, 2D/3D, physics, audio) — not generic software requirements",
+      "passed": true,
+      "evidence": "Deeply game-engine-specific: GDScript discussion (P2), scene/node tree architecture (P4), separate 2D/3D engines (P5), 'built-in scripting, animation, tilemap editing, shader editing, debugging, profiling' (G7), GDExtension (G6, C9), editor dogfooding (P3, derived principle 3), supported platforms section, officially supported languages section."
+    },
+    {
+      "text": "At least one non-obvious requirement is inferred (e.g. GDScript design goals, no royalties constraint, community governance implications)",
+      "passed": true,
+      "evidence": "P2: 'GDScript exists because Lua, Python, and JavaScript all failed on threading, class extension, C++ binding quality, native vector types, GC pauses, and editor integration' -- this is a non-obvious inference about why a custom language was created. P6: 'Open source sustainability requires a small, maintainable core' -- inferred from contributor dynamics. P7: 'Performance bottlenecks are rarely in the scripting layer' -- a non-obvious architectural premise."
+    },
+    {
+      "text": "Output shows evidence of bottom-up Chain of Knowledge expansion with multiple levels visible (e.g. L5 Topics through L1 Domains, or equivalent layered knowledge build-up from raw facts to domain-level synthesis)",
+      "passed": false,
+      "evidence": "No CoK expansion, no L5-L1 levels, no saturation summary. The output proceeds directly from source analysis to structured sections without visible bottom-up methodology."
+    },
+    {
+      "text": "Every constraint (both hard and soft) cites its source — who or what imposed it (e.g. 'MIT license file', 'README', 'governance docs', 'inferred from project history') — not just the constraint text alone",
+      "passed": false,
+      "evidence": "Constraints have a 'Rationale' column, not a 'Source' column. C1 provides rationale 'All technologies bundled...must be legally compatible with the MIT license' but does not cite where this is stated (README, LICENSE.txt, etc.). C4 says 'Features accepted into core must...' but doesn't cite the proposals evaluation criteria document. C6 says 'Proposal contributions must be written by humans' but doesn't cite godotengine/godot-proposals README. The rationale explains the reasoning but not the source."
+    }
+  ],
+  "summary": {
+    "passed": 6,
+    "failed": 2,
+    "total": 8,
+    "pass_rate": 0.75
+  },
+  "execution_metrics": {},
+  "timing": {
+    "executor_duration_seconds": 108.8,
+    "total_duration_seconds": 108.8
+  },
+  "claims": [
+    {
+      "claim": "GDScript was created because Lua, Python, and JavaScript all failed on specific criteria",
+      "type": "factual",
+      "verified": true,
+      "evidence": "This matches documented Godot design philosophy rationale for creating GDScript"
+    },
+    {
+      "claim": "The editor runs on the engine's own UI system and rendering pipeline",
+      "type": "factual",
+      "verified": true,
+      "evidence": "Well-documented Godot design principle; the editor is a Godot application itself"
+    }
+  ],
+  "user_notes_summary": {
+    "uncertainties": [],
+    "needs_review": [],
+    "workarounds": []
+  },
+  "eval_feedback": {
+    "suggestions": [
+      {
+        "assertion": "Every constraint (both hard and soft) cites its source",
+        "reason": "The without_skill output provides 'Rationale' instead of 'Source' -- this is a meaningful distinction. Rationale explains WHY, Source explains WHERE it was stated. The assertion correctly catches this difference."
+      }
+    ],
+    "overall": "Good discrimination between with_skill and without_skill. The without_skill output is substantively rich but lacks methodology trace and source citations."
+  }
+}
