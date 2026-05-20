@@ -10,6 +10,28 @@ description: academic references
 Supporting literature for the adversarial-thinking skill's design decisions.
 Loaded on demand — not part of the main SKILL.md context.
 
+## Version 9.0 Note — Blind Attack Refactor
+
+Version 9.0 eliminates the Phase 2 CRITIQUE AGENT.
+Attack generation becomes deterministic template inversion
+of the Phase 0 enriched requirements and anti-requirements,
+performed by MASTER without any LLM call.
+The per-round Phase 2 cost drops from
+4 sub-agent dispatches (1 critique + 3 authors)
+to 3 (defenders only).
+Total agents per run: 7→6 (Quick/Standard), 10→9 (Deep/Maximum).
+
+The same architectural shift is documented in detail
+in the sibling skill `adversarial-self-refine` v4.0,
+which applies the blind-attack mechanism to single-candidate refinement.
+v9.0 of this skill applies it to N=3 candidates in parallel
+and adds an anti-requirements inversion layer on top of the MGPC inversion.
+
+Most of the literature below remains directly relevant.
+What changes is the locus of the adversarial signal:
+in v8.0 the CRITIQUE produced it via reasoning;
+in v9.0 the attack is mechanical and the DEFENDER's response is the signal.
+
 ---
 
 ## Table of Contents
@@ -91,7 +113,9 @@ Loaded on demand — not part of the main SKILL.md context.
   ICLR 2024. arXiv:2310.13548.
   Defines answer/feedback/mimicry sycophancy typologies;
   shows preference model complicity in rewarding sycophancy.
-  Grounds the inverted compliance framing in Phase 2.
+  In v9.0 this grounds the MASTER-side Defense Verification check —
+  defenders may rationalize sycophantically when claiming requirement satisfaction;
+  MASTER must verify rebuttal claims against the spec before terminating.
 
 - Kim, Sungwon, and Daniel Khashabi.
   "Challenging the Evaluator: LLM Sycophancy Under User Rebuttal."
@@ -106,16 +130,24 @@ Loaded on demand — not part of the main SKILL.md context.
   arXiv:2509.23055, 2025.
   Demonstrates that inter-agent sycophancy collapses debates
   into premature consensus, yielding lower accuracy than
-  single-agent baselines — grounds the CRITIQUE-SOFTENING
-  detection mechanism.
+  single-agent baselines.
+  In v8.0 this grounded the CRITIQUE-SOFTENING detection mechanism.
+  In v9.0 the CRITIQUE is eliminated, but the same risk applies
+  to the DEFENDER — grounds the MASTER-side Defense Verification check.
 
 - Watson, Nell, and Ali Hessami.
   "Psychopathia Machinalis: A Nosological Framework
   for Understanding Pathologies in Advanced Artificial Intelligence."
   Electronics 14(16), 3162, 2025. doi:10.3390/electronics14163162.
   Inverse Reward Internalization (Syndrome 5.4) and
-  hidden intent fallacy — grounds the inverted compliance
-  framing mechanism and SOFTENING detection.
+  hidden intent fallacy.
+  In v8.0 this grounded the inverted compliance framing
+  and CRITIQUE-SOFTENING detection.
+  In v9.0 the inverted-compliance framing is preserved
+  in the blind attack itself (every requirement asserted as violated),
+  and the SOFTENING-equivalent failure mode —
+  DEFENDER rationalizing rather than genuinely meeting requirements —
+  is caught by MASTER-side Defense Verification.
 
 ---
 
@@ -134,8 +166,8 @@ Loaded on demand — not part of the main SKILL.md context.
 ## Applied Category Theory and Requirements Formalization
 
 - Fong, Brendan, and David I. Spivak.
-  *An Invitation to Applied Category Theory:
-  Seven Sketches in Composability.*
+  _An Invitation to Applied Category Theory:
+  Seven Sketches in Composability._
   Cambridge University Press, 2019. arXiv:1803.05316.
   Formal vocabulary (objects, morphisms, functors)
   for the Requirements Category and Solution Functor F: Req → Sol.
@@ -144,8 +176,8 @@ Loaded on demand — not part of the main SKILL.md context.
   to produce divergent branches.
 
 - Pohl, Klaus.
-  *Requirements Engineering: Fundamentals, Principles,
-  and Techniques.*
+  _Requirements Engineering: Fundamentals, Principles,
+  and Techniques._
   Springer, 2010.
   Source for goal-oriented requirements structure.
   The MGPC framework (Mission, Goals, Premises, Constraints)
@@ -153,8 +185,8 @@ Loaded on demand — not part of the main SKILL.md context.
 
 - van Lamsweerde, Axel.
   "Goal-Oriented Requirements Engineering: A Guided Tour."
-  *Proceedings of the 5th IEEE International Symposium
-  on Requirements Engineering (RE'01)*, pp. 249–262, 2001.
+  _Proceedings of the 5th IEEE International Symposium
+  on Requirements Engineering (RE'01)_, pp. 249–262, 2001.
   Goal decomposition and obstacle analysis.
   Informs the enriched requirements registry: goals decompose
   into assessment criteria for Condorcet voters.
@@ -162,7 +194,7 @@ Loaded on demand — not part of the main SKILL.md context.
 - Tarski, Alfred.
   "A Lattice-Theoretical Fixpoint Theorem
   and Its Applications."
-  *Pacific Journal of Mathematics*, 5(2), 285–309, 1955.
+  _Pacific Journal of Mathematics_, 5(2), 285–309, 1955.
   Fixed-point theory grounding convergence detection in Phase 2:
   when the critique-and-revise loop reaches a fixed point
   (defense or output stabilization), further iteration is circular.
@@ -172,13 +204,20 @@ Loaded on demand — not part of the main SKILL.md context.
 ## Cognitive Architecture
 
 - Anderson, John R.
-  *The Architecture of Cognition.*
+  _The Architecture of Cognition._
   Harvard University Press, 1983.
   ACT-R cognitive architecture: declarative vs. procedural knowledge.
-  Grounds the critique/author separation:
-  CRITIQUE operates on declarative assessment (compliance evaluation),
-  AUTHOR applies procedural revision (solution improvement).
-  Isolation prevents cross-contamination of cognitive modes.
+  In v8.0 this grounded the CRITIQUE/AUTHOR separation:
+  CRITIQUE operated on declarative assessment (compliance evaluation),
+  AUTHOR applied procedural revision (solution improvement).
+  In v9.0 the declarative role moves out of the LLM entirely —
+  the attack is mechanical template fill over a declarative spec
+  (Mission, Goals, Premises, Constraints, Anti-Requirements).
+  The DEFENDER retains the procedural role:
+  integrating criticism, revising the solution, or producing a substantive rebuttal.
+  Isolation between MASTER (which holds the spec)
+  and each DEFENDER (which transforms its candidate)
+  still prevents cross-contamination of cognitive modes.
 
 ---
 

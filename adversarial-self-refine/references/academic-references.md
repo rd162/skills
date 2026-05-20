@@ -10,6 +10,28 @@ description: academic references
 Supporting literature for the adversarial-self-refine skill's design decisions.
 Loaded on demand — not part of the main SKILL.md context.
 
+## Version 4.0 Note — Blind Attack Refactor
+
+Version 4.0 evolves the skill's architecture significantly.
+The CRITIC sub-agent role is eliminated.
+Attack generation becomes deterministic template inversion
+of a requirements spec —
+enumerated inline by the MASTER
+or optionally produced by the requirements-extractor helper skill when available.
+The LLM cost per round drops from 2 sub-agents (CRITIC + AUTHOR)
+to 1 (DEFENDER only).
+The requirements-extractor skill is a preferred helper, not a hard dependency:
+the blind-attack loop runs equally well on an inline-enumerated spec,
+just at lower spec rigor.
+
+Most of the literature below remains directly relevant —
+the foundational claims about isolation, self-correction limits,
+fixed-point convergence, and adversarial pressure still apply.
+What changes is the location of the adversarial signal:
+in v3.0 the CRITIC produced it via reasoning;
+in v4.0 the attack is mechanical and the DEFENDER's response is the signal.
+See § Original Contributions for the deltas specific to v4.0.
+
 ---
 
 ## Table of Contents
@@ -65,7 +87,7 @@ Loaded on demand — not part of the main SKILL.md context.
   and Rui Zhang.
   "When Can LLMs Actually Correct Their Own Mistakes?
   A Critical Survey of Self-Correction of LLMs."
-  *Transactions of the ACL*, vol. 12, pp. 1417–1440, 2024.
+  _Transactions of the ACL_, vol. 12, pp. 1417–1440, 2024.
   Survey establishing that self-correction works only when
   verification is substantially easier than generation.
   Grounds the assertive critique design: the CRITIC's task
@@ -145,31 +167,40 @@ Loaded on demand — not part of the main SKILL.md context.
 - Tarski, Alfred.
   "A Lattice-Theoretical Fixpoint Theorem
   and Its Applications."
-  *Pacific Journal of Mathematics*, 5(2), 285–309, 1955.
+  _Pacific Journal of Mathematics_, 5(2), 285–309, 1955.
   Fixed-point theorem for monotone functions on complete lattices.
   The defense signal is a behavioral fixed point:
-  R(s*) ~ s* — the AUTHOR arguing FOR its solution means
+  R(s₊) ≅ s₊ — the DEFENDER (v4.0) arguing FOR its solution means
   the refinement functor R has reached a fixed point.
+  Historical v3.0 framing used "AUTHOR" in the same role.
 
 - Kleene, Stephen Cole.
-  *Introduction to Metamathematics.*
+  _Introduction to Metamathematics._
   North-Holland, 1952.
   Kleene's fixed-point theorem and iterative approximation.
-  The CRITIC/AUTHOR loop computes successive approximations
-  s_0, s_1, ..., s_n converging to a fixed point s*
+  The DEFENDER loop (v4.0) computes successive approximations
+  s₀, s₁, ..., sₙ converging to a fixed point s₊
   (defense or output stabilization).
+  Historical v3.0 used a CRITIC/AUTHOR loop with the same convergence property.
 
 ---
 
 ## Cognitive Architecture
 
 - Anderson, John R.
-  *The Architecture of Cognition.*
+  _The Architecture of Cognition._
   Harvard University Press, 1983.
   ACT-R cognitive architecture: declarative vs. procedural knowledge.
-  The CRITIC operates on declarative assessment (what is wrong)
-  while the AUTHOR applies procedural revision (how to fix it).
-  Isolation ensures these cognitive modes do not contaminate each other.
+  In v3.0 the CRITIC operated on declarative assessment
+  while the AUTHOR applied procedural revision.
+  In v4.0 the declarative role is moved out of the LLM entirely —
+  the attack is a deterministic template fill over a declarative spec
+  (Mission, Goals, Premises, Constraints).
+  The DEFENDER retains the procedural role: integrating criticism,
+  revising the artifact, or producing a substantive rebuttal.
+  Isolation between MASTER (which holds the spec)
+  and DEFENDER (which transforms the artifact)
+  still prevents cross-contamination of these cognitive modes.
 
 ---
 
@@ -189,24 +220,47 @@ Loaded on demand — not part of the main SKILL.md context.
 ## Original Contributions
 
 The following elements are original to this skill ecosystem,
-built on the academic foundations listed above:
+built on the academic foundations listed above.
+Marked **v4.0** for items new or reframed in the blind-attack refactor.
 
-- **Blind assertive critique:** Asserting "X is flawed" rather than
-  asking "what could improve?" — forces binary revise/defend response.
-  Builds on Self-Refine (Madaan et al.) and Constitutional AI (Bai et al.)
-  but the specific assertive framing is original.
+- **Deterministic blind attack via requirements inversion (v4.0):**
+  Mechanical template inversion of a Mission/Goals/Premises/Constraints spec
+  produces the adversarial prompt with zero LLM calls.
+  Eliminates the CRITIC sub-agent role entirely.
+  The spec source is decoupled from the inversion mechanism:
+  inline MASTER enumeration is the floor,
+  requirements-extractor is the preferred-when-available ceiling.
+  Builds on Self-Refine (Madaan et al.) and Constitutional AI (Bai et al.) —
+  the constitutional principles become the requirements spec,
+  but inversion replaces principle-guided critique with assertion of total failure.
+  The specific deterministic-fill architecture is original to this skill.
 
-- **Defense-based termination:** The model arguing FOR its solution
-  as a natural convergence signal — a behavioral fixed point.
+- **Person Triangulation (v4.0):**
+  Adding attribution-based pressure ("this looks like cheap ChatGPT output")
+  on top of the inverted-requirement attack.
+  Exploits the model's tendency to either own and defend, or disown and rewrite,
+  attributed work — surfacing weakness faster than pure content critique.
+  Original contribution.
+
+- **Defense-based termination:**
+  The DEFENDER arguing FOR its solution as a natural convergence signal —
+  a behavioral fixed point.
   Inspired by Tarski's fixed-point theory and debate convergence
-  (Du et al., Irving et al.). The specific detection mechanism is original.
+  (Du et al., Irving et al.).
+  Carried over from v3.0; the specific detection mechanism is original.
 
-- **CRITIC/AUTHOR isolation pattern:** Mandatory separation of critique
-  and revision into distinct agent contexts. Motivated by
-  self-correction limitations (Huang et al.) and DoT (Liang et al.).
-  The specific master-routed architecture is original.
-
-- **Sycophancy collapse detection:** Distinguishing genuine convergence
-  from sycophantic accommodation in multi-round critique.
+- **Defense verification against spec (v4.0):**
+  Lightweight MASTER-side check that the DEFENDER's rebuttal claims
+  are plausibly correct against the requirements spec.
+  Filters sycophantic rationalization without re-doing the work.
+  Reframes v3.0's sycophancy collapse detection (which monitored CRITIC drift)
+  to the new architecture (which monitors DEFENDER rationalization).
   Motivated by sycophancy research (Sharma et al., Yao et al.).
-  The specific detection heuristics are original.
+
+- **MASTER / DEFENDER isolation pattern (v4.0):**
+  In v3.0 the pattern was CRITIC / AUTHOR isolation.
+  In v4.0 the CRITIC is gone — the relevant isolation is between MASTER
+  (which holds the spec and authoring context)
+  and DEFENDER (which sees only the artifact + the assembled attack).
+  Motivated by self-correction limitations (Huang et al.)
+  and Degeneration-of-Thought (Liang et al.).

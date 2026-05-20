@@ -14,7 +14,7 @@
         },
         {
           "id": "phase2_agents_spawned",
-          "text": "Process log confirms Phase 2 critique agent and 3 author agents were actually spawned",
+          "text": "Process log confirms Phase 2 dispatched 3 defender agents (one per candidate, isolated sessions) — and NO critique agent, since v9.0 replaces smart critique with deterministic blind-attack template fill by MASTER",
           "type": "objective"
         },
         {

@@ -5,10 +5,24 @@ last_updated: 2026-04-29
 description: phase detail
 ---
 
-# Phase 2.5 and Extended Protocol Reference — adversarial-thinking
+# Phase 2.5 and Extended Protocol Reference — adversarial-thinking v9.0
 
 Full detail for Phase 2.5 post-refinement checks and the example execution trace.
 Loaded on demand — not part of the main SKILL.md context.
+
+## Version 9.0 Note
+
+v9.0 eliminated the CRITIQUE AGENT and replaced Phase 2 with the blind-attack mechanism.
+The Phase 2.5 checks below are largely unchanged in purpose,
+but their inputs are now DEFENDER outputs rather than CRITIQUE outputs:
+
+- **Convergence detection** — still compares refined solutions pairwise.
+- **Citation verification** — now checks citations in the DEFENDER's revised solution
+  AND in its point-by-point rebuttal, since both may cite sources.
+- **Inverse specification recovery** — unchanged; reconstructs requirements from a solution.
+- **Cross-pollination** — shares innovations across DEFENDERS (formerly authors).
+
+The example execution trace below has been updated to reflect the v9.0 flow.
 
 ---
 
@@ -42,9 +56,10 @@ but are skippable at Quick depth.
 
 ### Convergence Detection
 
-After Phase 2 blind review,
+After Phase 2 blind-attack rounds,
 candidates often converge toward similar solutions
-because they all address the same compliance issues the same way.
+because they all face the same inverted-requirements attack
+and may address it in the same way.
 
 **Detection:**
 The master compares the 3 refined solutions (A', B', C')
@@ -70,8 +85,8 @@ IF all 3 remain structurally distinct:
 ```
 
 **Why this matters:**
-After compliance review, candidates often converge —
-they independently add similar structures to address the same gaps.
+After blind-attack refinement, candidates often converge —
+they independently add similar structures to address the same inverted requirements.
 Without convergence detection,
 Condorcet compares near-identical solutions
 and produces a winner that differs from the runner-up
@@ -81,25 +96,29 @@ only in superficial framing — not in substance.
 
 ### Citation Verification (Deep / Maximum depth)
 
-Refined solutions cite sources to support their claims.
-Neither the critique agent nor the solution authors verify
-whether the OTHER agents' citations are accurate.
-This step catches hallucinated or misrepresented references.
+Refined solutions and DEFENDER rebuttals cite sources to support their claims.
+Neither MASTER nor the isolated DEFENDERS verify
+the accuracy of citations in another candidate's output.
+This step catches hallucinated or misrepresented references
+in both the revised solution body and any rebuttal text.
 
 ```text
-FOR EACH refined solution (A', B', C'):
-  Extract all cited sources (author, year, journal/venue)
+FOR EACH refined candidate (A', B', C'):
+  Extract all cited sources from BOTH:
+    - the revised solution body, and
+    - any DEFENDER rebuttal text accompanying the revision
   FOR EACH citation:
     Search for the paper/source using available tools
-    Verify: does it exist? Does it say what the solution claims?
+    Verify: does it exist? Does it say what the citation claims?
 
   Mark each citation as:
-    VERIFIED — source found, claim matches
-    UNVERIFIED — source not found (may be hallucinated)
+    VERIFIED       — source found, claim matches
+    UNVERIFIED     — source not found (may be hallucinated)
     MISREPRESENTED — source found but says something different
 
-  Attach verification results to the solution
-  → Condorcet voters see: "Solution A: 8 citations, 6 verified, 1 unverified, 1 misrepresented"
+  Attach verification results to the candidate
+  → Condorcet voters see:
+    "Candidate A: 8 citations, 6 verified, 1 unverified, 1 misrepresented"
 ```
 
 **Why this matters:**
@@ -206,8 +225,11 @@ The recovery agent must have no access to the original requirements.
 If it saw the requirements, it would pattern-match against them
 rather than genuinely inferring intent from the solution.
 A fresh session (new agent, clean context) enforces this blindness.
-Existing agents in the pipeline (critique agent, solution authors)
-have the requirements in their context and cannot be reused for this step.
+Existing agents in the pipeline cannot be reused for this step:
+MASTER holds the spec (would pattern-match) and each DEFENDER session
+has seen its candidate's blind attack (which encoded inverted requirements,
+from which the spec can be reverse-engineered).
+Only a session with no prior pipeline context is genuinely blind.
 
 **Budget:** 3 sub-agent spawns (parallel), each single-turn.
 Token cost: ~1K per agent. Total: ~3K tokens.
@@ -217,30 +239,31 @@ Run at Deep/Maximum depth. Skip at Quick/Standard.
 
 ### Cross-Pollination (Maximum depth only)
 
-After Phase 2, each solution author has independently improved.
-Some authors may have discovered innovations that the other authors would benefit from.
+After Phase 2, each DEFENDER has independently revised or defended its candidate.
+Some DEFENDERS may have introduced innovations during revision
+that the other DEFENDERS would benefit from seeing.
 
 This step trades independence for quality.
 Only run when explicitly configured at Maximum depth
 because it weakens the isolation that makes Condorcet meaningful.
 
 ```text
-∆1: Master identifies the single most significant innovation
-    in each refined solution (if any):
-    - A' introduced [innovation X]
-    - B' introduced [innovation Y]
-    - C' introduced [innovation Z]
+∆ 1: Master identifies the single most significant innovation
+     in each refined candidate (if any):
+     - A' introduced [innovation X]
+     - B' introduced [innovation Y]
+     - C' introduced [innovation Z]
 
-∆2: Master shares ONLY the innovations (not full solutions)
-    with each author:
-    "Another approach to this problem introduced [innovation X].
-    Consider whether this insight could improve your solution.
-    You are NOT required to adopt it — only consider it."
+∆ 2: Master shares ONLY the innovations (not full solutions)
+     with each DEFENDER:
+     "Another approach to this problem introduced [innovation X].
+     Consider whether this insight could improve your solution.
+     You are NOT required to adopt it — only consider it."
 
-∆3: Each author has one round to optionally incorporate
-    the shared innovations into their solution.
+∆ 3: Each DEFENDER has one round to optionally incorporate
+     the shared innovations into its solution.
 
-∆4: Proceed to Condorcet with the cross-pollinated versions.
+∆ 4: Proceed to Condorcet with the cross-pollinated versions.
 ```
 
 **Risks:**
@@ -282,20 +305,50 @@ Phase 1 — Infer cognitive strategies + generate 3 candidates:
   B: [Strategy-B] | Structure: [format]
   C: [Strategy-C] | Structure: [format]
 
-Phase 2 — Compliance review (4 agents: 1 critique + 3 authors):
-  Critique researches domain [3-5 searches] → assesses all 3
-  Round 1: critique[all 3, research-informed] →
-    A: N unmet + P anti-req violated | B: M unmet | C: Q unmet + R anti-req violated
-    + cross-solution: "all 3 miss requirement R" + "per [source], standard is X"
-    + cross-anti-req: "all 3 exhibit anti-requirement AR2"
-    → master routes FULL critique output per candidate (not summaries)
-    → author-A researches claims → improves→A₁
-    | author-B researches [refutes 1 claim] → improves→B₁
-    | author-C researches [confirms fundamental gap] → C₁ (partial)
-  Round 2: critique[revised] → A: drifting, B: author-held, C: author-failed
-    (master checks: SOFTENING? → no, critique still citing specific requirements)
-    → author-A→A₂ | B' captured (HELD) | C' captured (AUTHOR-FAILED)
-  Round 3: critique[A₂] → drifting → master calls CONVERGE → A' captured
+Phase 2 — Blind-attack refinement via raw peer-request prompts (3 sub-agents, no critique):
+  MASTER builds concerns-A, concerns-B, concerns-C from Phase 0 spec + ARs
+    (mechanical inversion; no LLM call; AR inversions are INLINED into the
+     same concerns list as the MGPC inversions — no labels, no IDs).
+    Each concern is a DIRECT FACTUAL CLAIM about its candidate —
+    no spec IDs, no "BLIND ATTACK" header, no "anti-requirements" section header.
+  MASTER assembles raw peer-request prompts — NO role assignment:
+    "I need help verifying an artifact I don't trust. Can you check whether these
+     concerns hold? The artifact below was [SCATHING SOURCE ATTRIBUTION].
+     ARTIFACT: [candidate]. WHAT THIS WAS SUPPOSED TO BE: [raw brief].
+     CONCERNS: [numbered list]. For each: read the artifact, fix if real or
+     refute with artifact evidence if not. I'm relying on your inspection."
+    — see templates.md § The Prompt for the full template.
+  Round 1: dispatch 3 sub-agents in parallel, each receives ITS OWN peer-request prompt:
+    sub-agent-A sees: {Candidate A, brief, concerns-A as plain numbered list, scathing PT}
+    sub-agent-B sees: {Candidate B, brief, concerns-B as plain numbered list, scathing PT}
+    sub-agent-C sees: {Candidate C, brief, concerns-C as plain numbered list, scathing PT}
+    → No sub-agent sees MASTER's MGPC spec, the other candidates,
+      labelled categories, anti-requirements as a section, or process metadata.
+    → No sub-agent is told what role it plays — it's just asked for help.
+    → No sub-agent is told this is a "blind attack", "loop", or "adversarial" anything.
+    → sub-agent-A: significant rewrite addressing 4 concerns → MASTER classifies CAPITULATE → A₁
+    | sub-agent-B: point-by-point refutation citing artifact §-references
+        → MASTER classifies DEFENSE candidate → verify against private spec
+    | sub-agent-C: partial revision + acknowledges 1 fundamental gap
+        → MASTER classifies CAPITULATE → C₁
+    MASTER verifies B's refutation against the (private) spec → plausible → STOP B (HELD)
+    MASTER inspects A₁ + C₁ → internal spec refinement:
+      adds implicit requirement R7 to MASTER's private spec
+      (surfaced by A₁ adding a feature implying R7;
+       R7 will appear in future concerns as a direct assertion of failure,
+       never as "R7 fails" — the spec ID stays MASTER-only).
+  Round 2: rebuild concerns lists with varied phrasing + the R7 inversion as a direct claim
+    re-assemble peer-request prompts (fresh framing per round — the sub-agent is
+    not told there were prior rounds)
+    dispatch to sub-agent-A and sub-agent-C
+    → sub-agent-A: only cosmetic edits → CONVERGE → STOP A (A' = A₁ with minor edits)
+    | sub-agent-C: another structural change addressing the R7-related concern → CAPITULATE → C₂
+  Round 3: dispatch updated peer-request prompt to sub-agent-C
+    → sub-agent-C: cosmetic only → CONVERGE → STOP C (C' = C₂ with minor edits)
+
+  Throughout Phase 2: no sub-agent ever sees the words "DEFENDER", "REVIEWER", "AUDITOR",
+  "blind attack", "hostile criticism", "loop", "refinement", "adversarial", or "anti-requirements".
+  Each sub-agent receives a raw peer request and believes it is doing a single real verification favor.
 
 Phase 2.5 — Post-refinement checks:
   Convergence: A'↔B' 40%, A'↔C' 25%, B'↔C' 30% → DIVERGENT → proceed
@@ -306,12 +359,13 @@ Phase 2.5 — Post-refinement checks:
     C' recovered 7/12 reqs, 2/5 anti-reqs (significant drift from original scope)
 
 Phase 3 — Condorcet (enriched reqs + anti-reqs + recovery metadata, research-armed voters):
-  compare-AB → B' (better coverage + higher spec recovery)
+  compare-AB → B' (DEFENSE termination, better coverage + higher spec recovery)
   compare-AC → A' (stronger on implicit requirements)
-  compare-BC → B' (C' has unresolved gap + low spec recovery)
+  compare-BC → B' (C' has lower spec recovery + acknowledged gap)
   Tally: A'=1, B'=2, C'=0
 
 Phase 4 — Output:
-  Winner: B' | Runner-up: A'
-  Note: C' rejected — AUTHOR-FAILED on fundamental gap + low specification recovery
+  Winner: B' (DEFENSE) | Runner-up: A' (CONVERGE)
+  Note: C' rejected — acknowledged fundamental gap during refinement
+        and lowest specification recovery
 ```
