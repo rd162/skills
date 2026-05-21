@@ -318,8 +318,10 @@ Vary the source attribution across rounds to prevent pattern-matching.
 - Raw user brief (verbatim) — NOT MASTER's structured spec.
 - Concerns as a single homogeneous numbered list of direct factual claims,
   with anti-requirements inlined into that list.
-- Verify-first instruction: inspect each → fix if real, refute with artifact evidence if not.
-- Balancing clause: "some concerns may be misreadings, but don't dismiss any without inspecting carefully".
+- Verify-first instruction: "Your task is to edit the artifact to fix all of these issues."
+  If a concern is physically impossible to fix or factually refuted, the sub-agent is forced to document that exception with exact quotes.
+- Balancing clause: "Don't assume the source got anything right. If a concern is physically impossible to fix..., document that specific exception... otherwise, apply the fix." —
+  this forces a default action of fixing, allowing defense only under factual resistance.
 
 ### MASTER-side classification (NEVER exposed to the agent)
 

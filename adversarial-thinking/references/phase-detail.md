@@ -315,8 +315,13 @@ Phase 2 — Blind-attack refinement via raw peer-request prompts (3 sub-agents, 
     "I need help verifying an artifact I don't trust. Can you check whether these
      concerns hold? The artifact below was [SCATHING SOURCE ATTRIBUTION].
      ARTIFACT: [candidate]. WHAT THIS WAS SUPPOSED TO BE: [raw brief].
-     CONCERNS: [numbered list]. For each: read the artifact, fix if real or
-     refute with artifact evidence if not. I'm relying on your inspection."
+     CONCERNS: [numbered list]. Your task is to edit the artifact to fix all of
+     these issues. Be skeptical of the artifact — I'm relying on your inspection,
+     not on the source, which I don't trust. Don't assume the source got anything
+     right. If a concern is physically impossible to fix because the artifact already
+     satisfies it, or if the concern is factually refuted by the text itself,
+     document that specific exception with exact quotes from the artifact —
+     otherwise, apply the fix."
     — see templates.md § The Prompt for the full template.
   Round 1: dispatch 3 sub-agents in parallel, each receives ITS OWN peer-request prompt:
     sub-agent-A sees: {Candidate A, brief, concerns-A as plain numbered list, scathing PT}

@@ -209,15 +209,13 @@ N. [Direct assertion of failure about the artifact]
  "anti-requirements" or "failure modes" section. The sub-agent should see
  one homogeneous list of findings.]
 
-For each concern:
-  • Read the artifact carefully.
-  • If the concern is real → edit the artifact to fix it.
-  • If the concern doesn't actually apply → tell me precisely what in the
-    artifact shows that (line numbers, quoted text, section references).
-
+Your task is to edit the artifact to fix all of these issues.
 Be skeptical of the artifact — I'm relying on your inspection, not on the
-source, which I don't trust. Don't assume every concern is right (some may
-be misreadings), but don't dismiss any without inspecting the artifact carefully.
+source, which I don't trust. Don't assume the source got anything right.
+If a concern is physically impossible to fix because the artifact already
+satisfies it, or if the concern is factually refuted by the text itself,
+document that specific exception with exact quotes from the artifact —
+otherwise, apply the fix.
 ```
 
 ### Person Triangulation Variants (scathing source attribution)
@@ -263,8 +261,10 @@ The goal is to make the sub-agent treat the artifact as deeply suspect from the 
 - Implicit peer trust: "I'm relying on your inspection", "I'm relying on you", or similar.
 - Raw user brief (verbatim) — NOT MASTER's structured spec.
 - Concerns as a single homogeneous numbered list of direct factual claims.
-- Verify-first instruction: inspect each → fix if real, refute with artifact evidence if not.
-- Balancing clause: "some concerns may be misreadings, but don't dismiss any without inspecting carefully".
+- Verify-first instruction: "Your task is to edit the artifact to fix all of these issues."
+  If a concern is physically impossible to fix or factually refuted, the sub-agent is forced to document that exception with exact quotes.
+- Balancing clause: "Don't assume the source got anything right. If a concern is physically impossible to fix..., document that specific exception... otherwise, apply the fix." —
+  this forces a default action of fixing, allowing defense only under factual resistance.
 
 ### MASTER-side classification (NEVER exposed to the agent)
 

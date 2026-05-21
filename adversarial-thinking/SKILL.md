@@ -1,6 +1,6 @@
 ---
 name: adversarial-thinking
-description: Produces rigorously stress-tested solutions through adversarial exploration. Generates divergent approaches, battle-tests each via deterministic blind-attack prompts (mechanical inversion of the requirements spec plus anti-requirement assertions, optionally with Person Triangulation pressure) directed at isolated defender agents, then selects the strongest through pairwise comparison. Returns one recommended solution and one alternative. Use when the user asks to "think deeper", "think harder", "ultrathink", "deep research", "research deeply", "research this carefully", "give me a really good answer", "explore alternatives", "I need the best approach", or when the request is naturally high-stakes — architecture decisions, strategy choices, complex trade-offs, important designs, or any question where a first-draft answer risks missing critical flaws. Composes with deep-research-t1 when both deep knowledge gathering and adversarial solution refinement are needed.
+description: Produces rigorously stress-tested solutions through adversarial exploration. Generates divergent approaches, battle-tests each via deterministic blind-attack prompts (mechanical inversion of the requirements spec plus anti-requirement assertions, optionally with Person Triangulation pressure) directed at isolated sub-agents, then selects the strongest through pairwise comparison. Returns one recommended solution and one alternative. Use when the user asks to "think deeper", "think harder", "ultrathink", "deep research", "research deeply", "research this carefully", "give me a really good answer", "explore alternatives", "I need the best approach", or when the request is naturally high-stakes — architecture decisions, strategy choices, complex trade-offs, important designs, or any question where a first-draft answer risks missing critical flaws. Composes with deep-research-t1 when both deep knowledge gathering and adversarial solution refinement are needed.
 version: "9.0"
 metadata:
   author: rd162@hotmail.com
@@ -14,7 +14,7 @@ last_updated: 2026-04-29
 
 Explore divergent approaches,
 battle-test each via deterministic blind-attack prompts
-directed at isolated defender agents,
+directed at isolated sub-agents,
 select the strongest through pairwise comparison,
 deliver one recommended solution and one alternative.
 
@@ -23,7 +23,7 @@ adversarial-self-refine —
 attack generation is mechanical inversion of the requirements spec,
 not a smart-critic LLM call.
 The attack here additionally inverts the Phase 0 anti-requirements registry,
-giving the defender a richer adversarial surface to defend against.
+giving the sub-agent a richer adversarial surface to defend against.
 
 ---
 
@@ -37,7 +37,7 @@ giving the defender a richer adversarial surface to defend against.
 | **Maximum**  | "exhaustive", "ultrathink"              | Deep        | Until conv | All + cross-pollin | 9      |
 
 Agent count breakdown:
-3 defenders (Phase 2, sessions persistent across rounds) +
+3 sub-agents (Phase 2, sessions persistent across rounds) +
 3 condorcet voters (Phase 3) +
 3 inverse-spec recovery agents (Phase 2.5, Deep/Maximum only).
 No critique agent — attack generation is deterministic template fill by MASTER.
@@ -45,7 +45,7 @@ No critique agent — attack generation is deterministic template fill by MASTER
 Research scales with depth because shallow domains need fewer queries to saturate,
 while high-stakes domains have more failure modes to discover.
 Round counts reflect observed convergence patterns:
-most defenders reach DEFENSE or CONVERGE by round 2-3;
+most sub-agents reach DEFENSE or CONVERGE by round 2-3;
 deep/maximum depth allows pursuit of structural issues that surface later.
 
 Detect depth from the user's language.
@@ -66,7 +66,7 @@ Track remaining budget and downgrade mid-pipeline if needed.
 ## Step 1: Detect Execution Mode
 
 Isolation is what separates this pipeline from a first draft —
-without separate agent sessions, a defender's revision and rationalization
+without separate agent sessions, a sub-agent's revision and rationalization
 share context with the master's spec, biasing the response.
 Detect the best available sub-agent mechanism before proceeding.
 
@@ -92,7 +92,7 @@ so use it only when sub-agents are genuinely unavailable.
 ```text
 Phase 0   → Research domain, infer enriched requirements + anti-requirements
 Phase 1   → Infer cognitive strategies, generate 3 divergent candidates
-Phase 2   → Blind-attack refinement — 3 defenders, master-routed, no critic agent
+Phase 2   → Blind-attack refinement — 3 sub-agents, master-routed, no critic agent
 Phase 2.5 → Post-refinement checks (depth-dependent)
 Phase 3   → Condorcet pairwise comparison — 3 agents, enriched requirements
 Phase 4   → Output winner + runner-up
@@ -166,7 +166,7 @@ The template instructs the model to:
 ## Phase 2: Blind-Attack Refinement
 
 Each candidate is stress-tested through a deterministic blind attack
-dispatched to an isolated defender.
+dispatched to an isolated sub-agent.
 The master orchestrates routing.
 No "smart critic" agent is spawned —
 the attack is generated by template inversion of
@@ -194,7 +194,7 @@ the attack asserts "this solution exhibits AR."
 No LLM call is required to generate the attack —
 it is mechanical template fill by MASTER.
 
-The DEFENDER's response per candidate is the signal:
+The sub-agent's response per candidate is the signal:
 
 - **CAPITULATE** — significant rewrite → candidate was weak → continue
 - **CONVERGE** — cosmetic edits only despite total attack → stable → STOP this candidate
@@ -202,15 +202,15 @@ The DEFENDER's response per candidate is the signal:
 
 ### Why Isolation Still Matters
 
-DEFENDERS are isolated from MASTER (which holds the full spec)
+Sub-agents are isolated from MASTER (which holds the full spec)
 and from each other.
 A single agent playing both attacker and defender softens its own attacks
 (Huang et al., ICLR 2024; Madaan et al., NeurIPS 2023).
-Isolated DEFENDERS receive only their candidate + the assembled attack —
+Isolated sub-agents receive only their candidate + the assembled attack —
 they cannot rationalize from MASTER's authoring context.
 
 Authors-isolated-from-each-other (v8.0 architecture) is preserved here:
-each DEFENDER sees only its own candidate,
+each sub-agent sees only its own candidate,
 preventing convergence toward a single design.
 
 ### Prompt Framing: Raw Verification Request, Not Role Assignment
@@ -352,21 +352,21 @@ with no clue that any structure (spec / AR registry / categories) exists upstrea
 The MGPC spec, by contrast, IS the success-criteria checklist —
 hence must stay MASTER-only at all times.
 
-### Agent Architecture (3 defenders, no critique agent)
+### Agent Architecture (3 sub-agents, no critique agent)
 
 ```text
 MASTER ORCHESTRATOR
   ├─ holds enriched requirements + anti-requirements (Phase 0)
   ├─ holds research summary (Phase 0)
   ├─ builds blind attack per candidate (deterministic — no LLM call)
-  ├─ refines spec between rounds based on DEFENDER outputs (optional)
+  ├─ refines spec between rounds based on sub-agent outputs (optional)
   └─ classifies per-candidate termination
 
-DEFENDER A (isolated session, persistent across rounds)
+SUB-AGENT A (isolated session, persistent across rounds)
   — receives: Candidate A + blind attack for A (per round)
   — returns: revised solution A_n or point-by-point rebuttal
-DEFENDER B (isolated session, persistent across rounds)
-DEFENDER C (isolated session, persistent across rounds)
+SUB-AGENT B (isolated session, persistent across rounds)
+SUB-AGENT C (isolated session, persistent across rounds)
   — same shape, isolated from each other and from MASTER
 ```
 
@@ -473,17 +473,17 @@ it costs no additional sub-agent calls.
 
 ### Termination (Observed Per Candidate, Not Instructed)
 
-MASTER observes each DEFENDER's output and classifies it.
-DEFENDERS are never told when to stop —
+MASTER observes each sub-agent's output and classifies it.
+Sub-agents are never told when to stop —
 instructed termination causes agents to optimize for ending rather than quality.
 
-| Signal     | Detection in DEFENDER output                                                                                | Action                            |
-| ---------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------- |
-| DEFENSE    | Rebuts attack: "the solution already handles X", "this is intentional", "criticism doesn't apply because Y" | STOP this candidate (fixed point) |
-| CONVERGE   | Structure unchanged; only cosmetic edits (rewording, reordering, formatting) despite full attack            | STOP this candidate (stable)      |
-| CAPITULATE | Major structural revision — attack accepted                                                                 | CONTINUE this candidate           |
-| CYCLE      | Revised solution matches an earlier sₖ (k < n-1)                                                            | STOP — use best so far            |
-| TIMEOUT    | Max rounds reached per depth table                                                                          | STOP — use last                   |
+| Signal     | Detection in sub-agent output                                                                                 | Action                            |
+| ---------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| DEFENSE    | Rebuts concerns: "the solution already handles X", "this is intentional", "criticism doesn't apply because Y" | STOP this candidate (fixed point) |
+| CONVERGE   | Structure unchanged; only cosmetic edits (rewording, reordering, formatting) despite full concerns list       | STOP this candidate (stable)      |
+| CAPITULATE | Major structural revision — concerns accepted and fixed                                                       | CONTINUE this candidate           |
+| CYCLE      | Revised solution matches an earlier sₖ (k < n-1)                                                              | STOP — use best so far            |
+| TIMEOUT    | Max rounds reached per depth table                                                                            | STOP — use last                   |
 
 Round-level termination:
 end Phase 2 when all 3 candidates reach a stop signal,
@@ -491,7 +491,7 @@ or when Phase 2 budget is exhausted.
 
 ### Defense Verification (lightweight, MASTER-side)
 
-If a DEFENDER claims "requirement X is met"
+If a sub-agent claims "requirement X is met"
 but the solution clearly does not satisfy X,
 MASTER must reject the defense
 and run another round for that candidate
@@ -507,7 +507,7 @@ not a full re-verification.
 The goal is to filter rationalization without re-doing the analysis work.
 
 Use the prompt templates from
-`references/templates.md § Blind Attack` and `§ Defender`.
+`references/templates.md § The Prompt` and `§ MASTER Classification Heuristics`.
 
 ---
 
@@ -526,7 +526,7 @@ If 2 converge but 1 is distinct, merge the pair and run a single comparison.
 **Citation verification** (Deep+):
 For each refined solution, mark its cited claims as VERIFIED / UNVERIFIED / MISREPRESENTED.
 Note: citations may appear in either the revised solution body
-or in a DEFENDER's rebuttal — verify both.
+or in a sub-agent's rebuttal — verify both.
 Attach summary to Condorcet metadata.
 
 **Inverse specification recovery** (Deep+):
@@ -602,7 +602,7 @@ Hide raw candidates, attack traces, and rejected solutions unless requested.
 
 | File                                | When to read                                                                                                                                                                     |
 | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `references/templates.md`           | Before dispatching any sub-agent — contains generation prompt, blind-attack template + inversion patterns + Person Triangulation variants, defender prompt, and Condorcet prompt |
+| `references/templates.md`           | Before dispatching any sub-agent — contains generation prompt, blind-attack template + inversion patterns + Person Triangulation variants, verifier prompt, and Condorcet prompt |
 | `references/delegate-and-gates.md`  | Dispatch patterns, environment adaptation, gates, anti-patterns, composition table                                                                                               |
 | `references/phase-detail.md`        | Phase 2.5 full protocols (Deep/Maximum), execution trace                                                                                                                         |
 | `references/academic-references.md` | Supporting literature for design decisions                                                                                                                                       |

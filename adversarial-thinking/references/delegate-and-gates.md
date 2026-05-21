@@ -400,10 +400,9 @@ Self-play: one agent playing both attacker and defender in the same session
   LLMs do not genuinely self-critique (Huang et al., ICLR 2024).
   → Defenders run in isolated sessions; MASTER builds attacks.
 
-Role-game framing: telling defenders they are "under attack" or "must defend"
-  Turns into theatrical performance with shallow output.
-  → Use the prompt template — "criticism received, act on it."
-    Defense emerges naturally when the candidate is strong.
+Role-game framing / conditional instructions: telling defenders they are "under attack" or providing conditional "if real -> fix, if not -> refute" instructions
+  Turns into theatrical performance or checklist-checking.
+  → "Your task is to edit the artifact to fix all of these issues." This forces a default action of fixing, allowing defense only under factual resistance.
 
 Per-candidate critique sub-agents (one critic per candidate)
   Same architectural mistake as v8.0 but worse — no cross-candidate insight,

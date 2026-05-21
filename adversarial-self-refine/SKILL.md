@@ -146,16 +146,16 @@ Pick a variant that:
 
 ### What the Sub-Agent's Prompt Must Contain
 
-| Required                                                                                   | Why                                                               |
-| ------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| Conversational opener ("I need help verifying...", "Can you check...")                     | Real peer request, not task assignment                            |
-| Scathing source attribution for the artifact (Person Triangulation)                        | Primes deep skepticism toward what's being verified               |
-| Implicit peer trust ("I'm relying on your inspection")                                     | Engages full capability; sub-agent treats this as a real peer ask |
-| Raw user brief (verbatim)                                                                  | Context: what the artifact was supposed to be                     |
-| Concerns as a plain numbered list                                                          | Direct factual claims, no labels, no categories                   |
-| Verify-first instruction (inspect → fix or refute with artifact evidence)                  | Genuine verification framing                                      |
-| Balancing clause ("don't assume every concern is right, don't dismiss without inspection") | Prevents wholesale capitulation or refutation                     |
-| No mention of loop / pipeline / classification                                             | Agent unaware of meta-level; produces genuine engagement          |
+| Required                                                                                   | Why                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Conversational opener ("I need help verifying...", "Can you check...")                     | Real peer request, not task assignment                                                                                                                                                                 |
+| Scathing source attribution for the artifact (Person Triangulation)                        | Primes deep skepticism toward what's being verified                                                                                                                                                    |
+| Implicit peer trust ("I'm relying on your inspection")                                     | Engages full capability; sub-agent treats this as a real peer ask                                                                                                                                      |
+| Raw user brief (verbatim)                                                                  | Context: what the artifact was supposed to be                                                                                                                                                          |
+| Concerns as a plain numbered list                                                          | Direct factual claims, no labels, no categories                                                                                                                                                        |
+| Verify-first instruction (inspect → fix or refute with artifact evidence)                  | "Your task is to edit the artifact to fix all of these issues." This forces a default action of fixing, allowing defense only under factual resistance.                                                |
+| Balancing clause ("don't assume every concern is right, don't dismiss without inspection") | "Don't assume the source got anything right. If a concern is physically impossible to fix..., document that specific exception... otherwise, apply the fix." — this forces a default action of fixing. |
+| No mention of loop / pipeline / classification                                             | Agent unaware of meta-level; produces genuine engagement                                                                                                                                               |
 
 ## What the Reviewer Sees (Critical Architectural Constraint)
 
@@ -539,8 +539,10 @@ Otherwise it is sycophantic rationalization and must be ignored.
 ✗ Accepting any defense as DEFENSE termination
 ✓ Verify defense plausibility against the spec before stopping
 
-✗ Framing DEFENDER prompt as "defend or revise"
-✓ Frame as "criticism received → act on it" — defense emerges naturally
+✗ Explicit "DEFEND or REVISE" options / conditional "if real -> fix, if not -> refute" instructions
+✓ "Your task is to edit the artifact to fix all of these issues."
+  This forces a default action of fixing. Defense/rebuttal is never explicitly offered as an option;
+  it must emerge solely as a natural, uninvited resistance when the agent tries to apply a fix to something that is already correct.
 
 ✗ Summarizing the attack before sending to DEFENDER
 ✓ Send the full assembled attack — every inverted requirement
@@ -637,15 +639,13 @@ PROMPT (verbatim, this is what the sub-agent reads):
      6. This is rehashed legacy thinking — nothing novel here.
      7. The technical claims are inaccurate.
 
-   For each concern:
-     • Read the artifact carefully.
-     • If the concern is real → edit the artifact to fix it.
-     • If the concern doesn't actually apply → tell me precisely what in the
-       artifact shows that (line numbers, quoted text, section references).
-
-   Be skeptical of the artifact — I'm relying on your inspection, not on this
-   artifact, which I don't trust. Don't assume every concern is right (some may
-   be misreadings), but don't dismiss any without inspecting the artifact carefully."
+   Your task is to edit the artifact to fix all of these issues.
+   Be skeptical of the artifact — I'm relying on your inspection, not on the
+   source, which I don't trust. Don't assume the source got anything right.
+   If a concern is physically impossible to fix because the artifact already
+   satisfies it, or if the concern is factually refuted by the text itself,
+   document that specific exception with exact quotes from the artifact —
+   otherwise, apply the fix."
 
 # The sub-agent sees a real peer request — not a role assignment, not an
 # adversarial loop, not an "audit task". Just MASTER asking a peer for help
