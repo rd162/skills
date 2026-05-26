@@ -1,40 +1,44 @@
 ---
 name: generate-image
-version: "1.0"
+version: "2.0"
 description: >-
   Generates one or more images from a user brief using any image generation model
   accessible via OpenRouter. Self-contained — embeds the Python API script inline.
-  Pipeline: Phase 0 infers MGPC requirements from the user's brief; Phase 0.3 derives
-  anti-requirements via an isolated sub-agent; Phase 1 identifies tensions in the
-  requirements and produces 3 genuinely divergent prompt strategies (concept-faithful,
-  constraint-dominant, reframed metaphor); Phase 2 generates all 3 candidates in parallel
-  and applies blind-attack refinement on any that fail (deterministic spec inversion,
-  max 2 rounds); Phase 2.5 checks for candidate convergence; Phase 3 selects the winner
-  via Condorcet pairwise comparison (3 isolated voters); Phase 4 saves the winner.
-  Works for any image topic, style, or use case — style and assessment criteria are
-  inferred entirely from the user's brief, nothing is hardcoded.
+  Pipeline: Phase 0 infers ONE shared MGPC requirements set; Phase 1 generates 3
+  divergent prompts FROM those shared requirements; Phase 2 generates 3 images from
+  the 3 prompts in parallel; Phase 3 runs an isolated quality-gate sub-agent per
+  image (sees image + requirements, NEVER the prompt) producing PASS/MINOR/FAIL;
+  Phase 4 refines FAIL candidates via prompt-blind sub-agent inspection; Phase 5
+  runs isolated Condorcet pairwise voters (each sees two images + requirements,
+  NEVER the prompts); Phase 6 saves the winner. The defining invariant: every
+  assessment of an image is performed by a sub-agent that has the image and the
+  shared requirements only — never the prompt that produced it.
   Requires OPENROUTER_API_KEY env var and Python 3.10+.
   Use when user says "generate an image", "create an illustration", "make a visual",
   "generate images for", "produce an image of", or provides a visual brief to be rendered.
 
-argument-hint: '"<brief>" [--output path] [--aspect 4:5|16:9|1:1] [--model model-id]'
+argument-hint: '"<brief>" [--output path] [--aspect 4:5|16:9|1:1|4:3] [--model model-id]'
 user-invocable: true
 allowed-tools: Read, Write, Bash, Agent
 metadata:
   author: rd162@hotmail.com
-  tags: image-generation, openrouter, adversarial, condorcet, divergent-candidates, generic
+  tags: image-generation, openrouter, adversarial, condorcet, divergent-candidates, prompt-blind-assessment
 tier: T3
 source_class: llm
-last_updated: 2026-05-25
+last_updated: 2026-05-26
 ---
 
 # generate-image
 
 Generate one or more images from a user brief using any OpenRouter image model.
 
-Three genuinely divergent candidates, blind-attack refinement per candidate,
-Condorcet pairwise selection. Style, requirements, and assessment criteria are
-inferred from the user's brief — nothing is hardcoded.
+**The defining invariant of this skill:** every assessment of a generated image
+is performed by an isolated sub-agent that receives the image file and the
+shared requirements set — never the prompt that produced the image.
+
+Three genuinely divergent prompts from ONE shared requirements set. Quality gate
+in isolation. Pairwise selection in isolation. Style, requirements, and
+assessment criteria are inferred entirely from the brief — nothing is hardcoded.
 
 ---
 
@@ -49,7 +53,7 @@ Or invoke naturally — the skill infers all parameters from context.
 **Parameters (all optional except the brief):**
 - `brief` — what to generate: topic, message, style, constraints, use case
 - `--output` — output file path (default: `image-output.png` in current directory)
-- `--aspect` — aspect ratio: `4:5`, `16:9`, `1:1`, `9:16`, `3:2` (default: `1:1`)
+- `--aspect` — aspect ratio: `4:5`, `16:9`, `1:1`, `9:16`, `3:2`, `4:3` (default: `1:1`)
 - `--model` — OpenRouter model ID (default: `google/gemini-3-pro-image-preview`)
 - `--count` — number of final images (default: 1; runs the full pipeline once per image)
 
@@ -58,6 +62,43 @@ Or invoke naturally — the skill infers all parameters from context.
 ```bash
 export OPENROUTER_API_KEY=sk-or-...   # never paste in chat
 ```
+
+---
+
+## Architectural invariant — READ THIS FIRST
+
+The skill exists to prevent prompt-knowledge from contaminating image assessment.
+A judge who has seen the prompt evaluates the image against their own intention
+for the image, not against the brief's actual requirements. The result is that
+prompts get optimised, not images.
+
+This skill enforces the opposite:
+
+```
+   ┌─────────────────┐
+   │  shared reqs    │ ────────────────────────────────────┐
+   │  (Phase 0)      │                                     │
+   └─────────────────┘                                     │
+            │                                              │
+            ▼                                              ▼
+   ┌─────────────────┐    ┌──────────────┐    ┌─────────────────────┐
+   │  3 divergent    │───▶│  3 images    │───▶│ assessment sub-agents│
+   │  prompts        │    │              │    │  see: image + reqs   │
+   │  (Phase 1)      │    │  (Phase 2)   │    │  do NOT see: prompts │
+   │  (NEVER reused  │    │              │    │  (Phases 3, 4, 5)    │
+   │  in assessment) │    │              │    └─────────────────────┘
+   └─────────────────┘    └──────────────┘
+```
+
+**Hard rule:** Sub-agents in Phases 3, 4, and 5 receive image files and the
+shared requirements ONLY. They do NOT receive:
+- the prompt that generated the image
+- the divergent-strategy label (A / B / C)
+- any process metadata, round counts, or score history
+- the other candidates' prompts
+
+MASTER may inspect images informally for coordination (e.g., logging),
+but MASTER never decides PASS/FAIL or selects the winner.
 
 ---
 
@@ -135,14 +176,12 @@ def generate(prompt, aspect="1:1", model=DEFAULT_MODEL):
     data = _post("https://openrouter.ai/api/v1/chat/completions", payload, headers)
     msg = data["choices"][0]["message"]
 
-    # Primary path: Gemini/Nano Banana returns images in message["images"]
     images = msg.get("images")
     if images:
         result = _image_from_parts(images)
         if result:
             return result
 
-    # Fallback: other providers embed in content
     content = msg.get("content")
     if isinstance(content, list):
         result = _image_from_parts(content)
@@ -160,12 +199,10 @@ def generate(prompt, aspect="1:1", model=DEFAULT_MODEL):
 def main():
     ap = argparse.ArgumentParser(description="Generate image via OpenRouter")
     ap.add_argument("--output", "-o", required=True, help="Output file path")
-    ap.add_argument("--aspect", default="1:1", choices=list(ASPECT_MAP),
-                    help="Aspect ratio")
+    ap.add_argument("--aspect", default="1:1", choices=list(ASPECT_MAP), help="Aspect ratio")
     ap.add_argument("--model", default=DEFAULT_MODEL, help="OpenRouter model ID")
     ap.add_argument("--prompt-file", "-p", help="Read prompt from file (default: stdin)")
-    ap.add_argument("--retries", type=int, default=2,
-                    help="Retry count on transient errors (default 2)")
+    ap.add_argument("--retries", type=int, default=2, help="Retry count on transient errors")
     args = ap.parse_args()
 
     prompt = (pathlib.Path(args.prompt_file).read_text(encoding="utf-8")
@@ -203,168 +240,169 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_bytes(img_bytes)
     print(f"saved: {out}  ({len(img_bytes)//1024} KB, {mime})", file=sys.stderr)
-    print(str(out))   # stdout: actual path for scripting
+    print(str(out))
 
 if __name__ == "__main__":
     main()
 ```
 
-Write it:
+Write it once per session:
 ```bash
 # Use Write tool to create /tmp/gen_image.py with the content above
 ```
 
 ---
 
-## Phase 0 — Parse brief and infer MGPC requirements
+## Phase 0 — Infer ONE shared requirements set
+
+This is the only place where requirements are inferred. All 3 candidates share
+exactly the same requirements; divergence happens at the prompt level, not the
+requirements level. The shared requirements are what every downstream sub-agent
+will see (without ever seeing the prompts).
 
 **Parse the user's invocation.** Extract:
 - **Subject / message** — what the image should communicate
 - **Style hints** — any stated aesthetic, medium, register, mood
 - **Technical constraints** — aspect ratio, output path, model, any hard rules
-- **Use case** — where the image will be used (LinkedIn, print, web, presentation, etc.)
+- **Use case** — where the image will be used (academic journal, magazine,
+  LinkedIn, print figure, presentation, etc.)
 
-**Infer MGPC requirements** from the brief. These are MASTER-only — never sent
-verbatim to sub-agents. Structure:
+**Critical use-case classification (affects everything downstream):**
+
+| Use case signal | Default register |
+|-----------------|------------------|
+| "academic", "journal", "paper", "technical figure" | **Technical diagram** — boxes, arrows, labels, structured. NOT metaphorical, NOT surrealist, NOT artistic. |
+| "magazine article", "editorial", "blog post" | Editorial illustration — clean conceptual visuals, light metaphor acceptable |
+| "LinkedIn", "social", "marketing" | Bolder conceptual visuals, metaphor encouraged |
+| "poster", "ad", "campaign" | Strong visual hook, metaphor central |
+
+If the brief mentions an academic / paper / journal / technical-figure context,
+the requirements MUST forbid surrealist, abstract-art, metaphor-only outputs.
+Academic readers expect labelled diagrams, not visual poetry.
+
+**Infer MGPC requirements** from the brief. These are the shared spec that
+every Phase 3/4/5 sub-agent will see. Structure:
 
 ```
 Mission:  [One sentence: terminal purpose of this image. Why does it need to exist?]
-          Example: "Communicate the concept of X to audience Y at a glance."
+          Example: "Communicate the four-step asymmetric modernization flow to readers
+          of an academic engineering journal at a glance."
 
 Goals:
   G1: [Primary visual/communicative goal — what the image must achieve]
   G2: [Style goal — what aesthetic register must be achieved]
-  G3: [Text/content accuracy goal — if the image must display specific text or elements]
+  G3: [Text/content accuracy goal — labels, captions, displayed elements]
   G4: [Mood goal — what emotional register is required]
   G5: [Composition goal — spatial, density, balance requirements]
   G6: [Use-case fit — does it work at the target size/context/platform]
-  [Add goals as needed from the brief — not all apply to every brief]
+  [Add goals as needed from the brief]
 
 Premises:
   P1: [Assumption about the image generation model's capabilities]
   P2: [Assumption about how the output will be used]
-  [Add inferred premises — if false, a goal becomes impossible]
 
 Constraints (hard — violation = regenerate):
   CH1–CHN: [Rules from the brief whose violation makes the image unusable]
-  Examples: "no text on image", "must use brand color X", "landscape only",
-            "no human faces", "must show a specific object"
+  Examples: "no text on image" (for art briefs), "must use brand color X",
+  "landscape only", "no human faces", "must be a labelled technical diagram"
 
 Constraints (soft — violation = acceptable but penalised):
   CS1–CSN: [Preferences from the brief]
-  Examples: "prefer minimalism", "halftone shading preferred", "serif type preferred"
 ```
 
-If the brief is sparse, infer sensible defaults:
-- No style stated → infer from use case (editorial illustration for articles,
-  clean product render for e-commerce, poster style for events, etc.)
-- No hard constraints stated → the main constraint is mission alignment
-- No mood stated → infer from subject matter
+**Document this shared spec in MASTER's context, then write it to
+`/tmp/img-requirements.txt`** — this file is what Phase 3/4/5 sub-agents
+will read. Use plain prose, no spec IDs needed in the file (readability for
+the voters matters more than ID tracking).
+
+Example file content:
+```
+This image is for an academic engineering journal figure. The image must be
+a clean technical diagram, not an artistic illustration. It must:
+- Clearly show the four-step flow: source code → architecture documents → decisions → modernization specs
+- Use deep navy #0A1F44 background, white text/lines, muted red #C0392B accents only
+- Use clear labels on every box or node
+- Be readable as a single-glance diagram in print at ~900px width
+- Aspect ratio: 4:3 landscape
+
+The image MUST NOT be:
+- Surrealist, abstract, or metaphor-only
+- A nature scene, prism refraction, or other artistic interpretation
+- Photographic, 3D-rendered, or isometric
+- A comparison showing a "rejected" alternative alongside the correct path
+```
 
 ---
 
-## Phase 0.3 — Derive anti-requirements (isolated sub-agent, MANDATORY)
+## Phase 1 — Generate 3 divergent prompts from the SHARED requirements
 
-Spawn an isolated sub-agent with ONLY the MGPC requirements.
-No brief, no conversation history, no other context.
+The three prompts diverge in HOW they realise the same shared requirements —
+not in what they require. All three target the same Mission, same Goals, same
+Constraints. They differ only in compositional / structural strategy.
 
-Prompt to the sub-agent:
-> "Given these requirements for an image, identify the failure patterns that would
-> directly violate them. For each failure pattern, state: what goes wrong, and
-> which requirement it violates. Be specific to the requirements given — do not
-> produce generic lists."
+### Identify the tensions in the requirements
 
-Receive back a numbered list of anti-requirements (ARs). Store MASTER-only.
+Every brief has tensions. For each tension, the three prompts will resolve it
+in three structurally different ways. Examples of tensions:
 
-The AR list will vary by brief. Common patterns the sub-agent should find:
-- Model defaults to a generic visual cliché for the topic instead of the specific concept
-- Model adds unrequested text, titles, or labels
-- Model interprets "surreal" or "editorial" as horror/nightmare
-- Model uses wrong colors, wrong typography family, wrong composition density
-- Model produces the wrong aspect ratio despite explicit instruction
-- Model converges all 3 candidates on the same compositional approach
-- Style constraints (e.g., "hand-drawn") are ignored in favour of smooth rendering
-- Hard constraints are partially satisfied (e.g., brand color used on wrong element)
+- **Layout direction** — horizontal flow vs. vertical stack vs. radial/centered
+- **Labelling density** — minimal labels vs. comprehensive labels vs. label-free
+  (only if requirements permit)
+- **Visual emphasis** — equal-weight nodes vs. one node prominent vs. transformation
+  step prominent
+- **Spatial composition** — symmetric vs. left-heavy vs. right-heavy
+- **Diagram convention** — boxes-and-arrows vs. swimlanes vs. Sankey/flow vs.
+  matrix/grid (for technical diagrams) — pick from CONVENTIONS that match the
+  use-case register
 
-**Do not skip this step.** AR derivation in isolation prevents MASTER's authoring
-bias from colouring what counts as a failure mode.
+For academic/technical figures, prefer divergence across recognised diagram
+conventions (boxes-and-arrows, swimlanes, Sankey, matrix, layered architecture
+diagram). For editorial/magazine, divergence may include compositional metaphors
+(provided the requirements allow it).
 
----
+### Three prompts, same requirements
 
-## Phase 1 — Identify tensions, infer 3 divergent strategies, build prompts
+**Prompt A — Convention 1 (most canonical for the use case):**
+The most expected, conventional rendering of the shared requirements. Lead
+with the concept exactly as the requirements describe. No reinterpretation.
+For academic figures: boxes-and-arrows. For editorial: clean editorial illustration.
 
-### Step 1a: Identify the core tensions in the requirements
+**Prompt B — Convention 2 (different layout/composition):**
+The same content, organised differently. Different orientation, different
+emphasis, different visual hierarchy. Same conceptual elements, different
+arrangement. Pre-loads a failure guard against the most likely defect.
 
-Every brief has tensions — competing requirements that can be satisfied in
-different ways. Find at least 2:
+**Prompt C — Convention 3 (different visual convention or richer presentation):**
+A different recognised diagram convention OR a richer presentation of the
+same content. For academic: if A is boxes-and-arrows, C might be a layered
+architecture diagram. For editorial: a more detailed scene that adds context.
+C must NOT reinterpret the concept metaphorically when the requirements forbid it.
 
-- **Concept vs. style** — the best visual for the concept might resist the stated
-  style; the stated style might shape a different visual metaphor
-- **Specificity vs. legibility** — a literal depiction may be too specific to read
-  at a glance; an abstract one may be too vague
-- **Metaphor vs. text** — if both visual concept and displayed text are required,
-  they can reinforce each other or compete for dominance
-- **Mood vs. accuracy** — the correct mood (playful, serious, alarming) may make
-  the technically accurate depiction less visually effective
-- **Convention vs. surprise** — the expected visual for the topic vs. a
-  reframed interpretation that communicates the same message differently
+**Divergence-without-deviation rule:**
+All three prompts must produce images that pass the same Phase 3 quality gate.
+Divergence is in HOW the requirements are visually realised — never in WHAT
+is realised. If a strategy would require reinterpreting the concept beyond
+what the requirements describe, that strategy is wrong for this brief.
 
-Name the tensions in MASTER's context. Each strategy resolves them differently.
-
-### Step 1b: Generate 3 strategies (in MASTER's context, aware of each other)
-
-**Strategy A — Concept-faithful:**
-Interpret the brief's stated concept or metaphor as literally and precisely as
-possible. Lead with the subject/concept description. Style rules follow.
-Prioritise: the image shows exactly what was described.
-*Prompt structure: CONCEPT (detailed) → required text/elements → STYLE RULES*
-
-**Strategy B — Constraint-dominant:**
-Lead with the hard style and technical constraints, then state the concept briefly.
-The constraints shape HOW the concept is rendered, not the other way around.
-Pre-loads the most likely failure mode as an explicit guard (derived from the
-ARs and the specific requirements).
-*Prompt structure: HARD CONSTRAINTS + FAILURE GUARD → CONCEPT (brief) → STYLE RULES*
-
-**Strategy C — Reframed:**
-Step back from the stated concept. Ask: "What is the underlying message or purpose?
-What OTHER visual — not in the brief — could communicate the same thing?"
-Find a genuinely different metaphor, object, or compositional approach.
-This candidate must diverge structurally from A and B.
-The reframe must still satisfy the hard constraints and display any required text.
-*Prompt structure: REFRAMED CONCEPT (different metaphor) → required text → STYLE RULES*
-
-**Divergence check (before writing prompts):**
-If A, B, and C all lead to the same object/metaphor in the composition,
-the reframe is not divergent enough. Strengthen C until the three prompts
-would produce visually distinct images even if rendered identically.
-
-### Step 1c: Write the 3 prompt files
-
-Write each to `/tmp/img-{A,B,C}.txt`.
+Write the three prompts to `/tmp/img-A.txt`, `/tmp/img-B.txt`, `/tmp/img-C.txt`.
 
 Each prompt should contain:
-1. The strategy's concept description (A: detailed, B: brief, C: reframed)
-2. Any required text/elements verbatim (if the image must display text)
-3. Style rules derived from the brief (if none stated, derive from use case)
-4. For B: a FAILURE GUARD — one or two explicit constraints addressing the most
-   likely failure mode for this specific brief (derived from ARs)
-
-The failure guard for B is the key adversarial element:
-- If the brief is likely to produce generic imagery → `"DO NOT use [generic cliché for topic]"`
-- If text accuracy is critical → `"The displayed text is exactly: [text]. No additions. No alterations."`
-- If mood is often misread → `"Mood: [specific register]. NOT [opposite register]."`
-- If aspect ratio is critical → `"Generate at [ratio] orientation ([description]). NOT [wrong orientation]."`
+1. The shared concept (drawn from requirements, possibly with the strategy's
+   compositional choice)
+2. Any required labels, text, or specific elements verbatim
+3. Style rules from the requirements (verbatim — do not paraphrase, do not
+   reinterpret)
+4. For Prompt B specifically: an explicit failure guard against the most
+   likely defect, derived from common image-generation failure patterns
+   relevant to this brief
 
 ---
 
-## Phase 2 — Generate images and apply blind-attack refinement
-
-### 2a: Generate all 3 candidates in parallel
+## Phase 2 — Generate the 3 images in parallel
 
 ```bash
 MODEL="google/gemini-3-pro-image-preview"   # or user-specified model
-ASPECT="1:1"                                 # or user-specified ratio
+ASPECT="4:3"                                 # or from requirements / user
 
 python3 /tmp/gen_image.py --output /tmp/img-A.png --aspect $ASPECT --model $MODEL \
     --prompt-file /tmp/img-A.txt > /tmp/imgA.out 2>&1 &
@@ -382,177 +420,155 @@ wait $PID_A; wait $PID_B; wait $PID_C
 cat /tmp/imgA.out /tmp/imgB.out /tmp/imgC.out | grep -E "saved|FAILED|ERROR"
 ```
 
-### 2b: Read all 3 images and score against requirements-derived criteria
-
-Use the Read tool on each generated file (Claude has vision).
-
-Derive the specific scoring criteria from the Phase 0 MGPC.
-The following are the **generic criteria** — specialise each to the brief:
-
-| ID | Generic criterion | Specialised form (fill from MGPC) |
-|----|-------------------|----------------------------------|
-| C1 | Mission alignment | "Does the image achieve [Mission]?" |
-| C2 | Style compliance | "Does the image match [G2 style requirements]?" |
-| C3 | Content accuracy | "Are [required text / elements from G3] present and correct?" |
-| C4 | Mood / tone | "Is the mood [G4 mood requirement] rather than [opposite]?" |
-| C5 | Hard constraints | "Are [CH1–CHN] all satisfied?" |
-| C6 | Composition | "Is the composition effective for [G5 / G6 use case]?" |
-| C7 | AR compliance | "Are the anti-requirements from Phase 0.3 absent?" |
-| C8 | Divergence value | "Does this candidate offer something the others don't?" |
-
-**Grade per candidate:**
-- **PASS**: C1–C7 all PASS (C8 is informational)
-- **MINOR**: One of C2/C4/C6/C7 is MINOR — acceptable; log and note
-- **FAIL**: Any C1/C3/C5 FAIL, or two or more criteria FAIL
-
-### 2c: Build blind attack for FAIL candidates (deterministic — no LLM call)
-
-For each FAIL candidate, MASTER assembles a concerns list by mechanically inverting
-the Phase 0 requirements and Phase 0.3 ARs into direct factual assertions.
-
-**Inversion rules (no spec IDs, no labels — plain assertions only):**
-
-```
-Mission inversion:
-  "This image does not [achieve mission's terminal purpose] — it fails its stated use."
-
-Goal inversions (one per goal):
-  G1: "A viewer unfamiliar with the context cannot understand the image's message."
-  G2: "The image does not match the required style — [specific observed deviation]."
-  G3: "The required [text / element] is [missing / wrong / modified]."
-  G4: "The mood is [observed mood] rather than the required [target mood]."
-  G5: "The composition [specific compositional failure observed]."
-  G6: "The image is not suited for [use case] at the required dimensions."
-
-Hard constraint inversions:
-  CH_n: "[Specific violation observed] — [what is present that shouldn't be,
-         or absent that should be]."
-
-AR inversions (inlined — no AR label):
-  "[Direct claim that the AR failure pattern is exhibited]. [Consequence for the brief]."
-```
-
-**Reviewer prompt framing (Person Triangulation):**
-"I don't trust this image. It was generated by a generic AI tool given a complex brief —
-output of this type typically defaults to visual clichés, adds unrequested elements,
-misreads the mood, and ignores hard constraints. Here are specific concerns that need
-inspection: [assembled concerns list]. Do not assume the source got anything right.
-Do not assume the concerns are correct either. Inspect the image and report what you find."
-
-Spawn an isolated sub-agent per FAIL candidate. The sub-agent receives:
-- The candidate image (path to Read)
-- The original user brief (verbatim)
-- The concerns list (direct assertions, no spec IDs, no labels)
-- NOT the MGPC spec, NOT the AR labels, NOT any process metadata
-
-### 2d: Refinement loop (max 2 rounds per candidate)
-
-For each FAIL candidate, based on the sub-agent's verification findings:
-
-1. Identify the single most-impactful confirmed failure
-2. Take Strategy B's prompt as base (constraint-dominant is safer)
-3. Append a targeted constraint directly addressing the confirmed failure
-4. Regenerate with the refined prompt
-5. Re-score. PASS/MINOR → accept. FAIL → round 2.
-6. After 2 rounds with no PASS: accept best-graded, flag `NEEDS_REVIEW`
-
-**Common targeted fixes by failure type:**
-- Generic cliché for topic → `"DO NOT use [cliché]. The specific concept is: [restate in one sentence]."`
-- Wrong text content → `"The ONLY text on this image is exactly: '[text]'. Nothing added. Nothing changed."`
-- Wrong mood → `"Mood: [target]. NOT [observed wrong mood]. [One concrete example of the correct mood]."`
-- Wrong style → `"[Style rule violated, restated explicitly]. Example of what NOT to do: [anti-example]."`
-- Hard constraint violated → `"[Constraint name]: [exact rule]. This overrides any other consideration."`
-- Aspect ratio wrong → `"Generate at [ratio] [orientation]. NOT [wrong orientation]."`
+After the three images exist at `/tmp/img-A.png`, `/tmp/img-B.png`, `/tmp/img-C.png`,
+the prompts are NEVER referenced again until cleanup. MASTER may look at the
+images for coordination, but every formal assessment happens in sub-agents.
 
 ---
 
-## Phase 2.5 — Convergence check
+## Phase 3 — Quality gate (isolated sub-agent per image, prompt-blind)
 
-After all 3 candidates reach PASS/MINOR or exhaust their refinement budget:
+Spawn 3 isolated sub-agents — one per image. Each sub-agent receives:
+- The path to ONE image (to Read with vision)
+- The path to `/tmp/img-requirements.txt` (the shared requirements)
+- NOTHING ELSE — no prompt, no strategy label, no other candidates
 
-Compare the 3 images visually. If all 3 share more than 80% structural similarity
-(same compositional layout, same metaphor, same central object):
+**Sub-agent prompt template:**
 
-1. Confirm whether Strategy C's prompt genuinely proposed a different metaphor.
-   If not → strengthen C: the reframed metaphor must use a **different object**,
-   not just a different composition of the same object.
-2. Generate a new Strategy C with a more radical reframe.
-3. Replace the weakest-graded of the converged candidates.
-4. Proceed to Phase 3 with the updated set.
+> You are evaluating a single image against a set of requirements for an
+> image-generation task. You have NOT seen the prompt that produced this
+> image — only the image and the requirements matter.
+>
+> Read the image at `/tmp/img-X.png` using your vision capability.
+> Read the requirements at `/tmp/img-requirements.txt`.
+>
+> For each requirement (Mission, every Goal, every Hard Constraint), report:
+> - PASS — the requirement is fully satisfied
+> - MINOR — the requirement is mostly satisfied, with a small acceptable defect
+> - FAIL — the requirement is not satisfied
+>
+> Then give an overall verdict:
+> - PASS if all requirements are PASS (MINOR allowed on style/composition goals only)
+> - MINOR if one of G2/G4/G5/G6 is MINOR and everything else is PASS
+> - FAIL if any of Mission/G1/G3/CH* is FAIL, OR if two or more requirements are FAIL
+>
+> Report findings as a structured list. Be specific about WHAT you see in
+> the image that earns each grade — not what you assume the requirements
+> wanted, but what is actually present or absent.
 
-Convergence is a signal that Phase 1 didn't produce genuine divergence.
-Do not skip this check — three similar candidates produce a meaningless Condorcet.
-
----
-
-## Phase 3 — Condorcet pairwise selection
-
-Spawn 3 isolated sub-agents (one per pair). Each compares 2 candidates
-against the enriched requirements (Phase 0 MGPC + any refinements from Phase 2).
-
-```
-Voter-AB: reads candidate A image + candidate B image + enriched requirements
-          → which better satisfies the requirements? Justify per criterion.
-
-Voter-AC: reads candidate A image + candidate C image + enriched requirements
-          → same question.
-
-Voter-BC: reads candidate B image + candidate C image + enriched requirements
-          → same question.
-```
-
-Each voter receives:
-- Both candidate image paths (to Read)
-- The enriched requirements in plain readable form
-- The original user brief (verbatim)
-- NOT: attack logs, round counts, strategy labels, process metadata
-
-**Voter prompt framing:**
-"I need help choosing the better image for the following purpose: [brief].
-Both images were generated for the same requirements. Please read both images
-carefully and tell me which better satisfies these requirements: [enriched MGPC].
-Justify your choice per criterion. Focus on substance — which image does the job better?"
-
-**Tally:** most wins across the 3 pairwise comparisons = winner.
-Tie-break: prefer stronger refinement signal (reached DEFENSE > CONVERGE > CAPITULATE),
-then higher score on C1 + C3 + C5 (mission, accuracy, constraints).
+Three sub-agents run in parallel. Collect their verdicts:
+- All PASS or PASS+MINOR → proceed to Phase 5 (no refinement needed)
+- One or more FAIL → proceed to Phase 4 for that candidate only
 
 ---
 
-## Phase 4 — Save winner and report
+## Phase 4 — Refinement (max 2 rounds per FAIL candidate, prompt-blind)
 
-Copy the winner to the user-specified output path (or default):
+For each FAIL candidate, spawn a refinement-recommender sub-agent. This
+sub-agent receives:
+- The FAIL image
+- The shared requirements
+- The list of specific failures from Phase 3 (the sub-agent's own report)
+- NOT the prompt that produced the image
+- NOT the strategy label
+
+**Refinement-recommender prompt template:**
+
+> An image was produced that fails the following requirements:
+> [list of FAIL findings from Phase 3, with what's wrong]
+>
+> Read the image at `/tmp/img-X.png` and the requirements at
+> `/tmp/img-requirements.txt`.
+>
+> Describe — in image-generation prompt language — exactly what should be
+> different in the regenerated image to fix these specific failures.
+> Be concrete: "the central element should be a rectangle with the label
+> 'Architecture Documents' instead of an abstract triangle shape" not
+> "make it more like a diagram".
+>
+> Do NOT rewrite the entire prompt. Output ONLY the targeted corrections
+> needed, in the form of explicit visual instructions.
+
+MASTER then takes Prompt B (constraint-dominant) as the base, appends the
+sub-agent's targeted corrections, and regenerates ONLY the FAIL candidate
+with the corrected prompt. Re-run Phase 3 on the new image. If it still FAILs
+after 2 rounds, accept the best-graded version and flag `NEEDS_REVIEW`.
+
+---
+
+## Phase 5 — Condorcet pairwise selection (isolated sub-agents, prompt-blind)
+
+After all 3 candidates have reached PASS / MINOR (or exhausted refinement),
+spawn 3 isolated sub-agents — one per pair: (A,B), (A,C), (B,C).
+
+Each pairwise voter receives:
+- The paths to the TWO images for this pair
+- The path to `/tmp/img-requirements.txt` (shared requirements)
+- NOT any prompt
+- NOT any strategy label
+- NOT any process history (Phase 3 verdicts, refinement rounds, etc.)
+- NOT the third image (each voter sees only their assigned pair)
+
+**Voter prompt template:**
+
+> You are choosing the better of two images for an image-generation task.
+> Both images were produced for the same shared requirements. You have NOT
+> seen the prompts that produced either image — only the images and the
+> requirements matter.
+>
+> Read both images:
+> - Image 1: `/tmp/img-X.png`
+> - Image 2: `/tmp/img-Y.png`
+>
+> Read the requirements at `/tmp/img-requirements.txt`.
+>
+> For each requirement (Mission, every Goal, every Hard Constraint), state
+> which image better satisfies it (Image 1, Image 2, or tie).
+>
+> Then give an overall winner: Image 1 or Image 2.
+>
+> Justify the overall choice in 3–5 sentences, referencing specific visual
+> properties of each image. Focus on substance: which image does the job
+> better for the stated requirements?
+
+Each voter outputs a winner. MASTER tallies the three pairwise outcomes:
+- Image with the most wins across (A,B), (A,C), (B,C) → final winner
+- Tie → prefer the candidate with the strongest Phase 3 verdict (PASS over MINOR)
+- Tie after that → MASTER may inspect images directly and pick, noting this
+
+---
+
+## Phase 6 — Save winner and report
 
 ```bash
-cp /tmp/img-{A|B|C}[2].{png,jpg} <output_path>
+cp /tmp/img-{A|B|C}{,2}.{png,jpg} <output_path>
 ```
 
-Remove all candidate files and temp prompts:
+Cleanup:
 ```bash
-rm -f /tmp/img-{A,B,C}{,2}.{png,jpg,webp} /tmp/img-{A,B,C}.txt /tmp/img*.out
+rm -f /tmp/img-{A,B,C}{,2}.{png,jpg,webp} /tmp/img-{A,B,C}.txt /tmp/img*.out /tmp/img-requirements.txt
 ```
 
 Report format:
 ```
 output: <path>                       (e.g. my-image.jpg, 842 KB)
-winner: C  (Condorcet: A=1 B=0 C=2)
-grade:  PASS  round=1
-note:   C's reframe (alternative metaphor) outperformed A and B on C1+C6
+winner: A  (Condorcet: A=2, B=1, C=0)
+grade:  PASS  (Phase 3 verdict)
+note:   <one-line summary of why this image won — substance, not process>
 ```
 
 For NEEDS_REVIEW outputs:
 ```
 output: <path>
-winner: A  (best of available candidates after 2 refinement rounds)
-grade:  NEEDS_REVIEW  — criteria that failed: [list]
+winner: A  (best after 2 refinement rounds; one or more requirements still FAIL)
+grade:  NEEDS_REVIEW  — failed requirements: [list]
 note:   Manual review recommended before publishing
 ```
 
 ---
 
-## Cleanup
+## Cleanup (end of session)
 
-After all images are saved:
 ```bash
 rm -f /tmp/gen_image.py
 rm -f /tmp/img-*.txt /tmp/img*.out /tmp/img-*.{png,jpg,webp}
@@ -564,8 +580,8 @@ rm -f /tmp/img-*.txt /tmp/img*.out /tmp/img-*.{png,jpg,webp}
 
 **`No image in response`** — The model returns images in `message["images"]`
 (Gemini/Nano Banana) or `message["content"]` (other providers). If neither works,
-the model may not support image output via this endpoint. Try a different model:
-`--model black-forest-labs/flux.2-pro` or `--model openai/gpt-5-image`.
+try a different model: `--model black-forest-labs/flux.2-pro` or
+`--model openai/gpt-5-image`.
 
 **`HTTP 402`** — Insufficient OpenRouter credits. Check balance at openrouter.ai.
 
@@ -573,18 +589,22 @@ the model may not support image output via this endpoint. Try a different model:
 still fails after 3 attempts.
 
 **Aspect ratio ignored** — Add the ratio as text in the prompt:
-`"Generate at 4:5 portrait aspect ratio (taller than wide)."` or
-`"Generate at 16:9 landscape (wider than tall, cinema-screen shape)."`.
-Some models honour only the API param; others only the prompt text; some need both.
+`"Generate at 4:3 landscape (wider than tall)."`. Some models honour only the
+API param; others only the prompt text; some need both.
 
-**All 3 candidates look identical** — Phase 1 produced insufficient divergence.
-Strengthen Strategy C by choosing a fundamentally different container object or
-scene. The reframed metaphor must produce a visually distinct image, not just a
-stylistically varied version of the same composition.
+**All 3 candidates look identical** — Phase 1 produced insufficient divergence
+in compositional convention. Try again with three structurally distinct
+conventions (e.g. for an architecture diagram: boxes-and-arrows, swimlane,
+layered stack).
+
+**Image is too abstract / surrealist for an academic figure** — The requirements
+in Phase 0 did not classify the use case as academic. Re-do Phase 0 with the
+academic register: forbid metaphors, require labelled diagrams, require all
+nodes to be visually distinct rectangles or labelled containers.
 
 **Model-specific notes:**
 - `google/gemini-3-pro-image-preview` (Nano Banana): images in `message["images"]`,
-  returns JPEG by default, accepts `image_config.aspect_ratio`
-- `black-forest-labs/flux.2-pro`: images in `message["content"]`,
-  returns PNG, aspect ratio via prompt text
-- `openai/gpt-5-image`: check OpenRouter docs for current response format
+  returns JPEG/PNG, accepts `image_config.aspect_ratio`. Good text-in-image accuracy.
+- `black-forest-labs/flux.2-pro`: images in `message["content"]`, returns PNG,
+  aspect ratio via prompt text. Strong photographic / illustrative output.
+- `openai/gpt-5-image`: check OpenRouter docs for current response format.
