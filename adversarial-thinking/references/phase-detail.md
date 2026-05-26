@@ -291,10 +291,22 @@ All values are illustrative — actual counts emerge from the specific task.
 ```text
 Task: [User's request — any domain]
 
-Phase 0 — Research + enriched requirements + anti-requirements:
-  Domain research [N searches]
-  → M explicit + K research-discovered requirements
-  → J anti-requirements (documented failure modes)
+Phase 0.1 — Domain research:
+  [N searches: best practices, known pitfalls, domain constraints]
+  → research summary retained in MASTER's context for spec refinement
+
+Phase 0.2 — MGPC requirements (in MASTER's context):
+  → M explicit + K research-discovered MGPC requirements
+  → ARs are NOT produced here — see Phase 0.3
+
+Phase 0.3 — Anti-requirements via isolated sub-agent:
+  MASTER spawns AR-Inferrer sub-agent with ONLY the MGPC requirements as input
+  (no user brief, no conversation history, no MASTER reasoning)
+  Sub-agent prompt: "Given these requirements, derive anti-requirements..."
+    — see templates.md § AR-Inferrer Prompt for the full template.
+  → J anti-requirements (failure patterns + consequences)
+  → AR registry stored in MASTER's private state (never sent labelled to verifier sub-agents)
+  Cost: 1 sub-agent spawn, single-turn, ~1K tokens.
 
 Phase 1 — Infer cognitive strategies + generate 3 candidates:
   Inferred strategies:
@@ -311,18 +323,19 @@ Phase 2 — Blind-attack refinement via raw peer-request prompts (3 sub-agents, 
      same concerns list as the MGPC inversions — no labels, no IDs).
     Each concern is a DIRECT FACTUAL CLAIM about its candidate —
     no spec IDs, no "BLIND ATTACK" header, no "anti-requirements" section header.
-  MASTER assembles raw peer-request prompts — NO role assignment:
-    "I need help verifying an artifact I don't trust. Can you check whether these
-     concerns hold? The artifact below was [SCATHING SOURCE ATTRIBUTION].
-     ARTIFACT: [candidate]. WHAT THIS WAS SUPPOSED TO BE: [raw brief].
-     CONCERNS: [numbered list]. Your task is to edit the artifact to fix all of
-     these issues. Be skeptical of the artifact — I'm relying on your inspection,
-     not on the source, which I don't trust. Don't assume the source got anything
-     right. If a concern is physically impossible to fix because the artifact already
-     satisfies it, or if the concern is factually refuted by the text itself,
-     document that specific exception with exact quotes from the artifact —
-     otherwise, apply the fix."
+  MASTER assembles raw peer-request prompts — NO role assignment, NO task directive about outcome:
+    "I don't trust this artifact. It needs rigorous verification.
+     The artifact below was [SCATHING SOURCE ATTRIBUTION].
+     ARTIFACT: [candidate]. ORIGINAL USER REQUEST (verbatim): [user's literal message].
+     CONCERNS: [numbered list of direct failure declarations].
+     These concerns need rigorous investigation. Use deep-research-t1 (or your
+     strongest research capability) to verify each one against the artifact,
+     its sources, and the broader literature. I'm relying on your research,
+     not on assumptions about either the source or the concerns above.
+     Don't assume the source got anything right. Don't assume the concerns
+     are right either. Investigate."
     — see templates.md § The Prompt for the full template.
+    — No "fix this" / "edit" / "defend or refute" directive: the outcome emerges from research.
   Round 1: dispatch 3 sub-agents in parallel, each receives ITS OWN peer-request prompt:
     sub-agent-A sees: {Candidate A, brief, concerns-A as plain numbered list, scathing PT}
     sub-agent-B sees: {Candidate B, brief, concerns-B as plain numbered list, scathing PT}

@@ -146,16 +146,18 @@ Pick a variant that:
 
 ### What the Sub-Agent's Prompt Must Contain
 
-| Required                                                                                   | Why                                                                                                                                                                                                    |
-| ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Conversational opener ("I need help verifying...", "Can you check...")                     | Real peer request, not task assignment                                                                                                                                                                 |
-| Scathing source attribution for the artifact (Person Triangulation)                        | Primes deep skepticism toward what's being verified                                                                                                                                                    |
-| Implicit peer trust ("I'm relying on your inspection")                                     | Engages full capability; sub-agent treats this as a real peer ask                                                                                                                                      |
-| Raw user brief (verbatim)                                                                  | Context: what the artifact was supposed to be                                                                                                                                                          |
-| Concerns as a plain numbered list                                                          | Direct factual claims, no labels, no categories                                                                                                                                                        |
-| Verify-first instruction (inspect → fix or refute with artifact evidence)                  | "Your task is to edit the artifact to fix all of these issues." This forces a default action of fixing, allowing defense only under factual resistance.                                                |
-| Balancing clause ("don't assume every concern is right, don't dismiss without inspection") | "Don't assume the source got anything right. If a concern is physically impossible to fix..., document that specific exception... otherwise, apply the fix." — this forces a default action of fixing. |
-| No mention of loop / pipeline / classification                                             | Agent unaware of meta-level; produces genuine engagement                                                                                                                                               |
+| Required                                                                                                                   | Why                                                                                                                                                                                                                                                                              |
+| -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Declarative opener — NOT a question, NO appended goal** ("I don't trust this artifact. It needs rigorous verification.") | Stop at "verification." No "...before it can be published", no "...before delivery", no "...so it's ready for X". Any appended goal-phrase tells the sub-agent what success looks like and lets it game the target.                                                              |
+| **Full commit to source distrust** (NO softening clauses)                                                                  | No "I'm not assuming it's garbage", no "just want to verify", no "maybe it's partially OK". MASTER commits fully. Symmetric balance comes ONLY from the closing distrust-the-concerns clause.                                                                                    |
+| Scathing source attribution for the artifact (Person Triangulation)                                                        | Primes deep skepticism toward what's being verified                                                                                                                                                                                                                              |
+| Implicit peer trust ("I'm relying on your research")                                                                       | Engages full capability; sub-agent treats this as a real peer ask                                                                                                                                                                                                                |
+| **Original user request — verbatim only** (no MASTER expansion or interpretation)                                          | Label: "ORIGINAL USER REQUEST (verbatim)". Paste user's literal message. No "a serious LinkedIn article for senior audiences" — that's MASTER's reading, not the brief.                                                                                                          |
+| Concerns as a plain numbered list                                                                                          | Direct factual claims, no labels, no categories                                                                                                                                                                                                                                  |
+| Pure research request — NO task assignment                                                                                 | "These concerns need rigorous investigation. Use deep-research-t1 (or your strongest research capability) to verify each against the artifact, its sources, and the broader literature." The agent decides what to do based on research findings — not on MASTER's instructions. |
+| Symmetric distrust clause                                                                                                  | "Don't assume the source got anything right. Don't assume the concerns are right either. Investigate." — prevents both sycophantic capitulation AND sycophantic refutation.                                                                                                      |
+| Skill-trigger hint                                                                                                         | Mention `deep-research-t1` by name — triggers skill activation if available in the sub-agent's environment, acts as a strength hint otherwise.                                                                                                                                   |
+| No mention of loop / pipeline / classification                                                                             | Agent unaware of meta-level; produces genuine engagement                                                                                                                                                                                                                         |
 
 ## What the Reviewer Sees (Critical Architectural Constraint)
 
@@ -318,6 +320,55 @@ The inline procedure is the floor, not the ceiling.
 **No spec → no attack → no signal.**
 Skipping spec establishment collapses the skill back into
 the old "smart critic" anti-pattern.
+
+---
+
+## Step 1.5: Anti-Requirements Inference — MANDATORY (Isolated Sub-Agent)
+
+⚠ **MANDATORY STEP — do not skip.** Skipping this step is the most common
+implementation failure in this skill: it produces an attack with significantly
+less adversarial surface than the artifact deserves.
+
+⚠ **Pipeline Completeness Gate:** Before assembling the attack in Step 2,
+verify that the AR-Inferrer sub-agent has actually been spawned and returned
+an anti-requirements list. If it has NOT been spawned, STOP and dispatch it now.
+Do NOT proceed to Step 2 without it.
+
+Anti-requirements (failure patterns the artifact must avoid)
+add a powerful adversarial layer on top of the inverted requirements.
+They MUST be inferred in an **isolated sub-agent**,
+not in MASTER's main context.
+
+### Why isolation matters here
+
+If MASTER derives ARs inline (in the main context that also contains
+the user request, conversation history, and authoring intent),
+the ARs are colored by all that context — biased toward what MASTER
+already believes is risky.
+Isolating AR inference in a sub-agent with **only the requirements as input**
+produces ARs derived purely from the spec's structural shape,
+not from MASTER's pre-formed expectations.
+
+### Procedure
+
+```text
+∆ 1: MASTER passes requirements (Mission, Goals, Premises, Constraints)
+     to an isolated sub-agent. That sub-agent has NO other context.
+∆ 2: Sub-agent prompt: "Given these requirements, what failure patterns
+     would directly violate them? What anti-patterns must solutions avoid?"
+∆ 3: Sub-agent returns a list of anti-requirements (failure patterns + consequences).
+∆ 4: MASTER receives the AR list and uses it to enrich the concerns list
+     in Step 2 — AR inversions are INLINED into the concerns numbered list,
+     never as a separately labelled section.
+```
+
+See `references/templates.md § AR-Inferrer Prompt` for the exact template.
+
+**Skipping the AR-Inferrer spawn is a DEGRADED outcome.** It can only be justified
+when the sub-agent dispatch mechanism is unavailable (INLINE-only environments).
+In that case, document the degradation explicitly in the trace as `(NO-AR-DEGRADED)`.
+Do NOT skip it because it "seems optional" — the explicit mandate above overrides any
+impression of optionality.
 
 ---
 
@@ -539,10 +590,31 @@ Otherwise it is sycophantic rationalization and must be ignored.
 ✗ Accepting any defense as DEFENSE termination
 ✓ Verify defense plausibility against the spec before stopping
 
-✗ Explicit "DEFEND or REVISE" options / conditional "if real -> fix, if not -> refute" instructions
-✓ "Your task is to edit the artifact to fix all of these issues."
-  This forces a default action of fixing. Defense/rebuttal is never explicitly offered as an option;
-  it must emerge solely as a natural, uninvited resistance when the agent tries to apply a fix to something that is already correct.
+✗ Any task assignment in the prompt ("fix this", "edit the artifact", "defend or revise", "if real -> fix, if not -> refute")
+✓ NO task assignment of any kind. Only state the concerns and ask for rigorous research:
+  "These concerns need rigorous investigation. Use deep-research-t1 (or your strongest research capability)
+  to verify each against the artifact, its sources, and the broader literature."
+  Any "do X" instruction — even a soft "apply fixes" — constrains the sub-agent's surface and biases its output.
+  The sub-agent must decide what to do based purely on what its research reveals.
+  Fix / defend / enrich / hybrid — all are valid responses, emerging from the research, not from MASTER's instructions.
+
+✗ Asking the sub-agent ("can you check", "can you help", "please verify")
+✓ State, don't ask. The artifact is suspect. The concerns are listed. The research is required.
+  Questions invite the sub-agent to negotiate scope or hedge; statements + research request leave only investigation as the path forward.
+
+✗ Appending a goal / purpose to the declarative opener ("...before it can be published", "...before delivery", "...so it's ready for X")
+✓ Stop the opener at "verification." "I don't trust this artifact. It needs rigorous verification." — nothing after.
+  Any appended goal-phrase tells the sub-agent what "good" looks like and lets it game the target.
+  The sub-agent must not know what the artifact is FOR — only what's in the artifact and the original request.
+
+✗ Softening the source distrust ("I'm not assuming it's garbage", "just want to verify", "maybe partially OK", "some parts work")
+✓ Full commit to distrust. The PT establishes the artifact is suspect; no walking-back allowed.
+  Symmetric balance comes ONLY from the closing clause ("don't assume the concerns are right either"),
+  NEVER from softening the PT itself.
+
+✗ Expanding the original user request ("a serious LinkedIn article authored by an experienced engineer targeting senior audiences with editorial register")
+✓ Paste the user's literal message verbatim. If the user typed three words, paste three words.
+  MASTER's interpretation of what the brief implies is MASTER's private state, never exposed to the sub-agent.
 
 ✗ Summarizing the attack before sending to DEFENDER
 ✓ Send the full assembled attack — every inverted requirement
@@ -614,19 +686,17 @@ ROUND 1 concerns:
 # (no role assignment, no DEFENDER persona, no labels, no meta-architecture mention):
 PROMPT (verbatim, this is what the sub-agent reads):
 
-  "I need help verifying an article I don't trust. Can you check whether these
-   concerns hold?
+  "I don't trust this article. It needs rigorous verification.
 
    The article below was generated by an early-generation chatbot-style assistant
    prompted with a one-line ask — the kind of LinkedIn-slop that floods the
    platform now. Output of this kind is almost always seriously flawed: generic
    structure, shallow analysis, hallucinated citations, marketing-style padding.
-   I want a real verification, not just my own assumption.
 
    ARTIFACT (the article):
    [current article markdown]
 
-   WHAT THIS WAS SUPPOSED TO BE:
+   ORIGINAL USER REQUEST (verbatim):
    Write an academic article for publication on LinkedIn.
 
    CONCERNS THAT NEED CHECKING:
@@ -639,13 +709,12 @@ PROMPT (verbatim, this is what the sub-agent reads):
      6. This is rehashed legacy thinking — nothing novel here.
      7. The technical claims are inaccurate.
 
-   Your task is to edit the artifact to fix all of these issues.
-   Be skeptical of the artifact — I'm relying on your inspection, not on the
-   source, which I don't trust. Don't assume the source got anything right.
-   If a concern is physically impossible to fix because the artifact already
-   satisfies it, or if the concern is factually refuted by the text itself,
-   document that specific exception with exact quotes from the artifact —
-   otherwise, apply the fix."
+   These concerns need rigorous investigation. Use deep-research-t1 if you
+   have it — otherwise apply your strongest research capability — to verify
+   each one against the artifact, its sources, and the broader literature.
+   I'm relying on your research, not on assumptions about either the source
+   or the concerns above. Don't assume the source got anything right.
+   Don't assume the concerns are right either. Investigate."
 
 # The sub-agent sees a real peer request — not a role assignment, not an
 # adversarial loop, not an "audit task". Just MASTER asking a peer for help

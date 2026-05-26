@@ -31,12 +31,13 @@ giving the sub-agent a richer adversarial surface to defend against.
 
 | Depth        | Trigger                                 | Research    | Ph2 Rounds | Ph2.5              | Agents |
 | ------------ | --------------------------------------- | ----------- | ---------- | ------------------ | ------ |
-| **Quick**    | "quick take", "brief", "just compare"   | 1-2 queries | 1          | Skip               | 6      |
-| **Standard** | Default                                 | 3-5 queries | 2-3        | Convergence only   | 6      |
-| **Deep**     | "think deeply", "thorough", high-stakes | 5-8 queries | 3-5        | Conv + cite + inv  | 9      |
-| **Maximum**  | "exhaustive", "ultrathink"              | Deep        | Until conv | All + cross-pollin | 9      |
+| **Quick**    | "quick take", "brief", "just compare"   | 1-2 queries | 1          | Skip               | 7      |
+| **Standard** | Default                                 | 3-5 queries | 2-3        | Convergence only   | 7      |
+| **Deep**     | "think deeply", "thorough", high-stakes | 5-8 queries | 3-5        | Conv + cite + inv  | 10     |
+| **Maximum**  | "exhaustive", "ultrathink"              | Deep        | Until conv | All + cross-pollin | 10     |
 
 Agent count breakdown:
+1 AR-inferrer (Phase 0.3, isolated sub-agent, single-turn) +
 3 sub-agents (Phase 2, sessions persistent across rounds) +
 3 condorcet voters (Phase 3) +
 3 inverse-spec recovery agents (Phase 2.5, Deep/Maximum only).
@@ -90,7 +91,9 @@ so use it only when sub-agents are genuinely unavailable.
 ## Step 2: Process Overview
 
 ```text
-Phase 0   → Research domain, infer enriched requirements + anti-requirements
+Phase 0.1 → Research domain
+Phase 0.2 → Infer MGPC requirements (in MASTER's context)
+Phase 0.3 → Derive anti-requirements via isolated sub-agent
 Phase 1   → Infer cognitive strategies, generate 3 divergent candidates
 Phase 2   → Blind-attack refinement — 3 sub-agents, master-routed, no critic agent
 Phase 2.5 → Post-refinement checks (depth-dependent)
@@ -113,7 +116,7 @@ best practices, known pitfalls, domain constraints the user may not have stated.
 For high-stakes domains, trace forward consequences
 (what goes wrong if advice is incorrect).
 
-### 0.2 Infer Requirements
+### 0.2 Infer Requirements (MGPC — in MASTER's context)
 
 Use a requirements-inference capability if available;
 otherwise extract inline from the user's request combined with research findings.
@@ -124,16 +127,67 @@ Premises (assumptions that must hold), Constraints (hard/soft limits).
 This structure gives the blind attack specific categories to invert:
 unmet Goals, violated Constraints, false Premises.
 
-Produce:
+Produce in MASTER's context:
 
 - **Enriched requirements registry** — structured as MGPC when feasible,
   with explicit + research-discovered requirements and sources.
-- **Anti-requirements registry** — failure modes and anti-patterns the solution should avoid.
-  Format: `[AR-id]: Solutions should not [pattern] | Source: [ref] | Consequence: [impact]`.
-  Anti-requirements feed directly into the blind attack as positive assertions
-  that the candidate exhibits each failure mode.
 - **Domain research summary** — key findings retained by MASTER for spec refinement
   between Phase 2 rounds.
+
+**Do NOT produce anti-requirements in MASTER's context.** ARs are derived in Phase 0.3
+by an isolated sub-agent (see below) to prevent MASTER's authoring context from
+colouring what counts as a risk.
+
+### 0.3 Derive Anti-Requirements — MANDATORY (isolated sub-agent)
+
+⚠ **MANDATORY STEP — do not skip.** Skipping this step (deriving ARs inline in
+MASTER's context, or skipping ARs entirely) is the most common implementation
+failure in Phase 0: ARs derived in MASTER inherit MASTER's authoring bias;
+ARs skipped entirely produce attacks with significantly less adversarial surface.
+
+⚠ **Pipeline Completeness Gate (Phase 0):** Before proceeding to Phase 1,
+verify that the AR-Inferrer sub-agent has actually been spawned and returned
+an anti-requirements list. If it has NOT been spawned, STOP and dispatch it now.
+Do NOT proceed to Phase 1 without it.
+
+Spawn an isolated sub-agent with **only the MGPC requirements** as input.
+That sub-agent's sole task: derive the anti-requirements registry from those requirements.
+It has no other context — no user brief, no conversation history, no MASTER reasoning.
+
+**Why isolation matters:**
+if MASTER derived ARs inline alongside the requirements,
+the ARs would inherit MASTER's full authoring context
+(user brief, conversation history, pre-formed expectations about risks).
+Isolating AR inference in a sub-agent with only the MGPC as input
+produces ARs derived purely from the spec's structural shape —
+not from what MASTER already believes "risky" looks like.
+
+```text
+∆ 1: MASTER passes MGPC requirements to an isolated sub-agent.
+     That sub-agent has NO other context.
+∆ 2: Sub-agent derives anti-requirements from the requirements alone.
+     Output format: numbered list of failure patterns + consequences
+     (see `references/templates.md § AR-Inferrer Prompt` for the exact template).
+∆ 3: MASTER receives the AR list and stores it as the anti-requirements registry.
+     The registry stays MASTER-only — never sent labelled to verifier sub-agents.
+```
+
+Produce:
+
+- **Anti-requirements registry** — failure modes and anti-patterns the solution should avoid.
+  Format: `[AR-id]: [failure pattern] | Source: [ref or inferred] | Consequence: [impact]`.
+  AR inversions feed into the Phase 2 concerns list as ordinary failure declarations,
+  never as a separately labelled section.
+
+Cost: 1 additional sub-agent spawn per pipeline run (single-turn, ~1K tokens).
+This cost is **mandatory** — the adversarial surface gain is much larger than the spawn cost.
+
+**Skipping the AR-Inferrer spawn is a DEGRADED outcome.** It can only be justified
+when the sub-agent dispatch mechanism is unavailable (INLINE-only environments).
+In that case, document the degradation explicitly in the trace as `(NO-AR-DEGRADED)`
+and mark Phase 0 output as DEGRADED.
+Do NOT skip it because it "seems expensive" or "optional" — the explicit mandate above overrides
+any impression of optionality.
 
 ---
 

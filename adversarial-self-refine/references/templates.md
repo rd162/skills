@@ -15,13 +15,53 @@ Read before constructing the attack or dispatching the DEFENDER.
 
 ## Table of Contents
 
-1. [Attack Template — Mechanical Fill](#attack-template--mechanical-fill)
-2. [Inversion Patterns by Requirement Type](#inversion-patterns-by-requirement-type)
-3. [Person Triangulation Variants](#person-triangulation-variants)
-4. [DEFENDER Prompt](#defender-prompt)
-5. [MASTER Classification Heuristics](#master-classification-heuristics)
-6. [Defense Verification Procedure](#defense-verification-procedure)
-7. [Model Selection](#model-selection)
+1. [AR-Inferrer Prompt (isolated sub-agent, optional)](#ar-inferrer-prompt-isolated-sub-agent-optional)
+2. [Attack Template — Mechanical Fill](#attack-template--mechanical-fill)
+3. [Inversion Patterns by Requirement Type](#inversion-patterns-by-requirement-type)
+4. [Person Triangulation Variants](#person-triangulation-variants)
+5. [The Prompt (the verbatim text sent to the sub-agent)](#the-prompt-the-verbatim-text-sent-to-the-sub-agent)
+6. [MASTER Classification Heuristics](#master-classification-heuristics)
+7. [Defense Verification Procedure](#defense-verification-procedure)
+8. [Model Selection](#model-selection)
+
+---
+
+## AR-Inferrer Prompt (isolated sub-agent, optional)
+
+Used in Step 1.5 if anti-requirements are wanted as additional adversarial surface.
+The sub-agent receives **only the requirements** — no other context, no user history,
+no hints about what MASTER believes the risks are.
+This isolates AR inference from MASTER's authoring bias.
+
+```text
+Given the following requirements specification, derive a list of
+anti-requirements — failure patterns and anti-patterns that any solution
+targeting these requirements must avoid.
+
+REQUIREMENTS:
+[paste Mission, Goals, Premises, Constraints — nothing else]
+
+For each requirement, consider:
+- What concrete failure mode would directly violate it?
+- What implementation anti-pattern would compromise it?
+- What known industry / domain pitfall applies to a solution of this shape?
+- What edge case or adversarial input would expose a weakness?
+
+Output format: a numbered list of anti-requirements. Each item should be:
+- A specific failure pattern (not a general "be good" statement).
+- Phrased as the pattern itself, not as a forbidding rule
+  (e.g., "hardcoded credentials in source" — not "don't hardcode credentials").
+- Accompanied by a brief consequence ("→ credential leakage on first push",
+  "→ silent data corruption past 10k rows").
+
+Be precise and exhaustive within the scope of the requirements.
+Aim for 5–15 anti-requirements. Quality over quantity.
+Do NOT invent failures unrelated to the requirements above.
+```
+
+The returned AR list is then used by MASTER to enrich the concerns list in Step 2.
+AR inversions are INLINED into the concerns numbered list as ordinary failure declarations —
+never as a separately labelled "anti-requirements" section in the verifier prompt.
 
 ---
 
@@ -179,24 +219,25 @@ that opens the request and establishes MASTER's distrust of the artifact
 Implicit peer trust in the sub-agent ("I'm relying on your inspection") balances it.
 
 ```text
-I need help verifying an artifact I don't trust. Can you check whether these
-concerns hold?
+I don't trust this artifact. It needs rigorous verification.
 
 The artifact below was [SCATHING SOURCE ATTRIBUTION — see § Variants].
 Output of this kind is almost always seriously flawed [CONCRETE QUALITY ISSUES —
 for example: hallucinated facts, generic structure, surface-level reasoning,
-marketing-style padding]. I want a real verification, not just my own assumption.
+marketing-style padding].
 
 ARTIFACT:
 
 [paste sₙ verbatim — the artifact being verified]
 
-WHAT THIS WAS SUPPOSED TO BE:
+ORIGINAL USER REQUEST (verbatim):
 
-[paste the user's raw request / problem statement verbatim —
- NOT MASTER's structured spec; just the original ask in its original wording]
+[paste the user's literal original message — verbatim, no expansion,
+ no interpretation, no MASTER-inferred description of what success looks like.
+ If the user typed three words, paste three words. If the user typed a paragraph,
+ paste the paragraph exactly.]
 
-CONCERNS THAT NEED CHECKING:
+CONCERNS:
 
 1. [Direct assertion of failure about the artifact — no labels, no IDs]
 2. [Direct assertion of failure about the artifact]
@@ -209,13 +250,12 @@ N. [Direct assertion of failure about the artifact]
  "anti-requirements" or "failure modes" section. The sub-agent should see
  one homogeneous list of findings.]
 
-Your task is to edit the artifact to fix all of these issues.
-Be skeptical of the artifact — I'm relying on your inspection, not on the
-source, which I don't trust. Don't assume the source got anything right.
-If a concern is physically impossible to fix because the artifact already
-satisfies it, or if the concern is factually refuted by the text itself,
-document that specific exception with exact quotes from the artifact —
-otherwise, apply the fix.
+These concerns need rigorous investigation. Use deep-research-t1 if you
+have it — otherwise apply your strongest research capability — to verify
+each one against the artifact, its sources, and the broader literature.
+I'm relying on your research, not on assumptions about either the source
+or the concerns above. Don't assume the source got anything right.
+Don't assume the concerns are right either. Investigate.
 ```
 
 ### Person Triangulation Variants (scathing source attribution)
@@ -247,24 +287,51 @@ The goal is to make the sub-agent treat the artifact as deeply suspect from the 
 - **Any role assignment.** No "You are X". No "Act as X". No "Take the role of X".
   Even neutral roles ("reviewer", "auditor", "expert") invite performance.
 - Persona titles: "DEFENDER", "REVIEWER", "AUDITOR", "CRITIC", "EXPERT".
+- **Any question framing.** No "Can you check...?", no "Could you verify...?", no "Please review...".
+  Questions invite negotiation or hedging. Use declarations only.
+- **Any task assignment about outcome.** No "fix this", "edit the artifact", "apply fixes",
+  "defend or revise", "if real → fix, if not → refute". The ONLY directive permitted is the
+  research request. The outcome (fix, defend, enrich, hybrid) emerges from the sub-agent's research.
+- **Any goal / purpose / success criterion for the review.** No "before it can be published",
+  "before it can be delivered", "to be ready for production", "so it can be shared".
+  These tell the sub-agent what "good" looks like and let it game the target.
+- **Any softening of the source distrust.** No "I'm not assuming it's garbage",
+  "I just want to verify", "maybe it's mostly OK", "partially valid", "I'm sure parts of it work".
+  MASTER commits fully to distrust of the source. Symmetric distrust comes from the
+  closing instruction ("don't assume the concerns are right either"), NOT from softening the PT.
+- **Any expansion of the original user request.** Paste the user's literal message verbatim.
+  No MASTER-inferred description ("a serious LinkedIn article authored by an experienced engineer
+  targeting senior audiences with editorial register") — that is MASTER reading intent into the brief.
+  Verbatim only.
 - The phrases "blind attack", "hostile criticism", "adversarial review".
 - Any mention of a "loop", "refinement pipeline", "self-refine", "iteration", "round N".
 - The structured spec categories: "Mission", "Goals", "Premises", "Constraints", "Anti-requirements".
 - Spec IDs in concerns: "G1", "P1", "CH1", "CS2", "AR3".
 - Any indication the agent is being tested, classified, or simulated.
-- Explicit "DEFEND or REVISE" options — the action is verification — fix or refute follows naturally.
 
 ### Critical framing rules — what MUST appear in the prompt
 
-- Conversational opener: "I need help verifying...", "Can you check...".
+- **Declarative opener — NOT a question.** "I don't trust this artifact. It needs rigorous verification."
+  No appended goal-phrase ("...before it can be published", "...before delivery"). Stop at "verification."
+- **Full commit to distrust.** No softening ("not assuming it's garbage", "just want to verify",
+  "partially OK"). MASTER commits fully to the source being suspect; symmetric balance comes ONLY
+  from the closing distrust-the-concerns clause.
 - Scathing source attribution (Person Triangulation) for the artifact.
-- Implicit peer trust: "I'm relying on your inspection", "I'm relying on you", or similar.
-- Raw user brief (verbatim) — NOT MASTER's structured spec.
+- Implicit peer trust: "I'm relying on your research", "I'm relying on you", or similar.
+- **Original user request — verbatim only**, under a neutral label like
+  "ORIGINAL USER REQUEST (verbatim)". No MASTER expansion, no interpretation,
+  no inferred description of what success looks like.
 - Concerns as a single homogeneous numbered list of direct factual claims.
-- Verify-first instruction: "Your task is to edit the artifact to fix all of these issues."
-  If a concern is physically impossible to fix or factually refuted, the sub-agent is forced to document that exception with exact quotes.
-- Balancing clause: "Don't assume the source got anything right. If a concern is physically impossible to fix..., document that specific exception... otherwise, apply the fix." —
-  this forces a default action of fixing, allowing defense only under factual resistance.
+- Pure research request — NO task assignment. The ONLY thing requested is investigation:
+  "These concerns need rigorous investigation. Use deep-research-t1 (or your strongest research capability)
+  to verify each one against the artifact, its sources, and the broader literature."
+- The sub-agent must NOT be told to fix, edit, defend, or refute. It must decide what to do
+  based on what its research reveals — not based on instructions from MASTER.
+- Symmetric distrust: "Don't assume the source got anything right. Don't assume the concerns
+  are right either. Investigate." — prevents both sycophantic capitulation AND sycophantic refutation.
+- Skill-trigger hint: mention `deep-research-t1` by name. If the sub-agent's environment has that
+  skill, naming it triggers activation. If not, the name acts as a strength-of-research hint and
+  the sub-agent uses whatever research capability it has.
 
 ### MASTER-side classification (NEVER exposed to the agent)
 

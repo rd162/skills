@@ -32,10 +32,19 @@ that the v9.0 blind-attack pipeline relies on.
 ## Architecture Diagram
 
 ```text
-┌────────────────────────────┐
+PHASE 0.3 — AR derivation (isolated sub-agent):
+
+┌─────────────┐      MGPC only      ┌─────────────────────┐
+│   MASTER    │ ──────────────────▶│  AR-INFERRER     │
+│             │ ◀─── anti-reqs ──│ (no other context)│
+└─────────────┘                     └─────────────────────┘
+
+PHASE 2 — Blind-attack refinement:
+
+┌──────────────────────────┐
 │      MASTER Orchestrator    │
-│ ─ holds enriched reqs      │
-│ ─ holds anti-requirements   │
+│ ─ holds enriched MGPC reqs │
+│ ─ holds AR registry        │
 │ ─ builds blind attacks      │  ← deterministic, no LLM
 │ ─ refines spec between      │
 │   rounds (MASTER reasoning) │
@@ -45,7 +54,7 @@ that the v9.0 blind-attack pipeline relies on.
    │ attack-A│ attack-B│ attack-C
    ▼         ▼         ▼
 ┌────────┐┌────────┐┌────────┐
-│DEFENDER││DEFENDER││DEFENDER│
+│SUB-AGT ││SUB-AGT ││SUB-AGT │
 │   A    ││   B    ││   C    │
 │(isolated session, persists  │
 │ across rounds — each sees   │
@@ -54,7 +63,9 @@ that the v9.0 blind-attack pipeline relies on.
 ```
 
 No CRITIQUE agent — attack generation is mechanical template fill
-by MASTER from the Phase 0 enriched requirements and anti-requirements.
+by MASTER from the Phase 0 enriched requirements and anti-requirements registry.
+The AR-inferrer is the only Phase 0 sub-agent;
+it runs once, returns the AR list, then exits.
 
 ---
 
@@ -196,13 +207,14 @@ When the environment allows model selection per sub-agent,
 use the strongest model where reasoning depth matters most
 and faster models where the task is more mechanical.
 
-| Agent Role                       | Cognitive Demand | Model Tier             | Rationale                                                                     |
-| -------------------------------- | ---------------- | ---------------------- | ----------------------------------------------------------------------------- |
-| **Generation (Phase 1)**         | High             | Strongest (opus-class) | Divergent exploration requires deep domain understanding                      |
-| **Defenders (Phase 2)**          | High             | Strongest (opus-class) | Must research counter-evidence and produce substantive revisions OR rebuttals |
-| **Condorcet Voters (Standard+)** | High             | Strongest (opus-class) | Research-armed voting with claim verification needs strong reasoning          |
-| **Condorcet Voters (Quick)**     | Moderate         | Fast (sonnet-class)    | Quick-depth comparisons are straightforward requirement matching              |
-| **Inverse Spec Recovery**        | Moderate         | Fast (sonnet-class)    | Structured extraction from solution text suits faster models                  |
+| Agent Role                       | Cognitive Demand | Model Tier             | Rationale                                                                                       |
+| -------------------------------- | ---------------- | ---------------------- | ----------------------------------------------------------------------------------------------- |
+| **AR-Inferrer (Phase 0.3)**      | Moderate         | Capable (sonnet-class) | Single-turn extraction of failure patterns from MGPC — structured, well-suited to capable model |
+| **Generation (Phase 1)**         | High             | Strongest (opus-class) | Divergent exploration requires deep domain understanding                                        |
+| **Sub-Agents (Phase 2)**         | High             | Strongest (opus-class) | Must do deep research and produce substantive fixes / refutations / enrichments                 |
+| **Condorcet Voters (Standard+)** | High             | Strongest (opus-class) | Research-armed voting with claim verification needs strong reasoning                            |
+| **Condorcet Voters (Quick)**     | Moderate         | Fast (sonnet-class)    | Quick-depth comparisons are straightforward requirement matching                                |
+| **Inverse Spec Recovery**        | Moderate         | Fast (sonnet-class)    | Structured extraction from solution text suits faster models                                    |
 
 The v8.0 CRITIQUE row is removed — there is no critique agent in v9.0.
 The attack is template fill by MASTER, requiring no model.
@@ -213,8 +225,8 @@ Isolation alone (separate contexts preventing self-play bias)
 justifies sub-agent dispatch.
 
 **Cost optimization at scale:**
-At Quick depth with 6 agents,
-using fast models for Condorcet voters
+At Quick depth with 7 agents,
+using fast models for Condorcet voters and the AR-Inferrer
 reduces total pipeline cost by ~20-30% with minimal quality impact.
 At Deep/Maximum depth, use the strongest model for all agents —
 every phase involves research and complex reasoning.
@@ -239,19 +251,19 @@ GATE(label):
 
 ### Gates in v9.0
 
-| Phase | Gate                  | Requires                             | Evidence                          | Fallback                     |
-| ----- | --------------------- | ------------------------------------ | --------------------------------- | ---------------------------- |
-| 0     | Requirements          | Requirements inference               | Structured specification          | Inline extraction            |
-| 0     | Knowledge Saturation  | Domain research                      | Enriched requirements w/ sources  | Training knowledge only      |
-| 0     | Anti-Requirements     | Failure-mode discovery               | Anti-requirements registry        | Empty AR registry            |
-| 1     | Candidate Generation  | 3 divergent solutions                | 3 distinct candidates             | Model generates all          |
-| 2     | Defender Isolation    | Separate agent sessions per defender | Independent execution contexts    | Context fencing              |
-| 2     | Attack Construction   | MGPC + AR registry → template fill   | Assembled attack string           | Partial spec, partial attack |
-| 2     | Defender Research     | Search tools (optional)              | Cited sources in defender output  | Training knowledge only      |
-| 2.5   | Convergence Detection | Pattern analysis (optional)          | Termination signal detected       | Fixed iteration count        |
-| 2.5   | Citation Verification | Source validation (optional)         | Citations checked against sources | Trust outputs at face value  |
-| 3     | Pairwise Isolation    | Separate comparison sessions         | Independent comparison contexts   | Sequential fencing           |
-| 3     | Enriched Requirements | Final spec including Phase 2 refines | Enriched reqs at Condorcet input  | Original Phase 0 reqs        |
+| Phase | Gate                      | Requires                              | Evidence                           | Fallback                                                    |
+| ----- | ------------------------- | ------------------------------------- | ---------------------------------- | ----------------------------------------------------------- |
+| 0.1   | Knowledge Saturation      | Domain research                       | Enriched requirements w/ sources   | Training knowledge only                                     |
+| 0.2   | Requirements (in-context) | Requirements inference (MGPC)         | Structured specification           | Inline extraction                                           |
+| 0.3   | AR Isolation              | Isolated sub-agent receives MGPC only | AR list returned by isolated agent | Inline AR derivation (DEGRADED — colored by MASTER context) |
+| 1     | Candidate Generation      | 3 divergent solutions                 | 3 distinct candidates              | Model generates all                                         |
+| 2     | Sub-Agent Isolation       | Separate agent sessions per candidate | Independent execution contexts     | Context fencing                                             |
+| 2     | Attack Construction       | MGPC + AR registry → template fill    | Assembled attack string            | Partial spec, partial attack                                |
+| 2     | Sub-Agent Research        | Search tools (deep-research-t1 ideal) | Cited sources in sub-agent output  | Training knowledge only                                     |
+| 2.5   | Convergence Detection     | Pattern analysis (optional)           | Termination signal detected        | Fixed iteration count                                       |
+| 2.5   | Citation Verification     | Source validation (optional)          | Citations checked against sources  | Trust outputs at face value                                 |
+| 3     | Pairwise Isolation        | Separate comparison sessions          | Independent comparison contexts    | Sequential fencing                                          |
+| 3     | Enriched Requirements     | Final spec including Phase 2 refines  | Enriched reqs at Condorcet input   | Original Phase 0 reqs                                       |
 
 ### Gate Verification
 
@@ -360,14 +372,15 @@ If two candidates tie on win count:
 ## Anti-Patterns
 
 ```text
-MOST DAMAGING FAILURE (1/2): Assigning the sub-agent any role in the prompt
+MOST DAMAGING FAILURE (1/3): Assigning the sub-agent any role in the prompt
   ANY "You are X" / "Act as X" / "Take the role of X" framing — even neutral ones like
   "You are a senior reviewer" or "You are a quality auditor" — invites role-play
   instead of genuine engagement. The sub-agent's reward shifts from "do the real work"
   to "play the assigned role well". Even more damaging: "You are the DEFENDER" /
   labelling concerns as "BLIND ATTACK" / "HOSTILE CRITICISM" — primes defense and
   rationalization.
-  → The prompt is a RAW PEER REQUEST from MASTER ("I need help verifying...", "Can you check...").
+  → The prompt opens with a DECLARATION, not a question ("I don't trust this artifact. It needs rigorous verification.").
+  → NO "Can you check...?", "Please verify...", "Could you help...?" — questions invite negotiation or hedging.
   → Person Triangulation is scathing source attribution opening the request —
     NOT a role context for the sub-agent.
   → The sub-agent is treated as a capable peer, not assigned a role.
@@ -376,7 +389,7 @@ MOST DAMAGING FAILURE (1/2): Assigning the sub-agent any role in the prompt
   → The sub-agent must believe it is doing a single real verification favor for a peer,
     not participating in a simulation or playing a role.
 
-MOST DAMAGING FAILURE (2/2): Sending the enriched requirements spec to the sub-agent
+MOST DAMAGING FAILURE (2/3): Sending the enriched requirements spec to the sub-agent
   Letting the reviewer see the Mission/Goals/Premises/Constraints — or even spec IDs in concern lines
   ("G1 fails", "CH2 violated", "AR3 exhibited") — collapses the entire blind-attack mechanism.
   The reviewer pattern-matches concerns to spec items and rationalizes compliance
@@ -384,6 +397,33 @@ MOST DAMAGING FAILURE (2/2): Sending the enriched requirements spec to the sub-a
   → Sub-agent receives ONLY: candidate + raw brief + concerns list (direct assertions, no IDs, no labels).
   → Anti-requirements are INLINED as ordinary concerns — no separate "Anti-requirements" section.
   → The MGPC spec stays MASTER-only at all times.
+
+MOST DAMAGING FAILURE (3/3): Telling the sub-agent what to do ("fix this", "defend or revise")
+  Any outcome-directed task ("edit the artifact to fix these issues", "if real → fix, if not → refute")
+  constrains the sub-agent's surface and biases its output. The sub-agent's reward shifts from
+  "produce honest research-backed assessment" to "satisfy the task as stated."
+  → The ONLY directive permitted in the prompt is the research request:
+    "These concerns need rigorous investigation. Use deep-research-t1 (or your strongest research
+    capability) to verify each against the artifact, its sources, and the broader literature."
+  → The outcome (fix, defend, enrich, hybrid) emerges naturally from the research findings.
+  → Symmetric distrust required: "Don't assume the source got anything right. Don't assume the
+    concerns are right either. Investigate."
+
+DAMAGING FAILURE: Skipping or inlining the Phase 0.3 AR-Inferrer sub-agent spawn
+  Two failure modes:
+  (1) Skipping AR derivation entirely → attack with much less adversarial surface
+      than the spec actually exposes. Sub-agent finds fewer real issues.
+  (2) Deriving ARs inline in MASTER's context → ARs inherit MASTER's full authoring
+      context (user brief, conversation history, pre-formed risk expectations).
+      This makes ARs biased toward what MASTER already believes is risky,
+      not what the spec actually exposes.
+  → Phase 0.3 is MANDATORY. Spawn the AR-Inferrer sub-agent every pipeline run.
+  → MASTER produces ONLY the MGPC requirements in main context (Phase 0.2).
+  → The AR-Inferrer receives ONLY the MGPC — no other context.
+  → Pipeline Completeness Gate: Phase 1 MUST NOT START until the AR-Inferrer has
+     returned an AR list. If skipped due to INLINE-only environment, mark Phase 0
+     as `(NO-AR-DEGRADED)` in the trace.
+  → See `references/templates.md § AR-Inferrer Prompt` for the exact template.
 
 MOST COMMON FAILURE: Completing Phase 0+1 then skipping to Phase 4
   The agent does the easy inline work then shortcuts the expensive sub-agent phases.
@@ -401,8 +441,34 @@ Self-play: one agent playing both attacker and defender in the same session
   → Defenders run in isolated sessions; MASTER builds attacks.
 
 Role-game framing / conditional instructions: telling defenders they are "under attack" or providing conditional "if real -> fix, if not -> refute" instructions
-  Turns into theatrical performance or checklist-checking.
-  → "Your task is to edit the artifact to fix all of these issues." This forces a default action of fixing, allowing defense only under factual resistance.
+  Turns into theatrical performance or checklist-checking. Also: telling them to "fix all issues"
+  is itself a task assignment that constrains the surface.
+  → The ONLY directive in the prompt is the research request. No task assignment about outcome.
+  → "These concerns need rigorous investigation. Use deep-research-t1 (or your strongest research
+     capability) to verify each one." The outcome emerges from the research.
+
+Question framing in the verifier prompt ("Can you check...?", "Could you verify...?", "Please review...")
+  Questions invite negotiation or hedging. The sub-agent reads "can you?" as an option to refuse,
+  qualify, or narrow scope.
+  → Use declarations only. "I don't trust this artifact. It needs rigorous verification."
+
+Appending a goal-phrase to the declarative opener ("...before it can be published", "...before delivery", "...so it's ready for production")
+  Any goal-phrase tells the sub-agent what "good" looks like and lets it game the target.
+  The sub-agent must not know what the artifact is FOR — only what's in the artifact and the original request.
+  → Stop the opener at "verification." Nothing after.
+  → The artifact's purpose stays in MASTER's private state, never in the prompt.
+
+Softening the source distrust ("I'm not assuming it's garbage", "just want to verify", "maybe partially OK")
+  Walks back the Person Triangulation. The sub-agent reads this as "maybe it's fine" and softens its review.
+  → Full commit to source distrust. The PT establishes the artifact is suspect; no walking back.
+  → Symmetric balance comes ONLY from the closing "don't assume the concerns are right either" clause,
+     never from softening the PT.
+
+Expanding the original user request ("a serious LinkedIn article authored by an experienced engineer targeting senior audiences with editorial register")
+  MASTER's interpretation of what the brief implies is MASTER's private state — not the brief itself.
+  Including MASTER's reading in the prompt gives the sub-agent a success target it can game.
+  → Paste the user's literal message verbatim under a neutral label like "ORIGINAL USER REQUEST (verbatim)".
+  → If the user typed three words, paste three words. No expansion.
 
 Per-candidate critique sub-agents (one critic per candidate)
   Same architectural mistake as v8.0 but worse — no cross-candidate insight,
