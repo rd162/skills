@@ -2,20 +2,17 @@
 name: generate-image
 version: "2.0"
 description: >-
-  Generates one or more images from a user brief using any image generation model
-  accessible via OpenRouter. Self-contained — embeds the Python API script inline.
-  Pipeline: Phase 0 infers ONE shared MGPC requirements set; Phase 1 generates 3
-  divergent prompts FROM those shared requirements; Phase 2 generates 3 images from
-  the 3 prompts in parallel; Phase 3 runs an isolated quality-gate sub-agent per
-  image (sees image + requirements, NEVER the prompt) producing PASS/MINOR/FAIL;
-  Phase 4 refines FAIL candidates via prompt-blind sub-agent inspection; Phase 5
-  runs isolated Condorcet pairwise voters (each sees two images + requirements,
-  NEVER the prompts); Phase 6 saves the winner. The defining invariant: every
-  assessment of an image is performed by a sub-agent that has the image and the
-  shared requirements only — never the prompt that produced it.
-  Requires OPENROUTER_API_KEY env var and Python 3.10+.
-  Use when user says "generate an image", "create an illustration", "make a visual",
-  "generate images for", "produce an image of", or provides a visual brief to be rendered.
+  Generates one or more images from a user brief using any OpenRouter image
+  model. Self-contained with embedded Python API script. Pipeline: Phase 0
+  infers a shared MGPC requirements set; Phase 1 generates 3 divergent prompts;
+  Phase 2 generates 3 images in parallel; Phase 3 runs prompt-blind quality-gate
+  sub-agents (PASS/MINOR/FAIL); Phase 4 refines FAIL candidates; Phase 5 runs
+  prompt-blind Condorcet pairwise voters; Phase 6 saves the winner. Invariant:
+  every image assessment uses the image and shared requirements only, never the
+  generating prompt. Requires OPENROUTER_API_KEY and Python 3.10+. Use when
+  user says "generate an image", "create an illustration", "make a visual",
+  "generate images for", "produce an image of", or provides a visual brief
+  to be rendered.
 
 argument-hint: '"<brief>" [--output path] [--aspect 4:5|16:9|1:1|4:3] [--model model-id]'
 user-invocable: true
@@ -51,6 +48,7 @@ assessment criteria are inferred entirely from the brief — nothing is hardcode
 Or invoke naturally — the skill infers all parameters from context.
 
 **Parameters (all optional except the brief):**
+
 - `brief` — what to generate: topic, message, style, constraints, use case
 - `--output` — output file path (default: `image-output.png` in current directory)
 - `--aspect` — aspect ratio: `4:5`, `16:9`, `1:1`, `9:16`, `3:2`, `4:3` (default: `1:1`)
@@ -92,6 +90,7 @@ This skill enforces the opposite:
 
 **Hard rule:** Sub-agents in Phases 3, 4, and 5 receive image files and the
 shared requirements ONLY. They do NOT receive:
+
 - the prompt that generated the image
 - the divergent-strategy label (A / B / C)
 - any process metadata, round counts, or score history
@@ -247,6 +246,7 @@ if __name__ == "__main__":
 ```
 
 Write it once per session:
+
 ```bash
 # Use Write tool to create /tmp/gen_image.py with the content above
 ```
@@ -261,6 +261,7 @@ requirements level. The shared requirements are what every downstream sub-agent
 will see (without ever seeing the prompts).
 
 **Parse the user's invocation.** Extract:
+
 - **Subject / message** — what the image should communicate
 - **Style hints** — any stated aesthetic, medium, register, mood
 - **Technical constraints** — aspect ratio, output path, model, any hard rules
@@ -269,12 +270,12 @@ will see (without ever seeing the prompts).
 
 **Critical use-case classification (affects everything downstream):**
 
-| Use case signal | Default register |
-|-----------------|------------------|
+| Use case signal                                    | Default register                                                                                           |
+| -------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | "academic", "journal", "paper", "technical figure" | **Technical diagram** — boxes, arrows, labels, structured. NOT metaphorical, NOT surrealist, NOT artistic. |
-| "magazine article", "editorial", "blog post" | Editorial illustration — clean conceptual visuals, light metaphor acceptable |
-| "LinkedIn", "social", "marketing" | Bolder conceptual visuals, metaphor encouraged |
-| "poster", "ad", "campaign" | Strong visual hook, metaphor central |
+| "magazine article", "editorial", "blog post"       | Editorial illustration — clean conceptual visuals, light metaphor acceptable                               |
+| "LinkedIn", "social", "marketing"                  | Bolder conceptual visuals, metaphor encouraged                                                             |
+| "poster", "ad", "campaign"                         | Strong visual hook, metaphor central                                                                       |
 
 If the brief mentions an academic / paper / journal / technical-figure context,
 the requirements MUST forbid surrealist, abstract-art, metaphor-only outputs.
@@ -316,6 +317,7 @@ will read. Use plain prose, no spec IDs needed in the file (readability for
 the voters matters more than ID tracking).
 
 Example file content:
+
 ```
 This image is for an academic engineering journal figure. The image must be
 a clean technical diagram, not an artistic illustration. It must:
@@ -387,6 +389,7 @@ what the requirements describe, that strategy is wrong for this brief.
 Write the three prompts to `/tmp/img-A.txt`, `/tmp/img-B.txt`, `/tmp/img-C.txt`.
 
 Each prompt should contain:
+
 1. The shared concept (drawn from requirements, possibly with the strategy's
    compositional choice)
 2. Any required labels, text, or specific elements verbatim
@@ -429,6 +432,7 @@ images for coordination, but every formal assessment happens in sub-agents.
 ## Phase 3 — Quality gate (isolated sub-agent per image, prompt-blind)
 
 Spawn 3 isolated sub-agents — one per image. Each sub-agent receives:
+
 - The path to ONE image (to Read with vision)
 - The path to `/tmp/img-requirements.txt` (the shared requirements)
 - NOTHING ELSE — no prompt, no strategy label, no other candidates
@@ -443,20 +447,23 @@ Spawn 3 isolated sub-agents — one per image. Each sub-agent receives:
 > Read the requirements at `/tmp/img-requirements.txt`.
 >
 > For each requirement (Mission, every Goal, every Hard Constraint), report:
+>
 > - PASS — the requirement is fully satisfied
 > - MINOR — the requirement is mostly satisfied, with a small acceptable defect
 > - FAIL — the requirement is not satisfied
 >
 > Then give an overall verdict:
+>
 > - PASS if all requirements are PASS (MINOR allowed on style/composition goals only)
 > - MINOR if one of G2/G4/G5/G6 is MINOR and everything else is PASS
-> - FAIL if any of Mission/G1/G3/CH* is FAIL, OR if two or more requirements are FAIL
+> - FAIL if any of Mission/G1/G3/CH\* is FAIL, OR if two or more requirements are FAIL
 >
 > Report findings as a structured list. Be specific about WHAT you see in
 > the image that earns each grade — not what you assume the requirements
 > wanted, but what is actually present or absent.
 
 Three sub-agents run in parallel. Collect their verdicts:
+
 - All PASS or PASS+MINOR → proceed to Phase 5 (no refinement needed)
 - One or more FAIL → proceed to Phase 4 for that candidate only
 
@@ -466,6 +473,7 @@ Three sub-agents run in parallel. Collect their verdicts:
 
 For each FAIL candidate, spawn a refinement-recommender sub-agent. This
 sub-agent receives:
+
 - The FAIL image
 - The shared requirements
 - The list of specific failures from Phase 3 (the sub-agent's own report)
@@ -502,6 +510,7 @@ After all 3 candidates have reached PASS / MINOR (or exhausted refinement),
 spawn 3 isolated sub-agents — one per pair: (A,B), (A,C), (B,C).
 
 Each pairwise voter receives:
+
 - The paths to the TWO images for this pair
 - The path to `/tmp/img-requirements.txt` (shared requirements)
 - NOT any prompt
@@ -517,6 +526,7 @@ Each pairwise voter receives:
 > requirements matter.
 >
 > Read both images:
+>
 > - Image 1: `/tmp/img-X.png`
 > - Image 2: `/tmp/img-Y.png`
 >
@@ -532,6 +542,7 @@ Each pairwise voter receives:
 > better for the stated requirements?
 
 Each voter outputs a winner. MASTER tallies the three pairwise outcomes:
+
 - Image with the most wins across (A,B), (A,C), (B,C) → final winner
 - Tie → prefer the candidate with the strongest Phase 3 verdict (PASS over MINOR)
 - Tie after that → MASTER may inspect images directly and pick, noting this
@@ -545,11 +556,13 @@ cp /tmp/img-{A|B|C}{,2}.{png,jpg} <output_path>
 ```
 
 Cleanup:
+
 ```bash
 rm -f /tmp/img-{A,B,C}{,2}.{png,jpg,webp} /tmp/img-{A,B,C}.txt /tmp/img*.out /tmp/img-requirements.txt
 ```
 
 Report format:
+
 ```
 output: <path>                       (e.g. my-image.jpg, 842 KB)
 winner: A  (Condorcet: A=2, B=1, C=0)
@@ -558,6 +571,7 @@ note:   <one-line summary of why this image won — substance, not process>
 ```
 
 For NEEDS_REVIEW outputs:
+
 ```
 output: <path>
 winner: A  (best after 2 refinement rounds; one or more requirements still FAIL)
@@ -603,6 +617,7 @@ academic register: forbid metaphors, require labelled diagrams, require all
 nodes to be visually distinct rectangles or labelled containers.
 
 **Model-specific notes:**
+
 - `google/gemini-3-pro-image-preview` (Nano Banana): images in `message["images"]`,
   returns JPEG/PNG, accepts `image_config.aspect_ratio`. Good text-in-image accuracy.
 - `black-forest-labs/flux.2-pro`: images in `message["content"]`, returns PNG,

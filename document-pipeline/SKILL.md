@@ -2,24 +2,18 @@
 name: document-pipeline
 version: "2.0"
 description: >-
-  End-to-end document knowledge pipeline. Two modes in one skill:
-  (1) INGESTION — converts raw documents (PDF, DOCX, PPTX, XLSX), draw.io
-  diagrams, and video files (MP4, MKV, AVI, MOV) into AI-readable fragments
-  in __FRAGMENTS__/ using dual markdown converters (MarkItDown + Docling),
-  WEBP sliding-window page images via libvips, OpenAI Whisper VTT subtitles,
-  and PySceneDetect cadre images, with SHA256 change tracking and incremental
-  resume. (2) SURVEY — reads __FRAGMENTS__/ + optional web research and
-  produces a targeted survey/knowledge base scoped to a named subject
-  (one partner, one product) with structured §1–§12 sections, source
-  traceability, gap/contradiction/ambiguity catalogue, and prioritized
-  clarification questions with default assumptions. Both modes emit
-  source-tier frontmatter on outputs (fragments inherit source tier; surveys are T3).
-  Use when user says "convert documents", "ingest documents", "create
-  fragments", "process specs", "run the converter", "process videos",
-  "extract subtitles", "build survey", "analyze documents", "extract
-  knowledge from fragments", "what do the specs say", "summarize the RFP",
-  "generate clarification questions", or for combined requests like
-  "ingest documents and produce a survey for X".
+  End-to-end document knowledge pipeline with two modes. INGESTION: converts
+  raw documents (PDF, DOCX, PPTX, XLSX), draw.io diagrams, and video files
+  (MP4, MKV, AVI, MOV) into AI-readable fragments using MarkItDown + Docling,
+  WEBP sliding-window images via libvips, Whisper VTT subtitles, and
+  PySceneDetect cadres with SHA256 change tracking. SURVEY: reads fragments
+  plus optional web research, produces a targeted knowledge base with
+  structured sections, source traceability, gap/contradiction catalogue, and
+  clarification questions. Use when user says "convert documents",
+  "ingest documents", "create fragments", "process specs", "run the converter",
+  "process videos", "build survey", "analyze documents", "what do the specs say",
+  "summarize the RFP", "generate clarification questions", or "ingest documents
+  and produce a survey for X".
 metadata:
   author: rd162@hotmail.com
   tags: document-conversion, ingestion, survey, knowledge-extraction, markitdown, docling, drawio, webp, vips, pdf, fragments, libreoffice, chrome, video, whisper, scenedetect, vtt, source-tiering
@@ -35,11 +29,11 @@ Two modes — invoked separately or chained.
 
 ## Mode Selection
 
-| User intent | Mode | Read further in |
-| ----------- | ---- | --------------- |
-| Convert raw documents/videos to fragments | **Ingestion** | Below in this SKILL.md |
-| Build a survey/knowledge base from fragments | **Survey** | `references/survey-mode.md` |
-| "Ingest X and produce survey for Y" | **Both, sequenced** | Run Ingestion first, then Survey |
+| User intent                                  | Mode                | Read further in                  |
+| -------------------------------------------- | ------------------- | -------------------------------- |
+| Convert raw documents/videos to fragments    | **Ingestion**       | Below in this SKILL.md           |
+| Build a survey/knowledge base from fragments | **Survey**          | `references/survey-mode.md`      |
+| "Ingest X and produce survey for Y"          | **Both, sequenced** | Run Ingestion first, then Survey |
 
 Both modes share `__FRAGMENTS__/` as the canonical interchange format.
 Ingestion emits `tier: <inherits source>, source_class: fragment` frontmatter on every
@@ -64,7 +58,7 @@ T1 for saved public official docs, etc.:
 
 ```yaml
 ---
-tier: T2                  # inherits source tier (T2 for __SPECS__/, T1 for public docs, etc.)
+tier: T2 # inherits source tier (T2 for __SPECS__/, T1 for public docs, etc.)
 source_class: fragment
 version: "1.0"
 last_updated: <ISO date>
