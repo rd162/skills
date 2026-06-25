@@ -39,7 +39,7 @@ Both modes share `data/corpus/` as the canonical interchange format.
 Ingestion emits `tier: <inherits source>, source_class: fragment` frontmatter on every
 fragment markdown (T2 when source is from `data/intake/`). Survey emits
 `tier: T3, source_class: llm` on the survey/questions output. See
-`deep-research-t1/references/source-tiering.md` for the full policy.
+`deep-research/references/source-tiering.md` for the full policy.
 
 ---
 

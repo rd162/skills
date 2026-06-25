@@ -1,6 +1,6 @@
 ---
-name: adversarial-thinking
-description: Produces rigorously stress-tested solutions through adversarial exploration. Generates divergent approaches, battle-tests each via deterministic blind-attack prompts (mechanical inversion of the requirements spec plus anti-requirement assertions, optionally with Person Triangulation pressure) directed at isolated sub-agents, then selects the strongest through pairwise comparison. Returns one recommended solution and one alternative. Use when the user asks to "think deeper", "think harder", "ultrathink", "deep research", "research deeply", "research this carefully", "give me a really good answer", "explore alternatives", "I need the best approach", or when the request is naturally high-stakes — architecture decisions, strategy choices, complex trade-offs, important designs, or any question where a first-draft answer risks missing critical flaws. Composes with deep-research-t1 when both deep knowledge gathering and adversarial solution refinement are needed.
+name: deliberate
+description: Produces rigorously stress-tested solutions through adversarial exploration. Generates divergent approaches, battle-tests each via deterministic blind-attack prompts (mechanical inversion of the requirements spec plus anti-requirement assertions, optionally with Person Triangulation pressure) directed at isolated sub-agents, then selects the strongest through pairwise comparison. Returns one recommended solution and one alternative. Use when the user asks to "think deeper", "think harder", "ultrathink", "deep research", "research deeply", "research this carefully", "give me a really good answer", "explore alternatives", "I need the best approach", or when the request is naturally high-stakes — architecture decisions, strategy choices, complex trade-offs, important designs, or any question where a first-draft answer risks missing critical flaws. Composes with deep-research when both deep knowledge gathering and adversarial solution refinement are needed.
 version: "9.0"
 metadata:
   author: rd162@hotmail.com
@@ -19,7 +19,7 @@ select the strongest through pairwise comparison,
 deliver one recommended solution and one alternative.
 
 Phase 2 uses the same **blind-attack mechanism** as the sibling skill
-adversarial-self-refine —
+roaster —
 attack generation is mechanical inversion of the requirements spec,
 not a smart-critic LLM call.
 The attack here additionally inverts the Phase 0 anti-requirements registry,

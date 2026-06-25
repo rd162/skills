@@ -1,5 +1,5 @@
 ---
-name: adversarial-self-refine
+name: roaster
 description: Stress-test any solution by feeding it deterministic blind-attack prompts that assert every enumerated requirement is violated, then observing whether the defender defends, converges, or capitulates. Replaces the expensive "smart critic" sub-agent with mechanical inversion of a requirements spec (enumerated inline by the MASTER, or optionally via the requirements-extractor helper skill when available) plus optional Person Triangulation pressure. Use when refining drafts, articles, code, prompts, designs, plans, or any artifact whose requirements can be enumerated. Falls back to single-thread when sub-agents unavailable (DEGRADED).
 version: "4.0"
 metadata:
@@ -10,7 +10,27 @@ source_class: llm
 last_updated: 2026-04-29
 ---
 
-# Adversarial Self-Refine via Blind Attack
+# Roaster (Adversarial Self-Refine via Blind Attack)
+
+```text
+                  (  )   (   )
+                 (    ) (     )
+                  )  (   )   (
+                 (____) (_____)
+                 |            |
+                 |  [ROAST]   |
+                 |            |
+             _.-'--------------'-._
+            (______________________)
+             \                    /
+              \      ::..        /
+               \    :.:.        /
+                \   ..:        /
+                 \____________/
+                 |            |
+                 |   COFFEE   |
+                 |____________|
+```
 
 Stress-test a solution by mechanically asserting that every requirement is unmet,
 then watching how the defender reacts.
@@ -24,7 +44,7 @@ The DEFENDER's behavior is the only signal that matters:
 
 ## Why Blind Attack Beats Smart Critique
 
-The classical adversarial-self-refine pattern spawned a CRITIC sub-agent
+The classical roaster pattern spawned a CRITIC sub-agent
 to identify flaws in a solution,
 then routed those flaws to an AUTHOR sub-agent.
 That pattern has two failure modes:
@@ -154,9 +174,9 @@ Pick a variant that:
 | Implicit peer trust ("I'm relying on your research")                                                                       | Engages full capability; sub-agent treats this as a real peer ask                                                                                                                                                                                                                |
 | **Original user request — verbatim only** (no MASTER expansion or interpretation)                                          | Label: "ORIGINAL USER REQUEST (verbatim)". Paste user's literal message. No "a serious LinkedIn article for senior audiences" — that's MASTER's reading, not the brief.                                                                                                          |
 | Concerns as a plain numbered list                                                                                          | Direct factual claims, no labels, no categories                                                                                                                                                                                                                                  |
-| Pure research request — NO task assignment                                                                                 | "These concerns need rigorous investigation. Use deep-research-t1 (or your strongest research capability) to verify each against the artifact, its sources, and the broader literature." The agent decides what to do based on research findings — not on MASTER's instructions. |
+| Pure research request — NO task assignment                                                                                 | "These concerns need rigorous investigation. Use deep-research (or your strongest research capability) to verify each against the artifact, its sources, and the broader literature." The agent decides what to do based on research findings — not on MASTER's instructions. |
 | Symmetric distrust clause                                                                                                  | "Don't assume the source got anything right. Don't assume the concerns are right either. Investigate." — prevents both sycophantic capitulation AND sycophantic refutation.                                                                                                      |
-| Skill-trigger hint                                                                                                         | Mention `deep-research-t1` by name — triggers skill activation if available in the sub-agent's environment, acts as a strength hint otherwise.                                                                                                                                   |
+| Skill-trigger hint                                                                                                         | Mention `deep-research` by name — triggers skill activation if available in the sub-agent's environment, acts as a strength hint otherwise.                                                                                                                                   |
 | No mention of loop / pipeline / classification                                                                             | Agent unaware of meta-level; produces genuine engagement                                                                                                                                                                                                                         |
 
 ## What the Reviewer Sees (Critical Architectural Constraint)
@@ -592,7 +612,7 @@ Otherwise it is sycophantic rationalization and must be ignored.
 
 ✗ Any task assignment in the prompt ("fix this", "edit the artifact", "defend or revise", "if real -> fix, if not -> refute")
 ✓ NO task assignment of any kind. Only state the concerns and ask for rigorous research:
-  "These concerns need rigorous investigation. Use deep-research-t1 (or your strongest research capability)
+  "These concerns need rigorous investigation. Use deep-research (or your strongest research capability)
   to verify each against the artifact, its sources, and the broader literature."
   Any "do X" instruction — even a soft "apply fixes" — constrains the sub-agent's surface and biases its output.
   The sub-agent must decide what to do based purely on what its research reveals.
@@ -709,7 +729,7 @@ PROMPT (verbatim, this is what the sub-agent reads):
      6. This is rehashed legacy thinking — nothing novel here.
      7. The technical claims are inaccurate.
 
-   These concerns need rigorous investigation. Use deep-research-t1 if you
+   These concerns need rigorous investigation. Use deep-research if you
    have it — otherwise apply your strongest research capability — to verify
    each one against the artifact, its sources, and the broader literature.
    I'm relying on your research, not on assumptions about either the source

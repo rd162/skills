@@ -5,9 +5,9 @@ last_updated: 2026-04-29
 description: academic references
 ---
 
-# Academic References — deep-research-t1
+# Academic References — deep-research
 
-Supporting literature for the deep-research-t1 skill's design decisions.
+Supporting literature for the deep-research skill's design decisions.
 Loaded on demand — not part of the main SKILL.md context.
 
 ---

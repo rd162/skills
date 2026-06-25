@@ -5,7 +5,7 @@ last_updated: 2026-04-29
 description: phase detail
 ---
 
-# Phase 2.5 and Extended Protocol Reference — adversarial-thinking v9.0
+# Phase 2.5 and Extended Protocol Reference — deliberate v9.0
 
 Full detail for Phase 2.5 post-refinement checks and the example execution trace.
 Loaded on demand — not part of the main SKILL.md context.
@@ -328,7 +328,7 @@ Phase 2 — Blind-attack refinement via raw peer-request prompts (3 sub-agents, 
      The artifact below was [SCATHING SOURCE ATTRIBUTION].
      ARTIFACT: [candidate]. ORIGINAL USER REQUEST (verbatim): [user's literal message].
      CONCERNS: [numbered list of direct failure declarations].
-     These concerns need rigorous investigation. Use deep-research-t1 (or your
+     These concerns need rigorous investigation. Use deep-research (or your
      strongest research capability) to verify each one against the artifact,
      its sources, and the broader literature. I'm relying on your research,
      not on assumptions about either the source or the concerns above.

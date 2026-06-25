@@ -5,7 +5,7 @@ last_updated: 2026-04-29
 description: sub agent dispatch
 ---
 
-# Sub-Agent Dispatch and Polling — deep-research-t1
+# Sub-Agent Dispatch and Polling — deep-research
 
 Extended reference for multi-subject sub-agent fan-out,
 deep research agent polling protocol, and model selection.

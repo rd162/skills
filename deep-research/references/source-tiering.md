@@ -8,7 +8,7 @@ description: source tiering
 # Source Tiering Policy
 
 Authoritative reference for tier (T1–T4) assignment and `source_class`
-taxonomy used by `deep-research-t1` and any skill that produces or
+taxonomy used by `deep-research` and any skill that produces or
 consumes structured knowledge. Other skills MAY inline the relevant
 short summary; this file is the source of truth.
 

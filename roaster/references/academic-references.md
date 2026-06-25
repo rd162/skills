@@ -5,9 +5,9 @@ last_updated: 2026-04-29
 description: academic references
 ---
 
-# Academic References — adversarial-self-refine
+# Academic References — roaster
 
-Supporting literature for the adversarial-self-refine skill's design decisions.
+Supporting literature for the roaster skill's design decisions.
 Loaded on demand — not part of the main SKILL.md context.
 
 ## Version 4.0 Note — Blind Attack Refactor

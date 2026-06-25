@@ -242,7 +242,7 @@ This makes the specification auditable and challengeable.
 
 When the spec is written to a file, prepend the source-tier frontmatter
 (`tier: T3, source_class: llm`) per
-`~/.claude/skills/deep-research-t1/references/source-tiering.md`. If the
+`~/.claude/skills/deep-research/references/source-tiering.md`. If the
 target file already has frontmatter, ADD missing keys only.
 
 ```text

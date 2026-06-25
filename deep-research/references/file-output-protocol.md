@@ -5,7 +5,7 @@ last_updated: 2026-04-29
 description: file output protocol
 ---
 
-# File Output Protocol — deep-research-t1
+# File Output Protocol — deep-research
 
 Full create/update protocols for persistent markdown playbook generation.
 Loaded on demand from the main SKILL.md.

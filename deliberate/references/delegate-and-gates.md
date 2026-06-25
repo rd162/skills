@@ -259,7 +259,7 @@ GATE(label):
 | 1     | Candidate Generation      | 3 divergent solutions                 | 3 distinct candidates              | Model generates all                                         |
 | 2     | Sub-Agent Isolation       | Separate agent sessions per candidate | Independent execution contexts     | Context fencing                                             |
 | 2     | Attack Construction       | MGPC + AR registry → template fill    | Assembled attack string            | Partial spec, partial attack                                |
-| 2     | Sub-Agent Research        | Search tools (deep-research-t1 ideal) | Cited sources in sub-agent output  | Training knowledge only                                     |
+| 2     | Sub-Agent Research        | Search tools (deep-research ideal)    | Cited sources in sub-agent output  | Training knowledge only                                     |
 | 2.5   | Convergence Detection     | Pattern analysis (optional)           | Termination signal detected        | Fixed iteration count                                       |
 | 2.5   | Citation Verification     | Source validation (optional)          | Citations checked against sources  | Trust outputs at face value                                 |
 | 3     | Pairwise Isolation        | Separate comparison sessions          | Independent comparison contexts    | Sequential fencing                                          |
@@ -403,7 +403,7 @@ MOST DAMAGING FAILURE (3/3): Telling the sub-agent what to do ("fix this", "defe
   constrains the sub-agent's surface and biases its output. The sub-agent's reward shifts from
   "produce honest research-backed assessment" to "satisfy the task as stated."
   → The ONLY directive permitted in the prompt is the research request:
-    "These concerns need rigorous investigation. Use deep-research-t1 (or your strongest research
+    "These concerns need rigorous investigation. Use deep-research (or your strongest research
     capability) to verify each against the artifact, its sources, and the broader literature."
   → The outcome (fix, defend, enrich, hybrid) emerges naturally from the research findings.
   → Symmetric distrust required: "Don't assume the source got anything right. Don't assume the
@@ -444,7 +444,7 @@ Role-game framing / conditional instructions: telling defenders they are "under 
   Turns into theatrical performance or checklist-checking. Also: telling them to "fix all issues"
   is itself a task assignment that constrains the surface.
   → The ONLY directive in the prompt is the research request. No task assignment about outcome.
-  → "These concerns need rigorous investigation. Use deep-research-t1 (or your strongest research
+  → "These concerns need rigorous investigation. Use deep-research (or your strongest research
      capability) to verify each one." The outcome emerges from the research.
 
 Question framing in the verifier prompt ("Can you check...?", "Could you verify...?", "Please review...")
@@ -553,7 +553,7 @@ This skill benefits from — but does not require — other capabilities:
 | 0     | requirements-extractor       | Structured MGPC specification                    | Inline extraction from request   |
 | 0     | Anti-requirements discovery  | Documented failure modes as negative constraints | Positive-only requirements       |
 | 1     | Cognitive strategy inference | Problem-specific divergence axes                 | Generic structural variation     |
-| 2     | adversarial-self-refine      | Sibling skill — same blind-attack mechanism      | Inline blind-attack mechanics    |
+| 2     | roaster                     | Sibling skill — same blind-attack mechanism      | Inline blind-attack mechanics    |
 | 2     | Sub-agent orchestration      | Parallel isolated defenders                      | Sequential with context fencing  |
 | 2     | Session continuation         | Stateful defender sessions across rounds         | Re-pass context per round        |
 | 2.5   | Citation verification        | Verified sources before Condorcet                | Trust citations at face value    |
@@ -566,7 +566,7 @@ Every capability in "Preferred" improves quality.
 None are required.
 The pipeline completes via graceful degradation.
 
-The Phase 2 entry for `adversarial-self-refine` reflects that the sibling skill
+The Phase 2 entry for `roaster` reflects that the sibling skill
 documents the same blind-attack mechanism for single-candidate refinement.
 When that skill is available it can be invoked directly as the Phase 2 implementation
 (one invocation per candidate, in isolation);

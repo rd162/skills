@@ -7,7 +7,7 @@ description: academic references
 
 # Academic References — ontology-extractor
 
-Supporting literature for the knowledge-management skill's design decisions.
+Supporting literature for the ontology-extractor skill's design decisions.
 Loaded on demand — not part of the main SKILL.md context.
 
 ---

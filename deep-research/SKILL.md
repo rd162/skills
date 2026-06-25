@@ -1,5 +1,5 @@
 ---
-name: deep-research-t1
+name: deep-research
 version: "2.3"
 description: >-
   Systematically gathers, validates, and synthesizes external knowledge

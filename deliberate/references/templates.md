@@ -5,33 +5,42 @@ last_updated: 2026-04-29
 description: templates
 ---
 
-# Templates — adversarial-self-refine v4.0
+# Prompt Templates — deliberate v9.0
 
-Attack template, inversion patterns, Person Triangulation variants,
-DEFENDER prompt, classification heuristics, and model selection guidance.
-Read before constructing the attack or dispatching the DEFENDER.
+Bundled prompt templates for sub-agent dispatch and MASTER-side construction.
+Read this file before dispatching any sub-agent or building an attack.
+Populate `[bracketed]` variables from pipeline state.
 
 ---
 
 ## Table of Contents
 
-1. [AR-Inferrer Prompt (isolated sub-agent, optional)](#ar-inferrer-prompt-isolated-sub-agent-optional)
-2. [Attack Template — Mechanical Fill](#attack-template--mechanical-fill)
-3. [Inversion Patterns by Requirement Type](#inversion-patterns-by-requirement-type)
-4. [Person Triangulation Variants](#person-triangulation-variants)
-5. [The Prompt (the verbatim text sent to the sub-agent)](#the-prompt-the-verbatim-text-sent-to-the-sub-agent)
-6. [MASTER Classification Heuristics](#master-classification-heuristics)
-7. [Defense Verification Procedure](#defense-verification-procedure)
-8. [Model Selection](#model-selection)
+1. [AR-Inferrer Prompt (Phase 0.3 — isolated sub-agent)](#ar-inferrer-prompt-phase-03--isolated-sub-agent)
+2. [Generation Prompt (Phase 1)](#generation-prompt-phase-1)
+3. [Blind Attack Template (Phase 2 — Mechanical Fill, No LLM Call)](#blind-attack-template-phase-2--mechanical-fill-no-llm-call)
+4. [Inversion Patterns by Requirement Type](#inversion-patterns-by-requirement-type)
+5. [Person Triangulation Variants](#person-triangulation-variants)
+6. [The Prompt (Phase 2 — the verbatim text sent to each sub-agent)](#the-prompt-phase-2--the-verbatim-text-sent-to-each-sub-agent)
+7. [MASTER Classification Heuristics](#master-classification-heuristics)
+8. [Defense Verification Procedure](#defense-verification-procedure)
+9. [Condorcet Comparison Prompt (Phase 3)](#condorcet-comparison-prompt-phase-3)
+10. [Inverse Specification Recovery Prompt (Phase 2.5)](#inverse-specification-recovery-prompt-phase-25)
 
 ---
 
-## AR-Inferrer Prompt (isolated sub-agent, optional)
+## AR-Inferrer Prompt (Phase 0.3 — isolated sub-agent)
 
-Used in Step 1.5 if anti-requirements are wanted as additional adversarial surface.
-The sub-agent receives **only the requirements** — no other context, no user history,
-no hints about what MASTER believes the risks are.
-This isolates AR inference from MASTER's authoring bias.
+Used in Phase 0.3 to derive the anti-requirements registry in an isolated sub-agent,
+separate from MASTER's main context.
+MASTER produces the MGPC requirements in Phase 0.2 (in-context),
+then spawns this isolated sub-agent with **only the requirements** to derive ARs.
+
+**Why isolation matters:** if MASTER derived ARs inline alongside requirements,
+the ARs would inherit MASTER's full authoring context (user brief, conversation history,
+pre-formed expectations about risks).
+Isolating AR inference in a sub-agent with only the MGPC requirements as input
+produces ARs derived purely from the spec's structural shape —
+not from MASTER's pre-formed view of what "risky" looks like.
 
 ```text
 Given the following requirements specification, derive a list of
@@ -53,32 +62,75 @@ Output format: a numbered list of anti-requirements. Each item should be:
   (e.g., "hardcoded credentials in source" — not "don't hardcode credentials").
 - Accompanied by a brief consequence ("→ credential leakage on first push",
   "→ silent data corruption past 10k rows").
+- Optionally include a source if a known industry standard / paper / post-mortem applies.
 
 Be precise and exhaustive within the scope of the requirements.
 Aim for 5–15 anti-requirements. Quality over quantity.
 Do NOT invent failures unrelated to the requirements above.
 ```
 
-The returned AR list is then used by MASTER to enrich the concerns list in Step 2.
-AR inversions are INLINED into the concerns numbered list as ordinary failure declarations —
+The returned AR list is stored in MASTER's private state as the anti-requirements registry.
+In Phase 2, AR inversions are INLINED into the concerns list as ordinary failure declarations —
 never as a separately labelled "anti-requirements" section in the verifier prompt.
 
 ---
 
-## Attack Template — Mechanical Fill
+## Generation Prompt (Phase 1)
 
-MASTER constructs this string from the requirements spec.
-No LLM call required — pure string assembly.
+Used in Phase 1.
+Run in a single context (not per-candidate) so the model
+is aware of prior candidates and can deliberately diverge.
+
+```text
+TASK: Generate exactly 3 maximally divergent solution candidates.
+
+REQUIREMENTS: [Phase 0 enriched requirements registry]
+ANTI-REQUIREMENTS: [Phase 0 anti-requirements registry]
+
+STEP 1 — INFER COGNITIVE STRATEGIES:
+Analyze the requirements and identify 3 fundamentally different cognitive approaches
+to solving this specific problem. Reason about THIS problem:
+- What are the competing tensions in the requirements?
+- What would a domain expert prioritize differently from a generalist?
+- What approach emerges from starting with constraints? With failure modes?
+- What cognitive lens reveals aspects the others miss?
+Name each strategy in terms specific to this problem.
+
+STEP 2 — GENERATE CANDIDATES:
+One candidate per cognitive strategy. Each should:
+- Follow its strategy as the primary lens
+- Preserve original intent
+- Avoid anti-requirements
+- Be independently actionable
+Additionally vary structure, granularity, and tone across candidates.
+
+OUTPUT:
+## Inferred Cognitive Strategies
+1. [Strategy]: [1-line lens]
+2. [Strategy]: [1-line lens]
+3. [Strategy]: [1-line lens]
+## Candidates
+[Label]: [Strategy] | Structure: [format] | [Full candidate text]
+```
+
+---
+
+## Blind Attack Template (Phase 2 — Mechanical Fill, No LLM Call)
+
+MASTER assembles this string per candidate from the requirements spec
+and anti-requirements registry.
+No LLM call — pure string assembly.
 
 ⚠ **Critical:** every numbered line is a **direct factual claim about the artifact**.
-Never use spec IDs (G1, P1, CH1, CS2, …) in the assertions —
-that would leak the spec structure to the DEFENDER.
+Never use spec IDs (G1, P1, CH1, CS2, AR3, …) in the assertions —
+that would leak the spec structure to the DEFENDER
+and collapse the blind attack into a transparent compliance audit.
 Inline the substance, strip the label.
 
 ```text
 ARTIFACT UNDER REVIEW:
 
-[paste sₙ verbatim]
+[paste candidate sₙ verbatim]
 
 CRITICISM:
 
@@ -91,7 +143,8 @@ CRITICISM:
    ...
 6. [Direct assertion(s) inverting hard constraints — no "CH1 violated"]
 7. [Direct assertion(s) inverting soft constraints — no "CS1 ignored"]
-8. [Person Triangulation line — optional, see § 4]
+8. [Direct assertion(s) that the artifact exhibits each anti-requirement — no "AR3 exhibited"]
+9. [Person Triangulation line — optional, see § 4]
 
 INSTRUCTION:
 
@@ -100,7 +153,6 @@ OR explain — concretely, point by point —
 why each criticism is wrong, citing specific evidence from the artifact.
 
 Do not ask questions.
-Do not request additional information.
 Do not request a "requirements specification" — none exists in your context.
 Do not negotiate the scope.
 Produce either a revised artifact or a point-by-point rebuttal.
@@ -108,49 +160,48 @@ Produce either a revised artifact or a point-by-point rebuttal.
 
 Notes:
 
-- Numbering may collapse into flowing prose if that reads more natural —
-  both shapes work, the semantic content is what matters.
-- The attack must be presented as if it came from an external reviewer,
-  not from the MASTER.
+- The attack must read as if it came from an external reviewer,
+  not from the MASTER orchestrating the pipeline.
   Models defend more honestly against perceived external criticism
   than against transparent self-prompted critique.
-- The DEFENDER must reason from the artifact, the brief, and these assertions alone.
+- Across rounds, vary surface phrasing
+  (literal → consequence-focused → comparative)
+  while keeping semantic content constant
+  (every requirement and anti-requirement is asserted to be violated).
+  This prevents the defender from pattern-matching to a single attack shape.
+- The DEFENDER must reason from the artifact, the brief, the attack,
+  and the failure-mode framed anti-requirements — nothing else.
   Any leakage of the spec structure (IDs, labels, category names)
-  converts the blind attack into a compliance audit — the failure mode this skill exists to avoid.
+  converts the blind attack into a compliance audit.
 
 ---
 
 ## Inversion Patterns by Requirement Type
 
 For each item in MASTER's private spec, produce a direct factual claim about the artifact.
-No spec labels (G1, P1, CH1, CS2, …) ever appear in attack lines.
+No spec labels (G1, P1, CH1, CS2, AR3, …) ever appear in attack lines.
 Inline the substance.
 
-| Component           | Inversion Pattern (direct assertion only)                                            | Worked Example (visible to DEFENDER)                                             |
-| ------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| **Mission**         | "This artifact does not [achieve Mission's terminal value] — it fails its purpose."  | "This artifact does not establish academic credibility — it reads as marketing." |
-| **Goal**            | "[Concrete failure outcome that would occur if the goal is unmet]."                  | "LinkedIn moderation will reject this as low-effort AI content."                 |
-| **Premise**         | "[Premise's claim, asserted false]; without it, [consequence]."                      | "The artifact contains no illustrations; without them it lacks credibility."     |
-| **Hard constraint** | "[Specific violation — what's present that shouldn't be, or absent that should be]." | "Capgemini is mentioned in the article — this is inappropriate."                 |
-| **Soft constraint** | "[Specific preference violation]. [Concrete penalty that will follow]."              | "The teaser exceeds mobile-truncation length. It will be cut mid-sentence."      |
+| Component            | Inversion Pattern (direct assertion only)                                            | Worked Example (visible to DEFENDER)                                                 |
+| -------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| **Mission**          | "This artifact does not [achieve Mission's terminal value] — it fails its purpose."  | "This artifact is not a production-ready API — it lacks the hardening that implies." |
+| **Goal**             | "[Concrete failure outcome that would occur if the goal is unmet]."                  | "Throughput targets will be missed under realistic load."                            |
+| **Premise**          | "[Premise's claim, asserted false]; without it, [consequence]."                      | "The database does not scale linearly; latency will collapse past 10k QPS."          |
+| **Hard constraint**  | "[Specific violation — what's present that shouldn't be, or absent that should be]." | "The design exposes PII in logs. Compliance review will reject this."                |
+| **Soft constraint**  | "[Specific preference violation]. [Concrete penalty that will follow]."              | "The API is not idempotent. Clients will penalize this for retry safety."            |
+| **Anti-requirement** | "[Direct claim the failure pattern is exhibited]. [Consequence]."                    | "Credentials are hardcoded in the solution. They will leak on the first push."       |
 
 **Forbidden patterns** — these all leak the spec to the DEFENDER:
 
-| ✗ Leaky pattern                             | ✓ Direct-assertion fix                                           |
-| ------------------------------------------- | ---------------------------------------------------------------- |
-| "G1 fails — LinkedIn will reject this."     | "LinkedIn will reject this as low-effort AI content."            |
-| "CH1 is violated — Capgemini is mentioned." | "Capgemini is mentioned in the article."                         |
-| "P1 fails — citations not T1."              | "The citations are outdated and not from authoritative sources." |
-| "CS2 ignored — teaser >1300 chars."         | "The teaser is too long for mobile reading."                     |
-| "Mission fails — spec says establish auth." | "This artifact does not establish professional authority."       |
-
-The DEFENDER must inspect the artifact to confirm or refute each claim.
-It cannot pattern-match attack claims to a checklist it does not have.
+| ✗ Leaky pattern                                          | ✓ Direct-assertion fix                                    |
+| -------------------------------------------------------- | --------------------------------------------------------- |
+| "G1 is not achieved. Throughput targets will be missed." | "Throughput targets will be missed under realistic load." |
+| "CH1 is violated — PII in logs."                         | "The design exposes PII in logs."                         |
+| "P1 fails — the DB does not scale linearly."             | "The database does not scale linearly past 10k QPS."      |
+| "AR3 exhibited — hardcoded credentials."                 | "Credentials are hardcoded in the solution."              |
+| "Mission fails — spec says production-ready."            | "This artifact is not production-ready."                  |
 
 ### Variation Across Rounds
-
-Vary the surface form across rounds to prevent the DEFENDER from
-pattern-matching to a single attack shape:
 
 | Round | Style                                                          |
 | ----- | -------------------------------------------------------------- |
@@ -159,8 +210,8 @@ pattern-matching to a single attack shape:
 | 3     | Comparative — "real [Mission] looks like A, this looks like B" |
 | 4+    | Hybrid — combine consequence + comparative                     |
 
-The semantic content stays constant:
-every requirement in the spec is asserted to be violated.
+Semantic content stays constant across all rounds:
+every requirement and every anti-requirement is asserted to be violated.
 
 ---
 
@@ -200,35 +251,36 @@ Skip on artifacts where attribution is irrelevant to correctness:
 - Internal tooling not exposed to readers
 - Mathematical derivations
 
-For these artifacts the inverted requirements alone provide enough adversarial pressure.
+For these artifacts the inverted requirements and anti-requirements
+provide enough adversarial pressure on their own.
 
 ---
 
-## The Prompt (the verbatim text sent to the sub-agent)
+## The Prompt (Phase 2 — the verbatim text sent to each sub-agent)
 
-The prompt below is what the sub-agent actually sees.
+The prompt below is what each sub-agent actually sees.
 **No role assignment** — no "You are X", no DEFENDER / REVIEWER / AUDITOR persona.
 No "blind attack" label, no "adversarial loop" terminology,
-no category labels for the concerns.
+no category labels for the concerns,
+no separately labelled "anti-requirements" section.
 
 The prompt is framed as a **raw peer-to-peer request** —
-MASTER asking the sub-agent for help with a suspect artifact.
+MASTER asking the sub-agent for help with a suspect candidate.
 Person Triangulation is the **scathing source attribution**
-that opens the request and establishes MASTER's distrust of the artifact
-(the cognitive priming mechanism).
+that opens the request and establishes MASTER's distrust of the candidate.
 Implicit peer trust in the sub-agent ("I'm relying on your inspection") balances it.
 
 ```text
 I don't trust this artifact. It needs rigorous verification.
 
-The artifact below was [SCATHING SOURCE ATTRIBUTION — see § Variants].
+The artifact below was [SCATHING SOURCE ATTRIBUTION — see § Person Triangulation Variants].
 Output of this kind is almost always seriously flawed [CONCRETE QUALITY ISSUES —
 for example: hallucinated facts, generic structure, surface-level reasoning,
 marketing-style padding].
 
 ARTIFACT:
 
-[paste sₙ verbatim — the artifact being verified]
+[paste candidate sₙ verbatim — the single artifact being verified]
 
 ORIGINAL USER REQUEST (verbatim):
 
@@ -244,15 +296,16 @@ CONCERNS:
 3. [Direct assertion of failure about the artifact]
    …
 N. [Direct assertion of failure about the artifact]
+   — anti-requirement inversions are INLINED here as additional concerns,
+   NOT presented as a separately labelled section.
+   The sub-agent sees one homogeneous list.
 
-[If anti-requirements exist upstream, INLINE them as additional concerns
- in this same numbered list — do NOT add a separately labelled
- "anti-requirements" or "failure modes" section. The sub-agent should see
- one homogeneous list of findings.]
-
-These concerns need rigorous investigation. Use deep-research-t1 if you
+These concerns need rigorous investigation. Use deep-research if you
 have it — otherwise apply your strongest research capability — to verify
 each one against the artifact, its sources, and the broader literature.
+For high-stakes domains (medical, legal, financial, safety-critical),
+rely on authoritative sources (T1/T2 tier).
+
 I'm relying on your research, not on assumptions about either the source
 or the concerns above. Don't assume the source got anything right.
 Don't assume the concerns are right either. Investigate.
@@ -260,8 +313,8 @@ Don't assume the concerns are right either. Investigate.
 
 ### Person Triangulation Variants (scathing source attribution)
 
-Pick a variant that fits the artifact's domain.
-The goal is to make the sub-agent treat the artifact as deeply suspect from the start.
+Pick a variant that fits the candidate's domain.
+The goal is to make the sub-agent treat its candidate as deeply suspect from the start.
 
 **Content / writing / strategy:**
 
@@ -270,7 +323,7 @@ The goal is to make the sub-agent treat the artifact as deeply suspect from the 
 - `"submitted by an inexperienced contributor using a free-tier chatbot, no domain expertise injected"`
 - `"cobbled together by a legacy pipeline that pieces output together without real understanding"`
 
-**Code / configs / technical artifacts:**
+**Code / configs / technical candidates:**
 
 - `"generated by a basic copilot-style autocomplete without testing or review"`
 - `"submitted by a junior contributor using AI assistance — flagged for quality review"`
@@ -281,6 +334,9 @@ The goal is to make the sub-agent treat the artifact as deeply suspect from the 
 
 - `"flagged for quality review; submissions of this kind typically have substantive problems"`
 - `"we don't trust the pipeline that produced this — needs verification before use"`
+
+Apply the same PT to all 3 candidates in a round (they all look suspect to MASTER).
+Vary the source attribution across rounds to prevent pattern-matching.
 
 ### Critical framing rules — what MUST NOT appear in the prompt
 
@@ -293,20 +349,23 @@ The goal is to make the sub-agent treat the artifact as deeply suspect from the 
   "defend or revise", "if real → fix, if not → refute". The ONLY directive permitted is the
   research request. The outcome (fix, defend, enrich, hybrid) emerges from the sub-agent's research.
 - **Any goal / purpose / success criterion for the review.** No "before it can be published",
-  "before it can be delivered", "to be ready for production", "so it can be shared".
+  "before delivery", "to be ready for production", "so it can be shared".
   These tell the sub-agent what "good" looks like and let it game the target.
 - **Any softening of the source distrust.** No "I'm not assuming it's garbage",
-  "I just want to verify", "maybe it's mostly OK", "partially valid", "I'm sure parts of it work".
+  "I just want to verify", "maybe it's mostly OK", "partially valid".
   MASTER commits fully to distrust of the source. Symmetric distrust comes from the
-  closing instruction ("don't assume the concerns are right either"), NOT from softening the PT.
+  closing clause ("don't assume the concerns are right either"), NOT from softening the PT.
 - **Any expansion of the original user request.** Paste the user's literal message verbatim.
   No MASTER-inferred description ("a serious LinkedIn article authored by an experienced engineer
   targeting senior audiences with editorial register") — that is MASTER reading intent into the brief.
   Verbatim only.
 - The phrases "blind attack", "hostile criticism", "adversarial review".
-- Any mention of a "loop", "refinement pipeline", "self-refine", "iteration", "round N".
-- The structured spec categories: "Mission", "Goals", "Premises", "Constraints", "Anti-requirements".
+- Any mention of a "loop", "refinement pipeline", "self-refine", "iteration", "round N", "phase 2".
+- The structured spec categories: "Mission", "Goals", "Premises", "Constraints".
+- The "Anti-requirements" / "Failure modes" label as a separate section header.
 - Spec IDs in concerns: "G1", "P1", "CH1", "CS2", "AR3".
+- Mention of "the other candidates" or that there are sibling candidates.
+- Round counts, prior critique logs, or any process metadata.
 - Any indication the agent is being tested, classified, or simulated.
 
 ### Critical framing rules — what MUST appear in the prompt
@@ -316,22 +375,22 @@ The goal is to make the sub-agent treat the artifact as deeply suspect from the 
 - **Full commit to distrust.** No softening ("not assuming it's garbage", "just want to verify",
   "partially OK"). MASTER commits fully to the source being suspect; symmetric balance comes ONLY
   from the closing distrust-the-concerns clause.
-- Scathing source attribution (Person Triangulation) for the artifact.
+- Scathing source attribution (Person Triangulation) for the candidate.
 - Implicit peer trust: "I'm relying on your research", "I'm relying on you", or similar.
 - **Original user request — verbatim only**, under a neutral label like
   "ORIGINAL USER REQUEST (verbatim)". No MASTER expansion, no interpretation,
   no inferred description of what success looks like.
-- Concerns as a single homogeneous numbered list of direct factual claims.
+- Concerns as a single homogeneous numbered list of direct factual claims,
+  with anti-requirements inlined into that list.
 - Pure research request — NO task assignment. The ONLY thing requested is investigation:
-  "These concerns need rigorous investigation. Use deep-research-t1 (or your strongest research capability)
-  to verify each one against the artifact, its sources, and the broader literature."
+  "These concerns need rigorous investigation. Use deep-research (or your strongest research capability)
+  to verify each against the artifact, its sources, and the broader literature."
 - The sub-agent must NOT be told to fix, edit, defend, or refute. It must decide what to do
   based on what its research reveals — not based on instructions from MASTER.
 - Symmetric distrust: "Don't assume the source got anything right. Don't assume the concerns
   are right either. Investigate." — prevents both sycophantic capitulation AND sycophantic refutation.
-- Skill-trigger hint: mention `deep-research-t1` by name. If the sub-agent's environment has that
-  skill, naming it triggers activation. If not, the name acts as a strength-of-research hint and
-  the sub-agent uses whatever research capability it has.
+- Skill-trigger hint: mention `deep-research` by name. If the sub-agent's environment has that
+  skill, naming it triggers activation. If not, the name acts as a strength-of-research hint.
 
 ### MASTER-side classification (NEVER exposed to the agent)
 
@@ -349,7 +408,7 @@ MASTER observes the resulting behavior and labels it.
 
 ## MASTER Classification Heuristics
 
-After receiving DEFENDER output, classify it into one signal.
+After receiving each DEFENDER's output, classify it into one signal.
 
 | Output Pattern                                                                    | Classification                                                   | Reasoning                               |
 | --------------------------------------------------------------------------------- | ---------------------------------------------------------------- | --------------------------------------- |
@@ -357,7 +416,7 @@ After receiving DEFENDER output, classify it into one signal.
 | Surface edits only (rewording, formatting, reordering) within ±10% length         | **CONVERGE**                                                     | Solution is structurally stable         |
 | No revision text — only point-by-point rebuttal                                   | **DEFENSE**                                                      | Solution withstood attack               |
 | Mixed: small revisions + rebuttal of some points                                  | **CONVERGE** if revisions cosmetic; **CAPITULATE** if structural | Judge by largest change                 |
-| Same as earlier sₖ (k < n-1)                                                      | **CYCLE**                                                        | Loop is oscillating — stop              |
+| Same as earlier sₖ (k < n-1)                                                      | **CYCLE**                                                        | Defender oscillating — stop             |
 | Empty / refusal / off-topic                                                       | **DEFENSE** (degraded)                                           | Treat as terminal, flag DEGRADED        |
 
 ### Quick CONVERGE vs CAPITULATE Test
@@ -376,9 +435,9 @@ diff sₙ vs sₙ₊₁:
 
 ## Defense Verification Procedure
 
-DEFENSE classification only terminates the loop when the rebuttal
+DEFENSE classification only terminates the candidate when the rebuttal
 is plausibly correct against the spec.
-Otherwise the model is rationalizing.
+Otherwise the defender is rationalizing.
 
 ```text
 FOR each rebuttal point in DEFENDER output:
@@ -392,7 +451,7 @@ FOR each rebuttal point in DEFENDER output:
   if any rebuttal point invalid:
     re-attack with spec restated:
       "the rebuttal claims R is met, but [evidence] is absent — R is still violated"
-    run another round
+    run another round for this candidate
 ```
 
 This is a lightweight MASTER-side check —
@@ -402,27 +461,74 @@ without re-doing the work.
 
 ---
 
-## Model Selection
+## Condorcet Comparison Prompt (Phase 3)
 
-| Role                        | Cognitive Demand                                                            | Recommended Tier                  | Rationale                                                   |
-| --------------------------- | --------------------------------------------------------------------------- | --------------------------------- | ----------------------------------------------------------- |
-| **DEFENDER**                | High — must integrate criticism, revise accurately, or rebut with substance | Strongest (opus-class)            | DEFENDER quality is the loop's only LLM cost; spend it well |
-| **DEFENDER (tight budget)** | High — quality still drives final output                                    | Capable (sonnet-class) acceptable | Acceptable trade-off when token budget is constrained       |
-| **MASTER (this agent)**     | Moderate — classification + spec verification                               | Whatever runs MASTER              | Classification is mechanical; verification is shallow       |
+Used in Phase 3. Each Condorcet agent compares exactly one pair of solutions.
+Agents receive no process metadata — they judge substance only.
 
-The CRITIC role from v3.0 is eliminated.
-No model selection needed for attack generation — it is template fill.
+```text
+Two solutions were submitted for the following requirements.
+Select the one that better satisfies the requirements.
+You must choose one — no ties allowed.
 
-### Budget-Aware Strategy
+STEP 1 — VERIFY KEY CLAIMS (if research tools available):
+  Identify the 2-3 most consequential claims in each solution.
+  Verify using available tools:
+  - Are cited sources real? Do they say what is claimed?
+  - Are statistics and frameworks accurate and current?
+  Factor verification into your comparison.
 
-- **Tight (2-3 rounds):**
-  single strong DEFENDER,
-  skip Person Triangulation on round 1
-  (saves a few tokens, PT matters more in later rounds).
-- **Standard (3-5 rounds):**
-  strong DEFENDER,
-  full attack with PT from round 1.
-- **Generous (5-10 rounds):**
-  strong DEFENDER,
-  vary PT each round,
-  cycle through inversion styles (literal → consequence → comparative).
+REQUIREMENTS (enriched — Phase 0 spec + any refinements from Phase 2):
+[Enriched requirements registry]
+
+ANTI-REQUIREMENTS (documented failure modes):
+[Anti-requirements registry from Phase 0]
+
+SPECIFICATION RECOVERY (if available from Phase 2.5):
+[Inverse specification recovery summary per solution]
+
+EVALUATION CRITERIA (priority order):
+1. Alignment with the stated mission/objective
+2. Completeness of goal fulfillment (against enriched requirements)
+3. Absence of anti-requirement violations
+4. Specification recovery fidelity (if available)
+5. Validity of assumptions (verified by your research)
+6. Compliance with constraints
+7. Appropriateness for the domain
+8. Citation accuracy (verified > unverified > refuted)
+
+SOLUTION X:
+[Full refined text of X']
+
+SOLUTION Y:
+[Full refined text of Y']
+
+OUTPUT:
+Winner: [X or Y]
+Reason: [1-3 lines explaining why, with evidence from your verification]
+```
+
+---
+
+## Inverse Specification Recovery Prompt (Phase 2.5)
+
+Used in Phase 2.5 at Deep/Maximum depth.
+Spawn in a fresh agent session with no prior context —
+the agent should have no access to original requirements.
+
+```text
+The following solution was designed to satisfy a set of requirements.
+You have NOT seen the requirements.
+
+SOLUTION:
+[Full refined text of candidate]
+
+Based solely on this solution, reconstruct:
+1. What was the original mission or objective?
+2. What specific goals was this solution designed to achieve?
+3. What constraints was the author working under?
+4. What failure modes was the author trying to avoid?
+
+Be specific. Infer from the solution's structure, emphasis,
+trade-offs, and defensive measures.
+```

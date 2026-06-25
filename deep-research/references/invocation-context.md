@@ -5,7 +5,7 @@ last_updated: 2026-04-29
 description: invocation context
 ---
 
-# MCP Invocation Context — deep-research-t1
+# MCP Invocation Context — deep-research
 
 Setup and activation details for MCP-compatible editors.
 Loaded on demand from the main SKILL.md.

@@ -5,9 +5,9 @@ last_updated: 2026-04-29
 description: academic references
 ---
 
-# Academic References — adversarial-thinking
+# Academic References — deliberate
 
-Supporting literature for the adversarial-thinking skill's design decisions.
+Supporting literature for the deliberate skill's design decisions.
 Loaded on demand — not part of the main SKILL.md context.
 
 ## Version 9.0 Note — Blind Attack Refactor
@@ -22,7 +22,7 @@ to 3 (defenders only).
 Total agents per run: 7→6 (Quick/Standard), 10→9 (Deep/Maximum).
 
 The same architectural shift is documented in detail
-in the sibling skill `adversarial-self-refine` v4.0,
+in the sibling skill `roaster` v4.0,
 which applies the blind-attack mechanism to single-candidate refinement.
 v9.0 of this skill applies it to N=3 candidates in parallel
 and adds an anti-requirements inversion layer on top of the MGPC inversion.

@@ -51,7 +51,7 @@ scripts/                       persistent, reusable automation scripts (committe
 .agents/rules/*.md             ONLY for monorepos: glob/path-scoped rules (else keep rules in AGENTS.md)
 ```
 
-Tiers/aliases and the full recognize-map live in `deep-research-t1/references/source-tiering.md` §8.
+Tiers/aliases and the full recognize-map live in `deep-research/references/source-tiering.md` §8.
 
 **No scratch dirs.** Never create `.cache/`, `.cache/agents/`, or `tmp/` in a project. `.cache/` belongs to
 third-party tools (pip/pytest/mypy/build) and stays gitignored — agents never author there. Reusable code →

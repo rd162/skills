@@ -669,7 +669,7 @@ Write to files using edit_file — do NOT output proposal content to chat.
 **Frontmatter (source-tiering):** Both files are `tier: T3, source_class:
 generated`. Prepend on first write; on re-runs, ADD missing keys only —
 preserve any human-edited values. See
-`~/.claude/skills/deep-research-t1/references/source-tiering.md`.
+`~/.claude/skills/deep-research/references/source-tiering.md`.
 
 ```yaml
 ---

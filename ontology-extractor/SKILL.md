@@ -12,7 +12,7 @@ description: >-
 version: "2.1"
 metadata:
   author: rd162@hotmail.com
-  tags: knowledge-management, artifacts, revision, materialization, Basic-Memory, source-tiering
+  tags: ontology-extractor, artifacts, revision, materialization, Basic-Memory, source-tiering
 tier: T3
 source_class: llm
 last_updated: 2026-04-29
@@ -276,7 +276,7 @@ see @references/sub-agent-guide.md.
 Knowledge artifacts produced by this skill are `tier: T3, source_class:
 generated` per the source-tiering policy. Use `tier: T4` only if the
 artifact was produced by a weak model or contains no verified sources.
-(`~/.claude/skills/deep-research-t1/references/source-tiering.md`).
+(`~/.claude/skills/deep-research/references/source-tiering.md`).
 On every write, EMIT the tier keys; on every revision, ADD missing
 tier keys without overwriting existing values (additivity rule).
 

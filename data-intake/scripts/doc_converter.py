@@ -44,19 +44,19 @@ Requirements:
     pip install -r requirements_converter.txt
 """
 
-import os
-import sys
-import json
-import hashlib
 import argparse
-import tempfile
-import shutil
-import zipfile
-import tarfile
-from pathlib import Path
-from datetime import datetime
-from typing import Optional, Dict, List
+import hashlib
+import json
 import logging
+import os
+import shutil
+import sys
+import tarfile
+import tempfile
+import zipfile
+from datetime import datetime
+from pathlib import Path
+from typing import Dict, List, Optional
 
 # ---------------------------------------------------------------------------
 # vips dynamic module pre-loader
@@ -69,16 +69,20 @@ import logging
 # time pyvips calls vips_init() the GObject types are already registered.
 # It is a no-op when modules load correctly (fast path via _pdfload_available).
 
+
 def _ensure_vips_modules_loaded() -> None:
     """Pre-load libvips dynamic modules via g_module_open if they are missing."""
-    import ctypes, ctypes.util, os, glob as _glob
+    import ctypes
+    import ctypes.util
+    import glob as _glob
+    import os
 
     # Locate libgmodule (GLib module system)
-    gmodule_path = ctypes.util.find_library('gmodule-2.0')
+    gmodule_path = ctypes.util.find_library("gmodule-2.0")
     if not gmodule_path:
         # Common Homebrew location
-        gmodule_path = '/opt/homebrew/opt/glib/lib/libgmodule-2.0.0.dylib'
-    if not os.path.exists(gmodule_path or ''):
+        gmodule_path = "/opt/homebrew/opt/glib/lib/libgmodule-2.0.0.dylib"
+    if not os.path.exists(gmodule_path or ""):
         return  # Can't find gmodule — skip silently
 
     try:
@@ -91,9 +95,9 @@ def _ensure_vips_modules_loaded() -> None:
 
     # Find the vips-modules directory (works for Homebrew and standard installs)
     candidates = [
-        '/opt/homebrew/lib/vips-modules-*',
-        '/usr/local/lib/vips-modules-*',
-        '/usr/lib/vips-modules-*',
+        "/opt/homebrew/lib/vips-modules-*",
+        "/usr/local/lib/vips-modules-*",
+        "/usr/lib/vips-modules-*",
     ]
     module_dirs = []
     for pattern in candidates:
@@ -101,7 +105,7 @@ def _ensure_vips_modules_loaded() -> None:
 
     loaded = 0
     for module_dir in module_dirs:
-        for dylib in sorted(Path(module_dir).glob('*.dylib')):
+        for dylib in sorted(Path(module_dir).glob("*.dylib")):
             handle = gmodule.g_module_open(str(dylib).encode(), 1)  # LAZY=1
             if handle:
                 gmodule.g_module_make_resident(handle)  # prevent accidental unload
@@ -109,7 +113,9 @@ def _ensure_vips_modules_loaded() -> None:
         if loaded:
             break  # found a working module dir
 
+
 _vips_modules_loaded = False
+
 
 def _lazy_vips_init():
     """Load vips modules on first use (not at import time) to avoid
@@ -119,14 +125,15 @@ def _lazy_vips_init():
         _ensure_vips_modules_loaded()
         _vips_modules_loaded = True
 
+
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s | %(levelname)s | %(message)s',
-    datefmt='%H:%M:%S'
+    format="%(asctime)s | %(levelname)s | %(message)s",
+    datefmt="%H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
@@ -136,26 +143,26 @@ logger = logging.getLogger(__name__)
 
 # Document types processed to markdown + WEBP
 SUPPORTED_EXTENSIONS = {
-    '.pdf':    'pdf',
-    '.docx':   'word',
-    '.doc':    'word',
-    '.pptx':   'powerpoint',
-    '.ppt':    'powerpoint',
-    '.xlsx':   'excel',
-    '.xls':    'excel',
-    '.xlsm':   'excel',
-    '.drawio': 'diagram',
-    '.mp4':    'video',
-    '.mkv':    'video',
-    '.avi':    'video',
-    '.mov':    'video',
-    '.webm':   'video',
-    '.m4v':    'video',
-    '.wmv':    'video',
+    ".pdf": "pdf",
+    ".docx": "word",
+    ".doc": "word",
+    ".pptx": "powerpoint",
+    ".ppt": "powerpoint",
+    ".xlsx": "excel",
+    ".xls": "excel",
+    ".xlsm": "excel",
+    ".drawio": "diagram",
+    ".mp4": "video",
+    ".mkv": "video",
+    ".avi": "video",
+    ".mov": "video",
+    ".webm": "video",
+    ".m4v": "video",
+    ".wmv": "video",
 }
 
 # Subtitle extensions that may accompany video files in data/intake
-SUBTITLE_EXTENSIONS = {'.vtt', '.srt'}
+SUBTITLE_EXTENSIONS = {".vtt", ".srt"}
 
 # Default scene-detection threshold (lower = more sensitive, good for 30-min meetings)
 VIDEO_SCENE_THRESHOLD = 5.0
@@ -165,34 +172,45 @@ VIDEO_WHISPER_MODEL = "base"
 
 # Archive types — auto-extracted, contents processed recursively
 ARCHIVE_EXTENSIONS = {
-    '.zip',
-    '.tar',
-    '.tar.gz',
-    '.tgz',
-    '.7z',
+    ".zip",
+    ".tar",
+    ".tar.gz",
+    ".tgz",
+    ".7z",
 }
 
 # Directories to exclude when scanning a project root recursively.
 # These are never scanned for source documents.
 EXCLUDED_DIRS = {
-    'corpus',
-    '.venv', 'venv', '.env',
-    'node_modules',
-    '.git', '.svn', '.hg',
-    '.tmp', '.cache',
-    '__pycache__', '.mypy_cache', '.pytest_cache',
-    'dist', 'build', '.tox',
-    '.idea', '.vscode',
+    "corpus",
+    ".venv",
+    "venv",
+    ".env",
+    "node_modules",
+    ".git",
+    ".svn",
+    ".hg",
+    ".tmp",
+    ".cache",
+    "__pycache__",
+    ".mypy_cache",
+    ".pytest_cache",
+    "dist",
+    "build",
+    ".tox",
+    ".idea",
+    ".vscode",
 }
 
-IMAGE_DPI         = 150   # Resolution for PDF→image rendering
-PAGES_PER_IMAGE   = 3     # Sliding window width (pages per WEBP)
-WEBP_QUALITY      = 85    # WEBP encoder quality (0–100)
-MAX_ARCHIVE_DEPTH = 2     # Prevent infinite nesting
+IMAGE_DPI = 150  # Resolution for PDF→image rendering
+PAGES_PER_IMAGE = 3  # Sliding window width (pages per WEBP)
+WEBP_QUALITY = 85  # WEBP encoder quality (0–100)
+MAX_ARCHIVE_DEPTH = 2  # Prevent infinite nesting
 
 # ---------------------------------------------------------------------------
 # draw.io CLI detection (for .drawio → PDF/PNG export)
 # ---------------------------------------------------------------------------
+
 
 def _detect_drawio_cli() -> Optional[str]:
     """Find draw.io CLI executable. Returns path or None."""
@@ -217,11 +235,13 @@ def _detect_drawio_cli() -> Optional[str]:
             return result
     return None
 
+
 DRAWIO_CLI = _detect_drawio_cli()
 
 # ---------------------------------------------------------------------------
 # Manifest helpers
 # ---------------------------------------------------------------------------
+
 
 def get_file_hash(filepath: Path) -> str:
     """SHA256 hash of a file (change-detection key)."""
@@ -234,14 +254,14 @@ def get_file_hash(filepath: Path) -> str:
 
 def load_manifest(manifest_path: Path) -> Dict:
     if manifest_path.exists():
-        with open(manifest_path, 'r') as fh:
+        with open(manifest_path, "r") as fh:
             return json.load(fh)
     return {"files": {}, "last_updated": None}
 
 
 def save_manifest(manifest_path: Path, manifest: Dict):
     manifest["last_updated"] = datetime.now().isoformat()
-    with open(manifest_path, 'w') as fh:
+    with open(manifest_path, "w") as fh:
         json.dump(manifest, fh, indent=2)
 
 
@@ -264,8 +284,9 @@ def _manifest_key(filepath: Path) -> str:
         return str(filepath.name)
 
 
-def needs_processing(filepath: Path, manifest: Dict, force: bool = False,
-                     file_key: Optional[str] = None) -> bool:
+def needs_processing(
+    filepath: Path, manifest: Dict, force: bool = False, file_key: Optional[str] = None
+) -> bool:
     """Check whether a file needs (re-)processing.
 
     Compares the file's current SHA256 hash against the manifest record.
@@ -327,7 +348,9 @@ def _clean_orphaned_fragments(
 
         if frag_dir.exists() and frag_dir.is_dir():
             shutil.rmtree(frag_dir)
-            logger.info(f"  🗑 Cleaned orphaned fragments: {frag_dir.name}/ (was: {key})")
+            logger.info(
+                f"  🗑 Cleaned orphaned fragments: {frag_dir.name}/ (was: {key})"
+            )
 
         # Remove archive children if this was an archive
         for child_key in info.get("archive_contents", []):
@@ -336,7 +359,9 @@ def _clean_orphaned_fragments(
                 child_dir = fragments_dir / child_stem
                 if child_dir.exists() and child_dir.is_dir():
                     shutil.rmtree(child_dir)
-                    logger.info(f"  🗑 Cleaned orphaned archive content: {child_dir.name}/")
+                    logger.info(
+                        f"  🗑 Cleaned orphaned archive content: {child_dir.name}/"
+                    )
                 del manifest["files"][child_key]
 
         del manifest["files"][key]
@@ -347,6 +372,7 @@ def _clean_orphaned_fragments(
 # ---------------------------------------------------------------------------
 # Archive extraction
 # ---------------------------------------------------------------------------
+
 
 def is_archive(filepath: Path) -> bool:
     """Return True if the file is a supported archive."""
@@ -367,26 +393,29 @@ def extract_archive(filepath: Path, dest_dir: Path) -> List[Path]:
     name_lower = filepath.name.lower()
 
     try:
-        if name_lower.endswith('.zip'):
-            with zipfile.ZipFile(filepath, 'r') as zf:
+        if name_lower.endswith(".zip"):
+            with zipfile.ZipFile(filepath, "r") as zf:
                 zf.extractall(dest_dir)
 
-        elif name_lower.endswith(('.tar.gz', '.tgz')):
-            with tarfile.open(filepath, 'r:gz') as tf:
+        elif name_lower.endswith((".tar.gz", ".tgz")):
+            with tarfile.open(filepath, "r:gz") as tf:
                 tf.extractall(dest_dir)
 
-        elif name_lower.endswith('.tar'):
-            with tarfile.open(filepath, 'r:*') as tf:
+        elif name_lower.endswith(".tar"):
+            with tarfile.open(filepath, "r:*") as tf:
                 tf.extractall(dest_dir)
 
-        elif name_lower.endswith('.7z'):
+        elif name_lower.endswith(".7z"):
             try:
                 import py7zr
-                with py7zr.SevenZipFile(filepath, mode='r') as szf:
+
+                with py7zr.SevenZipFile(filepath, mode="r") as szf:
                     szf.extractall(path=dest_dir)
             except ImportError:
-                logger.warning("⚠ py7zr not installed — skipping .7z archive. "
-                               "Install with: pip install py7zr")
+                logger.warning(
+                    "⚠ py7zr not installed — skipping .7z archive. "
+                    "Install with: pip install py7zr"
+                )
                 return []
         else:
             logger.warning(f"⚠ Unsupported archive format: {filepath.name}")
@@ -411,27 +440,29 @@ def extract_archive(filepath: Path, dest_dir: Path) -> List[Path]:
     logger.info(f"  ✓ Archive extracted: {len(extracted)} document(s) found")
     return extracted
 
+
 # ---------------------------------------------------------------------------
 # Fragment frontmatter (source-tiering policy)
 # ---------------------------------------------------------------------------
 # Every fragment markdown emits a YAML frontmatter block declaring its
 # tier (inherited from the source) and source_class (fragment). Policy:
-# ~/.claude/skills/deep-research-t1/references/source-tiering.md
+# ~/.claude/skills/deep-research/references/source-tiering.md
 # ---------------------------------------------------------------------------
 
 
 def _source_tier(filepath: Path) -> str:
     """Infer the tier of a source document from its path."""
     path_str = str(filepath).lower()
-    if 'intake' in path_str:
+    if "intake" in path_str:
         return "T2"
     # Public docs saved locally could be T1; unknown sources default to T2
     # (conservative — most sources in this pipeline are internal partner docs)
     return "T2"
 
 
-def _fragment_frontmatter(source_filepath: Path, converter: str,
-                           source_tier: str = "T2") -> str:
+def _fragment_frontmatter(
+    source_filepath: Path, converter: str, source_tier: str = "T2"
+) -> str:
     """
     Build the YAML frontmatter block for a generated fragment markdown.
 
@@ -445,7 +476,7 @@ def _fragment_frontmatter(source_filepath: Path, converter: str,
         "---\n"
         f"tier: {source_tier}\n"
         "source_class: fragment\n"
-        "version: \"1.0\"\n"
+        'version: "1.0"\n'
         f"last_updated: {today}\n"
         f"description: {converter} output for {source_filepath.name}\n"
         f"source_file: {source_filepath.name}\n"
@@ -458,12 +489,13 @@ def _fragment_frontmatter(source_filepath: Path, converter: str,
 # Markdown converters
 # ---------------------------------------------------------------------------
 
+
 def convert_with_markitdown(filepath: Path, output_dir: Path) -> Optional[Path]:
     """Convert document to markdown using markitdown."""
     # B4: Legacy .doc (Word 97-2003) files cannot be reliably converted by markitdown
     # (markitdown misidentifies them as Excel files via OLE2 compound document).
     # Skip gracefully — docling and WEBP fallback cover these files.
-    if filepath.suffix.lower() == '.doc':
+    if filepath.suffix.lower() == ".doc":
         logger.warning(
             f"  ⚠ Skipping markitdown for legacy .doc file: {filepath.name} "
             f"(Word 97-2003 format not supported — use LibreOffice to convert to .docx first)"
@@ -472,11 +504,14 @@ def convert_with_markitdown(filepath: Path, output_dir: Path) -> Optional[Path]:
 
     try:
         from markitdown import MarkItDown
+
         md = MarkItDown()
         result = md.convert(str(filepath))
         output_file = output_dir / f"{filepath.stem}_markitdown.md"
-        with open(output_file, 'w', encoding='utf-8') as fh:
-            fh.write(_fragment_frontmatter(filepath, 'markitdown', _source_tier(filepath)))
+        with open(output_file, "w", encoding="utf-8") as fh:
+            fh.write(
+                _fragment_frontmatter(filepath, "markitdown", _source_tier(filepath))
+            )
             fh.write(result.text_content)
         logger.info(f"  ✓ markitdown → {output_file.name}")
         return output_file
@@ -503,7 +538,9 @@ def convert_with_docling(filepath: Path, output_dir: Path) -> Optional[Path]:
     Runs docling in an isolated subprocess so that a crash (segfault, OOM)
     in docling's OCR/ML pipeline does not kill the main converter process.
     """
-    import subprocess, sys
+    import subprocess
+    import sys
+
     output_file = output_dir / f"{filepath.stem}_docling.md"
     source_tier = _source_tier(filepath)
 
@@ -537,15 +574,17 @@ with open(output_file, 'w', encoding='utf-8') as fh:
 """
     try:
         r = subprocess.run(
-            [sys.executable, '-c', script],
-            capture_output=True, text=True, timeout=300,
+            [sys.executable, "-c", script],
+            capture_output=True,
+            text=True,
+            timeout=300,
         )
         if r.returncode == 0 and output_file.exists():
             logger.info(f"  ✓ docling → {output_file.name}")
             return output_file
         else:
-            err = (r.stderr or '').strip().splitlines()
-            short = err[-1] if err else f'exit {r.returncode}'
+            err = (r.stderr or "").strip().splitlines()
+            short = err[-1] if err else f"exit {r.returncode}"
             logger.error(f"  ✗ docling failed for {filepath.name}: {short}")
             return None
     except subprocess.TimeoutExpired:
@@ -559,6 +598,7 @@ with open(output_file, 'w', encoding='utf-8') as fh:
 # ---------------------------------------------------------------------------
 # draw.io helpers
 # ---------------------------------------------------------------------------
+
 
 def _parse_drawio_xml(filepath: Path) -> str:
     """
@@ -582,13 +622,13 @@ def _parse_drawio_xml(filepath: Path) -> str:
     lines = [f"# {filepath.stem}\n"]
 
     # Iterate over each diagram tab (multi-page drawio support)
-    diagrams = root.findall('.//diagram')
+    diagrams = root.findall(".//diagram")
     if not diagrams:
         # Might be a flat mxGraphModel without <diagram> wrapper
         diagrams = [root]
 
     for diagram_idx, diagram in enumerate(diagrams):
-        diagram_name = diagram.get('name', f'Page {diagram_idx + 1}')
+        diagram_name = diagram.get("name", f"Page {diagram_idx + 1}")
         lines.append(f"\n## {diagram_name}\n")
 
         # Collect nodes and edges in two passes:
@@ -603,118 +643,121 @@ def _parse_drawio_xml(filepath: Path) -> str:
         import re
 
         nodes = []
-        edges = {}       # edge_id → {label, source, target}
-        edge_labels = {} # edge_id → label text (from child edgeLabel cells)
-        all_cells = []   # raw cell data for two-pass processing
+        edges = {}  # edge_id → {label, source, target}
+        edge_labels = {}  # edge_id → label text (from child edgeLabel cells)
+        all_cells = []  # raw cell data for two-pass processing
 
         # ── Pass 1: gather raw cell data and identify edges ──
-        for cell in diagram.iter('mxCell'):
-            cell_id = cell.get('id', '')
-            value = (cell.get('value') or '').strip()
-            style = cell.get('style', '')
-            source = cell.get('source')
-            target = cell.get('target')
-            parent = cell.get('parent', '')
-            is_edge_attr = cell.get('edge', '') == '1'
-            connectable = cell.get('connectable', '')
+        for cell in diagram.iter("mxCell"):
+            cell_id = cell.get("id", "")
+            value = (cell.get("value") or "").strip()
+            style = cell.get("style", "")
+            source = cell.get("source")
+            target = cell.get("target")
+            parent = cell.get("parent", "")
+            is_edge_attr = cell.get("edge", "") == "1"
+            connectable = cell.get("connectable", "")
 
             # Skip structural root cells (id 0 and 1 with no content)
-            if cell_id in ('0', '1') and not value:
+            if cell_id in ("0", "1") and not value:
                 continue
 
             # Strip HTML tags from labels (drawio uses <br>, <b>, <div>, etc.)
-            clean_value = ''
+            clean_value = ""
             if value:
-                clean_value = re.sub(r'<[^>]+>', ' ', value).strip()
-                clean_value = re.sub(r'\s+', ' ', clean_value)
+                clean_value = re.sub(r"<[^>]+>", " ", value).strip()
+                clean_value = re.sub(r"\s+", " ", clean_value)
 
             # Detect edge cells: explicit edge="1" attr, or has source/target,
             # or style contains endArrow/edgeStyle keywords
             is_edge = (
                 is_edge_attr
                 or (source and target)
-                or 'endArrow' in style
-                or 'edgeStyle' in style
+                or "endArrow" in style
+                or "edgeStyle" in style
             )
 
             # Detect edge-label cells: connectable="0" or style has "edgeLabel"
-            is_edge_label = (
-                connectable == '0'
-                or 'edgeLabel' in style
-            )
+            is_edge_label = connectable == "0" or "edgeLabel" in style
 
-            all_cells.append({
-                'id': cell_id,
-                'value': clean_value,
-                'style': style,
-                'source': source,
-                'target': target,
-                'parent': parent,
-                'is_edge': is_edge,
-                'is_edge_label': is_edge_label,
-            })
+            all_cells.append(
+                {
+                    "id": cell_id,
+                    "value": clean_value,
+                    "style": style,
+                    "source": source,
+                    "target": target,
+                    "parent": parent,
+                    "is_edge": is_edge,
+                    "is_edge_label": is_edge_label,
+                }
+            )
 
             if is_edge:
                 edges[cell_id] = {
-                    'label': clean_value,
-                    'source': source,
-                    'target': target,
+                    "label": clean_value,
+                    "source": source,
+                    "target": target,
                 }
 
         # ── Pass 2: attach edge labels, classify remaining as nodes ──
         for cell in all_cells:
-            if cell['is_edge']:
+            if cell["is_edge"]:
                 continue  # already in edges dict
 
-            if cell['is_edge_label'] and cell['parent'] in edges:
+            if cell["is_edge_label"] and cell["parent"] in edges:
                 # This is a label attached to a known edge — merge it
-                if cell['value']:
-                    edges[cell['parent']]['label'] = cell['value']
+                if cell["value"]:
+                    edges[cell["parent"]]["label"] = cell["value"]
                 continue
 
-            if not cell['value']:
+            if not cell["value"]:
                 continue
 
             # Detect shape type from style for node classification
-            style = cell['style']
-            shape = 'component'
-            if 'cylinder' in style:
-                shape = 'database'
-            elif 'rhombus' in style or 'diamond' in style:
-                shape = 'decision'
-            elif 'ellipse' in style:
-                shape = 'actor'
-            elif 'cloud' in style:
-                shape = 'cloud'
-            elif 'shape=mxgraph.aws' in style or 'shape=mxgraph.azure' in style:
-                shape = 'cloud-service'
+            style = cell["style"]
+            shape = "component"
+            if "cylinder" in style:
+                shape = "database"
+            elif "rhombus" in style or "diamond" in style:
+                shape = "decision"
+            elif "ellipse" in style:
+                shape = "actor"
+            elif "cloud" in style:
+                shape = "cloud"
+            elif "shape=mxgraph.aws" in style or "shape=mxgraph.azure" in style:
+                shape = "cloud-service"
 
-            nodes.append({
-                'id': cell['id'],
-                'label': cell['value'],
-                'shape': shape,
-            })
+            nodes.append(
+                {
+                    "id": cell["id"],
+                    "label": cell["value"],
+                    "shape": shape,
+                }
+            )
 
         if nodes:
             lines.append("\n### Components\n")
             for node in nodes:
-                shape_hint = f" ({node['shape']})" if node['shape'] != 'component' else ''
+                shape_hint = (
+                    f" ({node['shape']})" if node["shape"] != "component" else ""
+                )
                 lines.append(f"- **{node['label']}**{shape_hint}")
 
         edge_list = list(edges.values())
         if edge_list:
             lines.append("\n### Connections\n")
             # Build an ID→label map for readable edge descriptions
-            id_to_label = {n['id']: n['label'] for n in nodes}
+            id_to_label = {n["id"]: n["label"] for n in nodes}
             for edge in edge_list:
-                src_label = id_to_label.get(edge['source'], edge['source'] or '?')
-                tgt_label = id_to_label.get(edge['target'], edge['target'] or '?')
-                if edge['label']:
+                src_label = id_to_label.get(edge["source"], edge["source"] or "?")
+                tgt_label = id_to_label.get(edge["target"], edge["target"] or "?")
+                if edge["label"]:
                     lines.append(f"- {src_label} → {tgt_label} ({edge['label']})")
                 else:
                     lines.append(f"- {src_label} → {tgt_label}")
 
-    return '\n'.join(lines) + '\n'
+    return "\n".join(lines) + "\n"
 
 
 def convert_drawio_to_markdown(filepath: Path, output_dir: Path) -> Optional[Path]:
@@ -722,8 +765,12 @@ def convert_drawio_to_markdown(filepath: Path, output_dir: Path) -> Optional[Pat
     try:
         markdown_content = _parse_drawio_xml(filepath)
         output_file = output_dir / f"{filepath.stem}_drawio_parsed.md"
-        with open(output_file, 'w', encoding='utf-8') as fh:
-            fh.write(_fragment_frontmatter(filepath, 'drawio-xml-parser', _source_tier(filepath)))
+        with open(output_file, "w", encoding="utf-8") as fh:
+            fh.write(
+                _fragment_frontmatter(
+                    filepath, "drawio-xml-parser", _source_tier(filepath)
+                )
+            )
             fh.write(markdown_content)
         logger.info(f"  ✓ drawio-xml-parser → {output_file.name}")
         return output_file
@@ -751,14 +798,16 @@ def convert_drawio_to_images(
         return []
 
     import subprocess
+
     base_name = filepath.stem
     images: List[Path] = []
 
     # Count pages (diagrams) in the file
     import xml.etree.ElementTree as ET
+
     try:
         tree = ET.parse(filepath)
-        diagram_count = len(tree.getroot().findall('.//diagram'))
+        diagram_count = len(tree.getroot().findall(".//diagram"))
         if diagram_count == 0:
             diagram_count = 1
     except Exception:
@@ -770,16 +819,22 @@ def convert_drawio_to_images(
         pdf_path = temp_dir / f"{base_name}_p{page_idx}.pdf"
         try:
             cmd = [
-                DRAWIO_CLI, '--export',
-                '--format', 'pdf',
-                '--page-index', str(page_idx),
-                '--output', str(pdf_path),
+                DRAWIO_CLI,
+                "--export",
+                "--format",
+                "pdf",
+                "--page-index",
+                str(page_idx),
+                "--output",
+                str(pdf_path),
                 str(filepath),
             ]
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=60
-            )
-            if result.returncode == 0 and pdf_path.exists() and pdf_path.stat().st_size > 0:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            if (
+                result.returncode == 0
+                and pdf_path.exists()
+                and pdf_path.stat().st_size > 0
+            ):
                 # Convert PDF page to single WEBP
                 page_images = render_pdf_pages_to_images(
                     pdf_path, output_dir, f"{base_name}_diagram"
@@ -795,20 +850,29 @@ def convert_drawio_to_images(
         png_path = temp_dir / f"{base_name}_p{page_idx}.png"
         try:
             cmd = [
-                DRAWIO_CLI, '--export',
-                '--format', 'png',
-                '--scale', '2',
-                '--page-index', str(page_idx),
-                '--output', str(png_path),
+                DRAWIO_CLI,
+                "--export",
+                "--format",
+                "png",
+                "--scale",
+                "2",
+                "--page-index",
+                str(page_idx),
+                "--output",
+                str(png_path),
                 str(filepath),
             ]
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, timeout=60
-            )
-            if result.returncode == 0 and png_path.exists() and png_path.stat().st_size > 0:
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+            if (
+                result.returncode == 0
+                and png_path.exists()
+                and png_path.stat().st_size > 0
+            ):
                 # Convert PNG to WEBP
                 try:
-                    _lazy_vips_init(); import pyvips
+                    _lazy_vips_init()
+                    import pyvips
+
                     vips_img = pyvips.Image.new_from_file(str(png_path))
                     webp_name = f"{base_name}_diagram_p{page_idx + 1:03d}.webp"
                     webp_path = output_dir / webp_name
@@ -819,10 +883,15 @@ def convert_drawio_to_images(
                 except Exception as vips_exc:
                     # Last resort: keep the PNG as-is (still useful for vision)
                     from shutil import copy2
-                    kept_png = output_dir / f"{base_name}_diagram_p{page_idx + 1:03d}.png"
+
+                    kept_png = (
+                        output_dir / f"{base_name}_diagram_p{page_idx + 1:03d}.png"
+                    )
                     copy2(png_path, kept_png)
                     images.append(kept_png)
-                    logger.info(f"  ✓ drawio page {page_idx + 1} → {kept_png.name} (PNG, no vips)")
+                    logger.info(
+                        f"  ✓ drawio page {page_idx + 1} → {kept_png.name} (PNG, no vips)"
+                    )
                     continue
         except subprocess.TimeoutExpired:
             logger.warning(f"  ⚠ draw.io PNG export timed out for page {page_idx}")
@@ -838,16 +907,20 @@ def convert_drawio_to_images(
 # PDF helpers
 # ---------------------------------------------------------------------------
 
+
 def get_pdf_page_count(filepath: Path) -> int:
     """Return the number of pages in a PDF."""
     try:
-        _lazy_vips_init(); import pyvips
+        _lazy_vips_init()
+        import pyvips
+
         img = pyvips.Image.pdfload(str(filepath), n=1)
-        return img.get('n-pages')
+        return img.get("n-pages")
     except Exception:
         pass
     try:
         import fitz
+
         doc = fitz.open(str(filepath))
         count = doc.page_count
         doc.close()
@@ -856,15 +929,17 @@ def get_pdf_page_count(filepath: Path) -> int:
         pass
     try:
         import subprocess
+
         r = subprocess.run(
-            ['pdfinfo', str(filepath)], capture_output=True, text=True, timeout=30
+            ["pdfinfo", str(filepath)], capture_output=True, text=True, timeout=30
         )
         for line in r.stdout.splitlines():
-            if line.lower().startswith('pages:'):
-                return int(line.split(':')[1].strip())
+            if line.lower().startswith("pages:"):
+                return int(line.split(":")[1].strip())
     except Exception:
         pass
     return 1
+
 
 # ---------------------------------------------------------------------------
 # Office → PDF converters (produce PDF for render_pdf_pages_to_images)
@@ -886,6 +961,7 @@ _CHROME_CANDIDATES = [
 def _find_chrome() -> Optional[str]:
     """Return the first usable Chrome/Chromium executable, or None."""
     import shutil
+
     for candidate in _CHROME_CANDIDATES:
         if Path(candidate).is_file():
             return candidate
@@ -898,10 +974,16 @@ def _find_chrome() -> Optional[str]:
 def _office_to_pdf_libreoffice(filepath: Path, temp_dir: Path) -> Optional[Path]:
     """Convert Office document to PDF via LibreOffice headless."""
     import subprocess
+
     output_pdf = temp_dir / f"{filepath.stem}.pdf"
     cmd = [
-        'soffice', '--headless', '--convert-to', 'pdf',
-        '--outdir', str(temp_dir), str(filepath)
+        "soffice",
+        "--headless",
+        "--convert-to",
+        "pdf",
+        "--outdir",
+        str(temp_dir),
+        str(filepath),
     ]
     try:
         subprocess.run(cmd, capture_output=True, text=True, timeout=120, check=False)
@@ -922,8 +1004,9 @@ def _office_to_pdf_chrome(filepath: Path, temp_dir: Path) -> Optional[Path]:
     Requires: mammoth (pip) + Google Chrome or Chromium (system).
     """
     import subprocess
+
     ext = filepath.suffix.lower()
-    if ext not in ('.docx', '.doc'):
+    if ext not in (".docx", ".doc"):
         return None
 
     chrome = _find_chrome()
@@ -992,6 +1075,7 @@ def _office_to_pdf_docx2pdf(filepath: Path, temp_dir: Path) -> Optional[Path]:
     """
     try:
         from docx2pdf import convert as d2p_convert
+
         output_pdf = temp_dir / f"{filepath.stem}.pdf"
         d2p_convert(str(filepath), str(output_pdf))
         return output_pdf if output_pdf.exists() else None
@@ -1027,7 +1111,7 @@ def convert_office_to_pdf(filepath: Path, temp_dir: Path) -> Optional[Path]:
         return pdf
 
     # --- Strategy 2: mammoth + Chrome headless (DOCX/DOC only) ---
-    if ext in ('.docx', '.doc'):
+    if ext in (".docx", ".doc"):
         logger.info(f"  Trying mammoth + Chrome headless → PDF…")
         pdf = _office_to_pdf_chrome(filepath, temp_dir)
         if pdf:
@@ -1035,7 +1119,7 @@ def convert_office_to_pdf(filepath: Path, temp_dir: Path) -> Optional[Path]:
             return pdf
 
     # --- Strategy 3: docx2pdf / Word (DOCX/DOC only, last resort) ---
-    if ext in ('.docx', '.doc'):
+    if ext in (".docx", ".doc"):
         logger.info(f"  Trying docx2pdf → PDF…")
         pdf = _office_to_pdf_docx2pdf(filepath, temp_dir)
         if pdf:
@@ -1045,9 +1129,11 @@ def convert_office_to_pdf(filepath: Path, temp_dir: Path) -> Optional[Path]:
     logger.warning(f"  ⚠ Could not convert {filepath.name} to PDF via any converter")
     return None
 
+
 # ---------------------------------------------------------------------------
 # DOCX native fallback (no external tool required)
 # ---------------------------------------------------------------------------
+
 
 def convert_docx_to_images_fallback(
     filepath: Path,
@@ -1066,9 +1152,10 @@ def convert_docx_to_images_fallback(
     all visual content embedded in the Word document.
     """
     try:
+        import io
+
         from docx import Document as DocxDocument
         from PIL import Image, ImageDraw, ImageFont
-        import io
     except ImportError as exc:
         logger.warning(f"  ⚠ DOCX fallback unavailable ({exc})")
         return []
@@ -1091,11 +1178,11 @@ def convert_docx_to_images_fallback(
 
         # 2. If no images, render text paragraphs as pseudo-pages
         if not units:
-            TEXT_W, TEXT_H = 1240, 1754   # A4-ish at ~150 dpi
-            FONT_SIZE      = 18
-            LINE_H         = FONT_SIZE + 6
-            MARGIN         = 60
-            MAX_LINES      = (TEXT_H - 2 * MARGIN) // LINE_H
+            TEXT_W, TEXT_H = 1240, 1754  # A4-ish at ~150 dpi
+            FONT_SIZE = 18
+            LINE_H = FONT_SIZE + 6
+            MARGIN = 60
+            MAX_LINES = (TEXT_H - 2 * MARGIN) // LINE_H
 
             try:
                 font = ImageFont.truetype("DejaVuSans.ttf", FONT_SIZE)
@@ -1105,7 +1192,7 @@ def convert_docx_to_images_fallback(
             paragraphs = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
             # Chunk paragraphs into pseudo-pages
             for i in range(0, max(len(paragraphs), 1), MAX_LINES):
-                chunk = paragraphs[i: i + MAX_LINES]
+                chunk = paragraphs[i : i + MAX_LINES]
                 page_img = Image.new("RGB", (TEXT_W, TEXT_H), color=(255, 255, 255))
                 draw = ImageDraw.Draw(page_img)
                 y = MARGIN
@@ -1113,7 +1200,9 @@ def convert_docx_to_images_fallback(
                     # Wrap long lines
                     max_chars = (TEXT_W - 2 * MARGIN) // (FONT_SIZE // 2)
                     while len(line) > max_chars:
-                        draw.text((MARGIN, y), line[:max_chars], fill=(30, 30, 30), font=font)
+                        draw.text(
+                            (MARGIN, y), line[:max_chars], fill=(30, 30, 30), font=font
+                        )
                         line = line[max_chars:]
                         y += LINE_H
                         if y > TEXT_H - MARGIN:
@@ -1124,7 +1213,9 @@ def convert_docx_to_images_fallback(
                 units.append(page_img)
 
         if not units:
-            logger.warning(f"  ⚠ DOCX fallback: no content extracted from {filepath.name}")
+            logger.warning(
+                f"  ⚠ DOCX fallback: no content extracted from {filepath.name}"
+            )
             return []
 
         # --- Apply same sliding window as render_pdf_pages_to_images ---
@@ -1153,10 +1244,12 @@ def convert_docx_to_images_fallback(
                 composite.paste(img, (0, y_off))
                 y_off += img.height
 
-            out_file = output_dir / f"{base_name}_p{start+1:03d}-{end:03d}.webp"
+            out_file = output_dir / f"{base_name}_p{start + 1:03d}-{end:03d}.webp"
             composite.save(str(out_file), "WEBP", quality=WEBP_QUALITY)
             created.append(out_file)
-            logger.info(f"  ✓ DOCX fallback image: units {start+1}-{end} → {out_file.name}")
+            logger.info(
+                f"  ✓ DOCX fallback image: units {start + 1}-{end} → {out_file.name}"
+            )
 
             if end >= total:
                 break
@@ -1167,9 +1260,11 @@ def convert_docx_to_images_fallback(
         logger.warning(f"  ⚠ DOCX native fallback failed: {exc}")
         return []
 
+
 # ---------------------------------------------------------------------------
 # PPTX native fallback
 # ---------------------------------------------------------------------------
+
 
 def convert_pptx_to_images_fallback(
     filepath: Path,
@@ -1178,9 +1273,10 @@ def convert_pptx_to_images_fallback(
 ) -> List[Path]:
     """Fallback: extract slide images from PPTX using python-pptx + PIL."""
     try:
-        from pptx import Presentation
-        from PIL import Image
         import io
+
+        from PIL import Image
+        from pptx import Presentation
     except ImportError as exc:
         logger.warning(f"  ⚠ PPTX fallback unavailable ({exc})")
         return []
@@ -1190,7 +1286,7 @@ def convert_pptx_to_images_fallback(
         images: List[Path] = []
 
         for idx, slide in enumerate(prs.slides):
-            canvas = Image.new('RGB', (1920, 1080), color='white')
+            canvas = Image.new("RGB", (1920, 1080), color="white")
             for shape in slide.shapes:
                 if hasattr(shape, "image"):
                     try:
@@ -1199,8 +1295,8 @@ def convert_pptx_to_images_fallback(
                         break
                     except Exception:
                         pass
-            img_path = output_dir / f"{base_name}_p{idx+1:03d}-{idx+1:03d}.webp"
-            canvas.save(str(img_path), 'WEBP', quality=WEBP_QUALITY)
+            img_path = output_dir / f"{base_name}_p{idx + 1:03d}-{idx + 1:03d}.webp"
+            canvas.save(str(img_path), "WEBP", quality=WEBP_QUALITY)
             images.append(img_path)
 
         return images
@@ -1208,14 +1304,18 @@ def convert_pptx_to_images_fallback(
         logger.warning(f"  ⚠ PPTX fallback failed: {exc}")
         return []
 
+
 # ---------------------------------------------------------------------------
 # Core PDF page renderer (pyvips sliding window)
 # ---------------------------------------------------------------------------
 
+
 def _pdfload_available() -> bool:
     """Return True if pyvips has a working pdfload operation."""
     try:
-        _lazy_vips_init(); import pyvips
+        _lazy_vips_init()
+        import pyvips
+
         # Probe with a known-bad path — if the op exists we get a file error,
         # if the op is missing we get AttributeError before any I/O.
         pyvips.Image.pdfload("/dev/null", page=0, n=1)
@@ -1238,20 +1338,22 @@ def _render_pdf_via_pdftoppm(
     Used when pyvips pdfload (poppler dynamic module) is unavailable.
     Requires: pdftoppm (poppler-utils) + pyvips (for PPM→WEBP conversion).
     """
-    import subprocess
     import shutil
+    import subprocess
 
-    if not shutil.which('pdftoppm'):
+    if not shutil.which("pdftoppm"):
         logger.error("  ✗ pdftoppm not found — install poppler (brew install poppler)")
         return []
 
     try:
-        _lazy_vips_init(); import pyvips
+        _lazy_vips_init()
+        import pyvips
     except ImportError:
         logger.error("  ✗ pyvips not installed")
         return []
 
     import tempfile
+
     created: List[Path] = []
 
     with tempfile.TemporaryDirectory() as tmp_str:
@@ -1259,8 +1361,10 @@ def _render_pdf_via_pdftoppm(
         prefix = tmp / "page"
 
         r = subprocess.run(
-            ['pdftoppm', '-r', str(IMAGE_DPI), '-png', str(pdf_path), str(prefix)],
-            capture_output=True, text=True, timeout=120,
+            ["pdftoppm", "-r", str(IMAGE_DPI), "-png", str(pdf_path), str(prefix)],
+            capture_output=True,
+            text=True,
+            timeout=120,
         )
         if r.returncode != 0:
             logger.error(f"  ✗ pdftoppm failed: {r.stderr[:300]}")
@@ -1283,7 +1387,7 @@ def _render_pdf_via_pdftoppm(
 
             for page_num in range(start_page, end_page):
                 vimg = pyvips.Image.new_from_file(
-                    str(page_files[page_num]), access='sequential'
+                    str(page_files[page_num]), access="sequential"
                 )
                 # Ensure RGB (no alpha) for consistent WEBP output
                 if vimg.bands == 4:
@@ -1296,10 +1400,14 @@ def _render_pdf_via_pdftoppm(
                 else page_imgs[0]
             )
 
-            out_file = output_dir / f"{base_name}_p{start_page+1:03d}-{end_page:03d}.webp"
+            out_file = (
+                output_dir / f"{base_name}_p{start_page + 1:03d}-{end_page:03d}.webp"
+            )
             img.webpsave(str(out_file), Q=WEBP_QUALITY, effort=4, smart_subsample=True)
             created.append(out_file)
-            logger.info(f"  ✓ Image: pages {start_page+1}-{end_page} → {out_file.name}")
+            logger.info(
+                f"  ✓ Image: pages {start_page + 1}-{end_page} → {out_file.name}"
+            )
 
             if end_page >= total_pages:
                 break
@@ -1327,7 +1435,8 @@ def render_pdf_pages_to_images(
       …
     """
     try:
-        _lazy_vips_init(); import pyvips
+        _lazy_vips_init()
+        import pyvips
     except ImportError:
         logger.error("  ✗ pyvips not installed: pip install pyvips")
         return []
@@ -1344,7 +1453,7 @@ def render_pdf_pages_to_images(
                 return []
 
             for start_page in range(total_pages):
-                end_page  = min(start_page + pages_per_image, total_pages)
+                end_page = min(start_page + pages_per_image, total_pages)
                 page_imgs = []
 
                 for page_num in range(start_page, end_page):
@@ -1363,10 +1472,17 @@ def render_pdf_pages_to_images(
                     else page_imgs[0]
                 )
 
-                out_file = output_dir / f"{base_name}_p{start_page+1:03d}-{end_page:03d}.webp"
-                img.webpsave(str(out_file), Q=WEBP_QUALITY, effort=4, smart_subsample=True)
+                out_file = (
+                    output_dir
+                    / f"{base_name}_p{start_page + 1:03d}-{end_page:03d}.webp"
+                )
+                img.webpsave(
+                    str(out_file), Q=WEBP_QUALITY, effort=4, smart_subsample=True
+                )
                 created.append(out_file)
-                logger.info(f"  ✓ Image: pages {start_page+1}-{end_page} → {out_file.name}")
+                logger.info(
+                    f"  ✓ Image: pages {start_page + 1}-{end_page} → {out_file.name}"
+                )
 
                 if end_page >= total_pages:
                     break
@@ -1380,9 +1496,11 @@ def render_pdf_pages_to_images(
     logger.info("  Using pdftoppm → PNG → WEBP pipeline…")
     return _render_pdf_via_pdftoppm(pdf_path, output_dir, base_name, pages_per_image)
 
+
 # ---------------------------------------------------------------------------
 # Unified image conversion dispatcher
 # ---------------------------------------------------------------------------
+
 
 def convert_to_images(
     filepath: Path,
@@ -1402,15 +1520,15 @@ def convert_to_images(
                (2) no images if LibreOffice unavailable (markdown still generated)
     .drawio → draw.io CLI → PDF/PNG → WEBP
     """
-    ext       = filepath.suffix.lower()
+    ext = filepath.suffix.lower()
     base_name = filepath.stem
 
     # ---- PDF: render directly ----
-    if ext == '.pdf':
+    if ext == ".pdf":
         return render_pdf_pages_to_images(filepath, output_dir, base_name)
 
     # ---- DOCX / DOC ----
-    if ext in ('.docx', '.doc'):
+    if ext in (".docx", ".doc"):
         logger.info(f"  Converting {ext} → PDF for image extraction…")
         pdf_path = convert_office_to_pdf(filepath, temp_dir)
         if pdf_path and pdf_path.exists():
@@ -1420,7 +1538,7 @@ def convert_to_images(
         return convert_docx_to_images_fallback(filepath, output_dir, base_name)
 
     # ---- PPTX / PPT ----
-    if ext in ('.pptx', '.ppt'):
+    if ext in (".pptx", ".ppt"):
         logger.info(f"  Converting {ext} → PDF for image extraction…")
         pdf_path = convert_office_to_pdf(filepath, temp_dir)
         if pdf_path and pdf_path.exists():
@@ -1430,16 +1548,18 @@ def convert_to_images(
         return convert_pptx_to_images_fallback(filepath, output_dir, base_name)
 
     # ---- Excel: convert via LibreOffice → PDF → WEBP ----
-    if ext in ('.xlsx', '.xls', '.xlsm'):
+    if ext in (".xlsx", ".xls", ".xlsm"):
         logger.info(f"  Converting {ext} → PDF for image extraction…")
         pdf_path = convert_office_to_pdf(filepath, temp_dir)
         if pdf_path and pdf_path.exists():
             return render_pdf_pages_to_images(pdf_path, output_dir, base_name)
-        logger.warning("  ⚠ Excel→PDF failed — no images generated (markdown still available)")
+        logger.warning(
+            "  ⚠ Excel→PDF failed — no images generated (markdown still available)"
+        )
         return []
 
     # ---- draw.io diagrams ----
-    if ext == '.drawio':
+    if ext == ".drawio":
         logger.info("  Converting .drawio → images via draw.io CLI…")
         return convert_drawio_to_images(filepath, output_dir, temp_dir)
 
@@ -1450,6 +1570,7 @@ def convert_to_images(
 # ---------------------------------------------------------------------------
 # Video processing: VTT subtitles + scene-change cadres
 # ---------------------------------------------------------------------------
+
 
 def _find_companion_subtitles(video_path: Path) -> List[Path]:
     """Find .vtt/.srt/.txt transcript files alongside a video in the source directory."""
@@ -1473,7 +1594,9 @@ def _find_companion_subtitles(video_path: Path) -> List[Path]:
 
 
 def _copy_companion_subtitles(
-    video_path: Path, markdown_dir: Path, fragments_dir: Path,
+    video_path: Path,
+    markdown_dir: Path,
+    fragments_dir: Path,
 ) -> List[str]:
     """Copy manual VTT/SRT files from data/intake into the fragment's markdown dir."""
     companions = _find_companion_subtitles(video_path)
@@ -1482,6 +1605,7 @@ def _copy_companion_subtitles(
         dest = markdown_dir / sub.name
         if not dest.exists():
             import shutil as _shutil
+
             _shutil.copy2(sub, dest)
             logger.info(f"  Copied manual subtitle: {sub.name}")
         copied.append(str(dest.relative_to(fragments_dir)))
@@ -1493,7 +1617,7 @@ def _find_transcript_in_fragment(fragment_stem: str, fragments_dir: Path) -> Lis
     found = []
     md_dir = fragments_dir / fragment_stem / "markdown"
     if md_dir.exists():
-        for ext in ('.vtt', '.srt', '.txt'):
+        for ext in (".vtt", ".srt", ".txt"):
             found.extend(md_dir.glob(f"*{ext}"))
     return found
 
@@ -1549,14 +1673,14 @@ def _prompt_for_transcripts(missing: List[tuple]) -> set:
         print("\nNon-interactive — using Whisper for all missing transcripts.")
         return {vid for vid, _ in missing}
 
-    if choice == 'q':
+    if choice == "q":
         print("Quitting. Copy transcripts and re-run the converter.")
         sys.exit(0)
 
-    if choice == 'whisper':
+    if choice == "whisper":
         return {vid for vid, _ in missing}
 
-    if choice == 'skip':
+    if choice == "skip":
         print("Skipping transcription for all listed videos.")
         return set()
 
@@ -1576,7 +1700,9 @@ def _prompt_for_transcripts(missing: List[tuple]) -> set:
 
 
 def generate_vtt_subtitles(
-    video_path: Path, output_dir: Path, model_name: str = "base",
+    video_path: Path,
+    output_dir: Path,
+    model_name: str = "base",
 ) -> Optional[Path]:
     """Transcribe video audio to VTT subtitle file using Whisper."""
     try:
@@ -1587,6 +1713,7 @@ def generate_vtt_subtitles(
         return None
 
     import warnings as _w
+
     _w.filterwarnings("ignore", category=UserWarning)
     _w.filterwarnings("ignore", category=FutureWarning)
 
@@ -1617,11 +1744,13 @@ def generate_vtt_subtitles(
 
 
 def extract_scene_frames(
-    video_path: Path, output_dir: Path, threshold: float = 5.0,
+    video_path: Path,
+    output_dir: Path,
+    threshold: float = 5.0,
 ) -> List[Path]:
     """Detect scene changes and save the first frame of each new scene as JPEG."""
     try:
-        from scenedetect import detect, ContentDetector
+        from scenedetect import ContentDetector, detect
     except ImportError:
         logger.error("  scenedetect not installed — skipping scene extraction")
         return []
@@ -1678,32 +1807,35 @@ def process_video(
     Returns a results dict compatible with the standard manifest format.
     """
     results = {
-        "source":            str(filepath),
-        "hash":              get_file_hash(filepath),
-        "processed_at":      datetime.now().isoformat(),
-        "markitdown":        None,
-        "docling":           None,
-        "drawio_parsed":     None,
-        "vtt":               None,
-        "manual_subtitles":  [],
-        "images":            [],
-        "status":            "pending",
-        "type":              "video",
+        "source": str(filepath),
+        "hash": get_file_hash(filepath),
+        "processed_at": datetime.now().isoformat(),
+        "markitdown": None,
+        "docling": None,
+        "drawio_parsed": None,
+        "vtt": None,
+        "manual_subtitles": [],
+        "images": [],
+        "status": "pending",
+        "type": "video",
     }
 
     # 1. Copy companion VTT/SRT/TXT from the source directory
     logger.info("→ Checking for transcript alongside video…")
     results["manual_subtitles"] = _copy_companion_subtitles(
-        filepath, markdown_dir, fragments_dir,
+        filepath,
+        markdown_dir,
+        fragments_dir,
     )
     if results["manual_subtitles"]:
-        logger.info(f"  Found {len(results['manual_subtitles'])} transcript(s) in source dir")
+        logger.info(
+            f"  Found {len(results['manual_subtitles'])} transcript(s) in source dir"
+        )
 
     # 2. Check for transcripts already present in the fragment markdown directory
     if not results["manual_subtitles"]:
         in_frag = [
-            f for ext in ('.vtt', '.srt', '.txt')
-            for f in markdown_dir.glob(f"*{ext}")
+            f for ext in (".vtt", ".srt", ".txt") for f in markdown_dir.glob(f"*{ext}")
         ]
         if in_frag:
             logger.info(f"  Found {len(in_frag)} transcript(s) in fragment directory")
@@ -1720,7 +1852,9 @@ def process_video(
         if vtt:
             results["vtt"] = str(vtt.relative_to(fragments_dir))
     else:
-        logger.info("→ Skipping Whisper — no transcript available, Whisper not requested")
+        logger.info(
+            "→ Skipping Whisper — no transcript available, Whisper not requested"
+        )
 
     # 4. Scene-change cadre images
     logger.info("→ Extracting scene-change frames…")
@@ -1746,6 +1880,7 @@ def process_video(
 # Single-document processor
 # ---------------------------------------------------------------------------
 
+
 def process_document(
     filepath: Path,
     fragments_dir: Path,
@@ -1765,39 +1900,43 @@ def process_document(
     ext = filepath.suffix.lower()
 
     results = {
-        "source":       str(filepath),
-        "hash":         get_file_hash(filepath),
+        "source": str(filepath),
+        "hash": get_file_hash(filepath),
         "processed_at": datetime.now().isoformat(),
-        "markitdown":   None,
-        "docling":      None,
+        "markitdown": None,
+        "docling": None,
         "drawio_parsed": None,
-        "images":       [],
-        "status":       "pending",
+        "images": [],
+        "status": "pending",
     }
 
     # Subdirectory named after the stem of the original/display name
     safe_stem = Path(display_name).stem
-    doc_dir   = fragments_dir / safe_stem
+    doc_dir = fragments_dir / safe_stem
     doc_dir.mkdir(parents=True, exist_ok=True)
 
-    images_dir   = doc_dir / "images"
+    images_dir = doc_dir / "images"
     markdown_dir = doc_dir / "markdown"
     images_dir.mkdir(exist_ok=True)
     markdown_dir.mkdir(exist_ok=True)
 
-    logger.info(f"\n{'='*60}")
+    logger.info(f"\n{'=' * 60}")
     logger.info(f"Processing: {display_name}")
-    logger.info(f"{'='*60}")
+    logger.info(f"{'=' * 60}")
 
     # --- Video files get their own pipeline (transcript + scene cadres) ---
-    if SUPPORTED_EXTENSIONS.get(ext) == 'video':
+    if SUPPORTED_EXTENSIONS.get(ext) == "video":
         return process_video(
-            filepath, fragments_dir, markdown_dir, images_dir, display_name,
+            filepath,
+            fragments_dir,
+            markdown_dir,
+            images_dir,
+            display_name,
             whisper_allowed=whisper_allowed,
         )
 
     # 1. Markdown conversion — strategy depends on file type
-    if ext == '.drawio':
+    if ext == ".drawio":
         # .drawio gets its own XML parser (not markitdown/docling)
         logger.info("→ Parsing draw.io XML to Markdown…")
         md_drawio = convert_drawio_to_markdown(filepath, markdown_dir)
@@ -1822,7 +1961,9 @@ def process_document(
         results["images"] = [str(img.relative_to(fragments_dir)) for img in images]
 
     # Status
-    has_md  = bool(results["markitdown"] or results["docling"] or results["drawio_parsed"])
+    has_md = bool(
+        results["markitdown"] or results["docling"] or results["drawio_parsed"]
+    )
     has_img = bool(results["images"])
 
     if has_md and has_img:
@@ -1837,21 +1978,23 @@ def process_document(
     logger.info(f"→ Status: {results['status']}")
     return results
 
+
 # ---------------------------------------------------------------------------
 # Index builder
 # ---------------------------------------------------------------------------
+
 
 def create_index_file(fragments_dir: Path, manifest: Dict):
     """Write a human-readable INDEX.md listing all processed fragments."""
     index_path = fragments_dir / "INDEX.md"
 
     today = datetime.now().date().isoformat()
-    with open(index_path, 'w', encoding='utf-8') as fh:
+    with open(index_path, "w", encoding="utf-8") as fh:
         fh.write(
             "---\n"
             "tier: T3\n"
             "source_class: fragment\n"
-            "version: \"1.0\"\n"
+            'version: "1.0"\n'
             f"last_updated: {today}\n"
             "description: Master index of converted document fragments\n"
             "---\n\n"
@@ -1866,14 +2009,18 @@ def create_index_file(fragments_dir: Path, manifest: Dict):
             fh.write(f"- **Source:** {info.get('source', 'unknown')}\n")
             fh.write(f"- **Processed:** {info.get('processed_at', 'unknown')}\n")
 
-            if info.get('markitdown'):
-                fh.write(f"- **Markitdown:** [{info['markitdown']}]({info['markitdown']})\n")
-            if info.get('docling'):
+            if info.get("markitdown"):
+                fh.write(
+                    f"- **Markitdown:** [{info['markitdown']}]({info['markitdown']})\n"
+                )
+            if info.get("docling"):
                 fh.write(f"- **Docling:** [{info['docling']}]({info['docling']})\n")
-            if info.get('drawio_parsed'):
-                fh.write(f"- **Drawio Parsed:** [{info['drawio_parsed']}]({info['drawio_parsed']})\n")
+            if info.get("drawio_parsed"):
+                fh.write(
+                    f"- **Drawio Parsed:** [{info['drawio_parsed']}]({info['drawio_parsed']})\n"
+                )
 
-            imgs = info.get('images', [])
+            imgs = info.get("images", [])
             if imgs:
                 fh.write(f"- **Images:** {len(imgs)} WEBP file(s)\n")
                 for img in imgs[:3]:
@@ -1881,18 +2028,22 @@ def create_index_file(fragments_dir: Path, manifest: Dict):
                 if len(imgs) > 3:
                     fh.write(f"  - … and {len(imgs) - 3} more\n")
 
-            if info.get('archive_contents'):
-                fh.write(f"- **Archive contents:** {len(info['archive_contents'])} document(s)\n")
-                for ac in info['archive_contents']:
+            if info.get("archive_contents"):
+                fh.write(
+                    f"- **Archive contents:** {len(info['archive_contents'])} document(s)\n"
+                )
+                for ac in info["archive_contents"]:
                     fh.write(f"  - {ac}\n")
 
             fh.write("\n")
 
     logger.info(f"✓ Index → {index_path}")
 
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def _compute_display_names(file_list: List[Path]) -> Dict[Path, str]:
     """
@@ -1931,7 +2082,9 @@ def _compute_display_names(file_list: List[Path]) -> Dict[Path, str]:
             continue
 
         # Collision detected — derive a unique prefix per file
-        logger.info(f"⚠ Filename collision on '{stem}' across {len(paths)} files — adding partner prefix")
+        logger.info(
+            f"⚠ Filename collision on '{stem}' across {len(paths)} files — adding partner prefix"
+        )
 
         for fpath in paths:
             prefix = _derive_partner_prefix(fpath)
@@ -1965,11 +2118,18 @@ def _derive_partner_prefix(filepath: Path) -> Optional[str]:
         if "partners-journey" in part.lower() or "11-partners" in part.lower():
             # Next non-trivial directory is the partner (e.g. "US", "France")
             # Then the one after that is the partner name
-            remaining = parts[i + 1:]
+            remaining = parts[i + 1 :]
             if len(remaining) >= 2:
                 country_or_partner = remaining[0]
                 # If it's a country code dir (US, France, Canada, etc.), take the next
-                if country_or_partner in ("US", "France", "Canada", "EMEA", "APAC", "UK"):
+                if country_or_partner in (
+                    "US",
+                    "France",
+                    "Canada",
+                    "EMEA",
+                    "APAC",
+                    "UK",
+                ):
                     partner = remaining[1]
                 else:
                     partner = country_or_partner
@@ -1979,9 +2139,20 @@ def _derive_partner_prefix(filepath: Path) -> Optional[str]:
 
     # Strategy 2: Look for a parent named after a known partner keyword
     _PARTNER_KEYWORDS = {
-        "calian", "lookingpoint", "aqueduct", "oneneck", "winslow",
-        "accounting", "iosecure", "clutch", "actual", "canada computers",
-        "360 visibility", "archwell", "defy", "vervint",
+        "calian",
+        "lookingpoint",
+        "aqueduct",
+        "oneneck",
+        "winslow",
+        "accounting",
+        "iosecure",
+        "clutch",
+        "actual",
+        "canada computers",
+        "360 visibility",
+        "archwell",
+        "defy",
+        "vervint",
     }
     for part in reversed(parts[:-1]):  # exclude filename itself
         part_lower = part.lower()
@@ -2001,6 +2172,7 @@ def _derive_partner_prefix(filepath: Path) -> Optional[str]:
 def _clean_prefix(raw: str) -> str:
     """Normalize a directory name into a clean fragment prefix."""
     import re
+
     # Strip common project prefixes
     cleaned = re.sub(r"^XI-Growth-Factory\s*-?\s*", "", raw)
     # Replace spaces and special chars with hyphens
@@ -2025,8 +2197,7 @@ def _collect_files_recursive(scan_dir: Path) -> tuple:
     for dirpath, dirnames, filenames in os.walk(scan_dir, followlinks=True):
         # Prune excluded directories in-place (prevents os.walk from descending)
         dirnames[:] = [
-            d for d in dirnames
-            if d not in EXCLUDED_DIRS and not d.startswith('.')
+            d for d in dirnames if d not in EXCLUDED_DIRS and not d.startswith(".")
         ]
 
         for fname in filenames:
@@ -2045,56 +2216,68 @@ def _collect_files_recursive(scan_dir: Path) -> tuple:
 def main():
     parser = argparse.ArgumentParser(
         description="Convert documents to Markdown + WEBP for LLM processing.\n\n"
-                    "By default, scans the current directory recursively for all\n"
-                    "supported document types. Use --scan-dir to limit the scan\n"
-                    "to a specific directory (e.g. data/intake/).",
+        "By default, scans the current directory recursively for all\n"
+        "supported document types. Use --scan-dir to limit the scan\n"
+        "to a specific directory (e.g. data/intake/).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        '--scan-dir', type=Path,
+        "--scan-dir",
+        type=Path,
         default=None,
         help="Directory to scan for documents. Default: CWD (recursive). "
-             "Use --scan-dir data/intake to limit to that directory.",
+        "Use --scan-dir data/intake to limit to that directory.",
     )
     # Keep --specs-dir as an alias for backward compatibility
     parser.add_argument(
-        '--specs-dir', type=Path,
+        "--specs-dir",
+        type=Path,
         default=None,
         help="(Deprecated alias for --scan-dir) Source directory containing documents.",
     )
     parser.add_argument(
-        '--fragments-dir', type=Path,
+        "--fragments-dir",
+        type=Path,
         default=Path("data/corpus"),
         help="Output directory for converted files (default: ./data/corpus/ relative to CWD)",
     )
     parser.add_argument(
-        '--force', action='store_true',
+        "--force",
+        action="store_true",
         help="Force reprocessing even for unchanged files",
     )
     parser.add_argument(
-        '--file', type=str,
+        "--file",
+        type=str,
         help="Process only this specific filename (searched recursively in scan dir)",
     )
     parser.add_argument(
-        '--no-recurse', action='store_true',
+        "--no-recurse",
+        action="store_true",
         help="Only scan top-level of the scan directory (no subdirectories)",
     )
     parser.add_argument(
-        '--clean', action='store_true',
+        "--clean",
+        action="store_true",
         help="Remove fragments for documents that no longer exist in the scan directory",
     )
     parser.add_argument(
-        '--whisper', action='store_true',
+        "--whisper",
+        action="store_true",
         help="Always use Whisper for videos without transcripts, without prompting "
-             "(implied when stdin is not a terminal)",
+        "(implied when stdin is not a terminal)",
     )
     parser.add_argument(
-        '--whisper-model', type=str, default="base",
+        "--whisper-model",
+        type=str,
+        default="base",
         choices=["tiny", "base", "small", "medium", "large"],
         help="Whisper model for video transcription (default: base)",
     )
     parser.add_argument(
-        '--scene-threshold', type=float, default=5.0,
+        "--scene-threshold",
+        type=float,
+        default=5.0,
         help="Scene detection sensitivity for videos — lower = more cadres (default: 5.0)",
     )
 
@@ -2118,7 +2301,7 @@ def main():
         else:
             scan_dir = Path(".")
             logger.info("No data/intake/ found — scanning project root recursively.")
-    
+
     if not scan_dir.exists():
         logger.error(f"✗ Scan directory not found: {scan_dir}")
         sys.exit(1)
@@ -2126,7 +2309,7 @@ def main():
     args.fragments_dir.mkdir(parents=True, exist_ok=True)
 
     manifest_path = args.fragments_dir / ".manifest.json"
-    manifest      = load_manifest(manifest_path)
+    manifest = load_manifest(manifest_path)
 
     logger.info("=" * 60)
     logger.info("Document Converter Pipeline")
@@ -2192,8 +2375,8 @@ def main():
         logger.info(f"Manifest: {prev_count} previously tracked entry/entries")
 
     processed = 0
-    skipped   = 0
-    failed    = 0
+    skipped = 0
+    failed = 0
 
     # ------------------------------------------------------------------ #
     # Process archives — extract then process each contained document     #
@@ -2205,21 +2388,21 @@ def main():
             skipped += 1
             continue
 
-        logger.info(f"\n{'='*60}")
+        logger.info(f"\n{'=' * 60}")
         logger.info(f"Archive: {archive_path.name}")
-        logger.info(f"{'='*60}")
+        logger.info(f"{'=' * 60}")
 
         with tempfile.TemporaryDirectory() as arc_tmp:
             arc_tmp_path = Path(arc_tmp)
             extracted = extract_archive(archive_path, arc_tmp_path)
 
             archive_record = {
-                "source":           str(archive_path),
-                "hash":             get_file_hash(archive_path),
-                "processed_at":     datetime.now().isoformat(),
-                "type":             "archive",
+                "source": str(archive_path),
+                "hash": get_file_hash(archive_path),
+                "processed_at": datetime.now().isoformat(),
+                "type": "archive",
                 "archive_contents": [],
-                "status":           "complete" if extracted else "empty",
+                "status": "complete" if extracted else "empty",
             }
 
             for inner_doc in extracted:
@@ -2239,7 +2422,11 @@ def main():
                     manifest["files"][inner_key] = doc_results
                     archive_record["archive_contents"].append(inner_key)
 
-                    if doc_results["status"] in ("complete", "markdown_only", "images_only"):
+                    if doc_results["status"] in (
+                        "complete",
+                        "markdown_only",
+                        "images_only",
+                    ):
                         processed += 1
                     else:
                         failed += 1
@@ -2260,8 +2447,9 @@ def main():
     # ------------------------------------------------------------------ #
     # Collect only video files that actually need processing this run.
     pending_videos = [
-        f for f in all_files
-        if SUPPORTED_EXTENSIONS.get(f.suffix.lower()) == 'video'
+        f
+        for f in all_files
+        if SUPPORTED_EXTENSIONS.get(f.suffix.lower()) == "video"
         and needs_processing(f, manifest, args.force, file_key=_manifest_key(f))
     ]
 
@@ -2271,10 +2459,14 @@ def main():
 
     if pending_videos:
         missing = _collect_videos_missing_transcripts(
-            pending_videos, display_names, args.fragments_dir,
+            pending_videos,
+            display_names,
+            args.fragments_dir,
         )
         if not missing:
-            logger.info(f"✓ All {len(pending_videos)} video(s) have transcripts — Whisper not needed")
+            logger.info(
+                f"✓ All {len(pending_videos)} video(s) have transcripts — Whisper not needed"
+            )
         elif args.whisper or not sys.stdin.isatty():
             # Non-interactive run or explicit --whisper flag: behave like before
             whisper_video_set = {vid for vid, _ in missing}
@@ -2301,12 +2493,15 @@ def main():
 
         # Whisper is allowed only for video files that were confirmed in the pre-scan.
         # For non-video files the flag is irrelevant (True by default).
-        is_video = SUPPORTED_EXTENSIONS.get(doc_path.suffix.lower()) == 'video'
+        is_video = SUPPORTED_EXTENSIONS.get(doc_path.suffix.lower()) == "video"
         whisper_ok = (doc_path in whisper_video_set) if is_video else True
 
         try:
             results = process_document(
-                doc_path, args.fragments_dir, manifest, args.force,
+                doc_path,
+                args.fragments_dir,
+                manifest,
+                args.force,
                 source_label=label,
                 whisper_allowed=whisper_ok,
             )
@@ -2320,11 +2515,11 @@ def main():
         except Exception as exc:
             logger.error(f"✗ Error processing {doc_path.name}: {exc}")
             manifest["files"][file_key] = {
-                "source":       str(doc_path),
-                "hash":         get_file_hash(doc_path),
+                "source": str(doc_path),
+                "hash": get_file_hash(doc_path),
                 "processed_at": datetime.now().isoformat(),
-                "status":       "error",
-                "error":        str(exc),
+                "status": "error",
+                "error": str(exc),
             }
             failed += 1
 
@@ -2341,10 +2536,14 @@ def main():
     if orphaned_keys:
         if args.clean:
             logger.info(f"\n→ Cleaning {len(orphaned_keys)} orphaned entry/entries…")
-            cleaned = _clean_orphaned_fragments(orphaned_keys, manifest, args.fragments_dir)
+            cleaned = _clean_orphaned_fragments(
+                orphaned_keys, manifest, args.fragments_dir
+            )
         else:
-            logger.info(f"\n⚠ {len(orphaned_keys)} orphaned manifest entry/entries "
-                        f"(source files no longer found):")
+            logger.info(
+                f"\n⚠ {len(orphaned_keys)} orphaned manifest entry/entries "
+                f"(source files no longer found):"
+            )
             for okey in orphaned_keys:
                 logger.info(f"  · {okey}")
             logger.info("  Run with --clean to remove their fragments.")
