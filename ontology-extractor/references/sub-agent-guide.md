@@ -5,7 +5,7 @@ last_updated: 2026-04-29
 description: sub agent guide
 ---
 
-# Sub-Agent Guide — knowledge-management
+# Sub-Agent Guide — ontology-extractor
 
 Patterns for parallelizing artifact materialization via sub-agents,
 with model selection guidance.

@@ -5,7 +5,7 @@ last_updated: 2026-04-29
 description: academic references
 ---
 
-# Academic References — knowledge-management
+# Academic References — ontology-extractor
 
 Supporting literature for the knowledge-management skill's design decisions.
 Loaded on demand — not part of the main SKILL.md context.

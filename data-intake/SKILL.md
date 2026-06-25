@@ -1,5 +1,5 @@
 ---
-name: document-pipeline
+name: data-intake
 version: "2.0"
 description: >-
   End-to-end document knowledge pipeline with two modes. INGESTION: converts

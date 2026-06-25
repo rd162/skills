@@ -1,5 +1,5 @@
 ---
-name: knowledge-management
+name: ontology-extractor
 description: >-
   Creates, revises, and materializes structured knowledge artifacts
   (Fact, Concept, Procedure, Narrative, Ontology) with CoD formatting,

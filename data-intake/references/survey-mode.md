@@ -5,7 +5,7 @@ last_updated: 2026-06-24
 description: survey mode
 ---
 
-# Survey Mode — document-pipeline
+# Survey Mode — data-intake
 
 Targeted survey generation from `data/corpus/`. Loaded on demand by the
 parent skill when the user asks to build a survey, summarize specs, or
