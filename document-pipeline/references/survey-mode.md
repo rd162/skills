@@ -1,13 +1,13 @@
 ---
 tier: T3
 source_class: llm
-last_updated: 2026-04-29
+last_updated: 2026-06-24
 description: survey mode
 ---
 
 # Survey Mode — document-pipeline
 
-Targeted survey generation from `__FRAGMENTS__/`. Loaded on demand by the
+Targeted survey generation from `data/corpus/`. Loaded on demand by the
 parent skill when the user asks to build a survey, summarize specs, or
 extract structured knowledge — typically after ingestion completes.
 
@@ -19,7 +19,7 @@ file (see `source-tiering.md` in `deep-research-t1/references/`).
 
 ## When to Use This Mode
 
-- An `__FRAGMENTS__/` directory exists with converted documents
+- An `data/corpus/` directory exists with converted documents
 - User asks: "build a survey", "analyze documents", "what do the specs
   say", "summarize the RFP", "extract knowledge from fragments",
   "create knowledge base from documents", "generate clarification
@@ -41,18 +41,18 @@ file (see `source-tiering.md` in `deep-research-t1/references/`).
 | -------- | ------------------------------------------------------------------------ | ------ |
 | COMPLETE | Survey written, gaps catalogued, questions generated (if needed)         | STOP — report sections + gap count |
 | PARTIAL  | Survey partially populated, session boundary reached                     | STOP — save progress, report what remains |
-| NO_FRAGS | `__FRAGMENTS__/` missing or empty                                        | Degrade — read `__SPECS__/` directly |
+| NO_FRAGS | `data/corpus/` missing or empty                                        | Degrade — read `data/intake/` directly |
 | BLOCKED  | No documents available in any location                                   | Ask user to provide documents or run ingestion |
 
 ## Graceful Degradation
 
-- **Full capability** (`__FRAGMENTS__/` with dual MD + WEBP + web search):
+- **Full capability** (`data/corpus/` with dual MD + WEBP + web search):
   cross-reference converters, vision analysis, entity research, structured
   survey, clarification questions.
 - **Partial fragments** (single converter): proceed; state limitation.
 - **No WEBP images**: skip vision analysis; note diagrams may be missing.
 - **No web search**: skip entity research (Phase 2); state limitation.
-- **No `__FRAGMENTS__/`, but `__SPECS__/` exists**: read source documents
+- **No `data/corpus/`, but `data/intake/` exists**: read source documents
   via Read directly; quality lower (no dual-converter cross-reference).
 
 ---
@@ -62,7 +62,7 @@ file (see `source-tiering.md` in `deep-research-t1/references/`).
 ### 1.1 Read the Master Index
 
 ```text
-∆1: read_file("__FRAGMENTS__/INDEX.md") → document inventory
+∆1: read_file("data/corpus/INDEX.md") → document inventory
 ∆2: For each document, note converters succeeded, WEBP image count, content type
 ∆3: Record as inventory table
 ```
@@ -143,7 +143,7 @@ For PDFs/DOCX with WEBP images:
 ```text
 ∆1: Check markdown for "Figure", "Diagram", "Architecture" mentions
 ∆2: Identify pages likely containing visual content
-∆3: read_file("__FRAGMENTS__/{doc}/images/{doc}_p{NNN}-{NNN}.webp")
+∆3: read_file("data/corpus/{doc}/images/{doc}_p{NNN}-{NNN}.webp")
 ∆4: Extract: components, relationships, data flows, annotations
 ∆5: Record image reference in survey for traceability
 ```

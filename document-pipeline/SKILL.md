@@ -19,7 +19,7 @@ metadata:
   tags: document-conversion, ingestion, survey, knowledge-extraction, markitdown, docling, drawio, webp, vips, pdf, fragments, libreoffice, chrome, video, whisper, scenedetect, vtt, source-tiering
 tier: T3
 source_class: llm
-last_updated: 2026-04-29
+last_updated: 2026-06-24
 ---
 
 # Document Pipeline — Ingestion + Targeted Survey
@@ -35,11 +35,77 @@ Two modes — invoked separately or chained.
 | Build a survey/knowledge base from fragments | **Survey**          | `references/survey-mode.md`      |
 | "Ingest X and produce survey for Y"          | **Both, sequenced** | Run Ingestion first, then Survey |
 
-Both modes share `__FRAGMENTS__/` as the canonical interchange format.
+Both modes share `data/corpus/` as the canonical interchange format.
 Ingestion emits `tier: <inherits source>, source_class: fragment` frontmatter on every
-fragment markdown (T2 when source is from `__SPECS__/`). Survey emits
+fragment markdown (T2 when source is from `data/intake/`). Survey emits
 `tier: T3, source_class: llm` on the survey/questions output. See
 `deep-research-t1/references/source-tiering.md` for the full policy.
+
+---
+
+## Project naming conventions — directory detection
+
+Different projects (and different eras of the same project) use different
+directory names for the two pipeline zones. **Detect the actual names before
+assuming canonical paths.**
+
+### Zone 1 — Source / Intake layer (T2; gitignored when it contains symlinks)
+
+Raw, externally-supplied originals: OneDrive/SharePoint symlinks, downloaded PDFs,
+official API documentation, web index files, raw recordings.
+
+| Name | Convention |
+| --- | --- |
+| `data/intake/` | **Canonical** — `data/` is the conventional base (LlamaIndex, CCDS); `intake` = raw zone |
+| `data/raw/` / `data/external/` | CCDS-strict (immutable dump / third-party) |
+| `sources/` | Generic data-engineering |
+| `raw/` | Medallion Architecture (Databricks Bronze) |
+| `intake/` | Project-root variant |
+| `documents/` | Document-heavy projects (⚠ avoid `docs/` — API/human docs) |
+| `upstream/` | Data-mesh projects |
+| `ingest/` / `ingestion/` | ETL-oriented naming |
+| `.agents/intake/`, `.agents/external-refs/` | Legacy self-invented base (pre-2026-06-24) — still recognized |
+| `__SPECS__/` | Very legacy — dunder names mangle in Markdown editors |
+
+### Zone 2 — Corpus / Processed layer (T3 fragment; committed to git)
+
+Expensive pipeline-owned artifacts: markdown extractions, WEBP cadres,
+Whisper transcripts, manifests, INDEX files.
+
+| Name | Convention |
+| --- | --- |
+| `data/corpus/` | **Canonical** — `data/` base + `corpus` (NLP/RAG curated collection) |
+| `data/processed/` | CCDS-strict (final, canonical sets); pairs with `data/raw/` |
+| `corpus/` | NLP/AI standard — curated processed document collection |
+| `fragments/` | Original name; still used in manifest/index keys |
+| `knowledge/` | Knowledge-management tools |
+| `artifacts/` | Build-system metaphor (CI/CD adjacent projects) |
+| `extracted/` | Process-oriented |
+| `derived/` | Data-engineering (derived tables) |
+| `enriched/` | Medallion Silver layer |
+| `processed/` | Generic; pairs with `raw/` |
+| `index/` | RAG pipeline projects |
+| `.agents/corpus/`, `.agents/kb-cache/` | Legacy self-invented base (pre-2026-06-24) — still recognized |
+| `__FRAGMENTS__/` | Very legacy — dunder names mangle |
+
+### Quick detection (run at session start on any new project)
+
+```bash
+# Show pipeline dirs under data/ (plus any root-level or legacy .agents/ variants)
+ls -d data/*/ .agents/*/ 2>/dev/null
+ls -d */ 2>/dev/null | grep -E 'intake|corpus|sources|raw|fragments|knowledge|__SPECS__|__FRAGMENTS__'
+```
+
+Then map to canonical names when reading paths in this skill:
+
+- Zone 1 found at any name above → treat as `data/intake/`
+- Zone 2 found at any name above → treat as `data/corpus/`
+
+**Manifest and index files** (inside Zone 2, regardless of dir name):
+
+- `INDEX.md` — partner/document → fragment mapping
+- `.manifest.json` — SHA256 change-tracking manifest
+- `_ALL_MEETING_NOTES_CONSOLIDATED.md` — merged meeting corpus
 
 ---
 
@@ -48,22 +114,22 @@ fragment markdown (T2 when source is from `__SPECS__/`). Survey emits
 Convert raw documents, draw.io diagrams, and video files into AI-readable
 fragments using dual markdown converters, XML parsing, WEBP sliding-window
 images, and video speech-to-text + scene-change extraction.
-Scans project directories recursively — not limited to `__SPECS__/`.
+Scans project directories recursively — not limited to `data/intake/`.
 Domain-agnostic: works for any document type and any downstream analysis.
 
 **Frontmatter on emitted fragments:** `scripts/doc_converter.py` writes
 this YAML block at the top of every fragment markdown. The `tier` key
-is inherited from the source document — T2 for sources under `__SPECS__/`,
+is inherited from the source document — T2 for sources under `data/intake/`,
 T1 for saved public official docs, etc.:
 
 ```yaml
 ---
-tier: T2 # inherits source tier (T2 for __SPECS__/, T1 for public docs, etc.)
+tier: T2 # inherits source tier (T2 for data/intake/, T1 for public docs, etc.)
 source_class: fragment
 version: "1.0"
 last_updated: <ISO date>
 description: <converter> output for <source filename>
-source_file: <relative path to source under __SPECS__/ or scan root>
+source_file: <relative path to source under data/intake/ or scan root>
 converter: markitdown | docling | drawio-xml-parser
 ---
 ```
@@ -82,13 +148,13 @@ strategy chain and anti-patterns.
 
 - **Whisper** speech-to-text → `_whisper.vtt` subtitle files
 - **PySceneDetect** → `cadre_NNN.jpg` scene-change images
-- Manual VTT/SRT files found alongside videos in `__SPECS__/` are preserved
+- Manual VTT/SRT files found alongside videos in `data/intake/` are preserved
 
 ## When to Use
 
 - Raw documents (PDF, DOCX, PPTX, XLSX) or diagrams (.drawio) need conversion
 - Video files (MP4, MKV, AVI, MOV) need transcription or scene extraction
-- Project has an `__SPECS__/` directory with source documents to ingest
+- Project has an `data/intake/` directory with source documents to ingest
 - User wants to set up or run the document conversion pipeline
 - New documents arrive and need incremental processing
 - User needs to force-reprocess existing documents
@@ -111,7 +177,7 @@ strategy chain and anti-patterns.
 | PARTIAL       | Some documents processed, others failed                              | ✓ STOP — report successes and failures with actions |
 | NO_DEPS       | Python, libvips, or required libraries unavailable after setup       | Degrade — attempt manual read_file fallback         |
 | VIDEO_PARTIAL | Whisper or scenedetect missing — video partially processed           | Degrade — report which video outputs are available  |
-| BLOCKED       | No `__SPECS__/` directory and user cannot provide documents          | Ask user to place documents in `__SPECS__/`         |
+| BLOCKED       | No `data/intake/` directory and user cannot provide documents     | Ask user to place documents in `data/intake/`    |
 
 ## Graceful Degradation
 
@@ -156,9 +222,9 @@ Copy them into every target project before running the pipeline.
 ### What `doc_converter.py` Does
 
 1. **Recursive project scanning** — walks the project tree with `followlinks=True`,
-   auto-excluding `.git`, `node_modules`, `.venv`, `__FRAGMENTS__`, `__pycache__`, etc.
-   If `__SPECS__/` exists it is auto-detected and used as the scan root.
-   **`__SPECS__/` entries are often symlinks** (e.g. pointing to OneDrive/SharePoint
+   auto-excluding `.git`, `node_modules`, `.venv`, `corpus`, `__pycache__`, etc.
+   If `data/intake/` exists it is auto-detected and used as the scan root.
+   **`data/intake/` entries are often symlinks** (e.g. pointing to OneDrive/SharePoint
    folders) — `followlinks=True` is required or every file under them is silently missed.
    1b. **Video file detection** — MP4, MKV, AVI, MOV, WEBM, M4V, WMV are routed
    to the video pipeline automatically during normal scanning runs.
@@ -176,7 +242,7 @@ Copy them into every target project before running the pipeline.
    ancestor directory as a context prefix, so fragment directories never collide.
 7. **Incremental manifest** — `.manifest.json` saved after every file.
    Interrupted batch runs resume cleanly without re-processing completed files.
-8. **Master index** — `__FRAGMENTS__/INDEX.md` lists every document and output.
+8. **Master index** — `data/corpus/INDEX.md` lists every document and output.
 
 For the full DOCX→PDF strategy details and anti-patterns:
 → @references/docx-pdf-strategies.md
@@ -188,7 +254,7 @@ Standalone video processor for when you only need video extraction
 
 1. **Whisper VTT** — transcribes audio to `_whisper.vtt` subtitle files
 2. **Scene-change cadres** — extracts `cadre_NNN.jpg` images at scene boundaries
-3. Uses the same `__FRAGMENTS__/` structure and `.manifest.json` change tracking
+3. Uses the same `data/corpus/` structure and `.manifest.json` change tracking
 4. Supports `--whisper-model` (tiny/base/small/medium/large) and `--threshold`
 
 Usage: `scripts/.venv/bin/python scripts/video_extract.py`
@@ -205,7 +271,7 @@ Usage: `scripts/.venv/bin/python scripts/video_extract.py`
 
 ### What `verify_images.py` Does
 
-- Scans `__FRAGMENTS__/` for all generated WEBP files
+- Scans `data/corpus/` for all generated WEBP files
 - Validates format, dimensions, and decodability via Pillow
 - Checks LLM vision constraints (min 10KB, max 20MB, 100–8192px)
 - Generates `IMAGE_VERIFICATION_REPORT.md`
@@ -267,7 +333,7 @@ chmod +x {ProjectRoot}/scripts/setup_converter.sh
 ```
 
 Always run converter commands from the project root.
-Documents do not need to be in `__SPECS__/` — the converter scans the whole tree.
+Documents do not need to be in `data/intake/` — the converter scans the whole tree.
 
 ## Step 2: One-Time Setup
 
@@ -294,27 +360,27 @@ Option B: scripts/.venv/bin/python scripts/doc_converter.py
 
 | Flag                    | Effect                                                           |
 | ----------------------- | ---------------------------------------------------------------- |
-| _(no flags)_            | Scan CWD recursively (or `__SPECS__/` if it exists)              |
+| _(no flags)_            | Scan CWD recursively (or `data/intake/` if it exists)         |
 | `--scan-dir PATH`       | Scan only this directory (recursively)                           |
 | `--force`               | Reprocess everything (ignore change tracking)                    |
 | `--file "name.pdf"`     | Process a specific file only (searched recursively)              |
 | `--clean`               | Remove fragments for deleted/moved source documents              |
 | `--no-recurse`          | Only scan top-level of the scan directory                        |
-| `--fragments-dir PATH`  | Override `__FRAGMENTS__/` output location                        |
+| `--fragments-dir PATH`  | Override `data/corpus/` output location                       |
 | `--whisper-model MODEL` | Whisper model: tiny, base, small, medium, large (default: base)  |
 | `--scene-threshold N`   | Scene detection sensitivity — lower = more cadres (default: 5.0) |
 
 ### Directory Exclusions
 
-Automatically excluded: `__FRAGMENTS__` `.venv` `venv` `.env` `node_modules`
+Automatically excluded: `corpus` `.venv` `venv` `.env` `node_modules`
 `.git` `.svn` `.tmp` `.cache` `__pycache__` `dist` `build` `.tox` `.idea` `.vscode`
 and any directory starting with `.`
 
 ## Step 4: Verify Output
 
 ```text
-∆1: list_directory("__FRAGMENTS__/") → confirm fragment directories exist
-∆2: read_file("__FRAGMENTS__/INDEX.md") → check master index
+∆1: list_directory("data/corpus/") → confirm fragment directories exist
+∆2: read_file("data/corpus/INDEX.md") → check master index
 ∆3: scripts/.venv/bin/python scripts/verify_images.py
 ∆4: Spot-check one markitdown + one docling output for quality
 ∆5: For DOCX/PPTX: confirm images/ dir is non-empty
@@ -324,7 +390,7 @@ and any directory starting with `.`
 ### Expected Output Structure
 
 ```text
-__FRAGMENTS__/
+data/corpus/
 ├── INDEX.md                              # Master index of all documents
 ├── .manifest.json                        # SHA256 change tracking (saved per-file)
 ├── IMAGE_VERIFICATION_REPORT.md
@@ -341,7 +407,7 @@ __FRAGMENTS__/
 ├── {Video Name}/                         # Video files
 │   ├── markdown/
 │   │   ├── {name}_whisper.vtt            # Whisper-generated subtitles
-│   │   └── {name}.vtt                    # Manual subtitle (if found in __SPECS__)
+│   │   └── {name}.vtt                    # Manual subtitle (if found in data/intake)
 │   └── images/
 │       ├── cadre_000.jpg                 # Scene-change frame images
 │       ├── cadre_001.jpg
@@ -406,7 +472,7 @@ p002-004: Page 2 │ Page 3 │ Page 4
 Overlapping windows preserve context across page boundaries.
 Typical size: 300KB–2MB per image (LibreOffice output).
 
-Read with: `read_file("__FRAGMENTS__/{doc}/images/{doc}_p010-012.webp")`
+Read with: `read_file("data/corpus/{doc}/images/{doc}_p010-012.webp")`
 
 WEBP is essential for architecture diagrams, complex tables, multi-column layouts,
 cover pages, and any visual content requiring LLM vision analysis.
@@ -447,18 +513,18 @@ and summary report format:
 
 ## Anti-Patterns
 
-| Approach                                        | Why it fails                                                                                                                                                                                                                                                                                           |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `PyMuPDF` DOCX→PDF                              | Silently drops all embedded images — diagram pages render blank in WEBP output                                                                                                                                                                                                                         |
-| `pyvips` direct DOCX                            | pyvips has no DOCX loader: "not a known file format" — PDF is always required                                                                                                                                                                                                                          |
-| Skipping WEBP for Office docs                   | Architecture diagrams and visual tables are only readable via LLM vision on WEBP                                                                                                                                                                                                                       |
-| `brew install libreoffice` (no `--cask`)        | Installs the formula, not the app — `soffice` is never linked                                                                                                                                                                                                                                          |
-| `docx2pdf` as primary strategy                  | Word AppleScript is unreliable: permission dialogs, 2-min timeouts, silent drops                                                                                                                                                                                                                       |
-| Assuming `pyvips.Image.pdfload` works           | libvips ships pdfload as a **dynamic module** (vips-poppler.dylib) that may not load at runtime even when `vips --vips-config` says "true". Always probe with `_pdfload_available()` and fall back to `pdftoppm`. The silent failure mode is an empty `AttributeError` with no message — easy to miss. |
-| `os.walk(__SPECS__)` without `followlinks=True` | `__SPECS__/` entries are symlinks — walk stops at the symlink, finds zero files. Always use the converter script or pass `followlinks=True` / `find -L` explicitly.                                                                                                                                    |
-| Ad-hoc manifest cross-check via custom scan     | Writing a custom file scanner to check what's in the manifest bypasses the converter's symlink handling. Run `doc_converter.py` (dry-run or normal) to get an authoritative view.                                                                                                                      |
-| Whisper `large` model on CPU                    | Extremely slow (~6h for 30-min video on ARM Mac). Use `tiny` or `base` for CPU; reserve `large` for GPU.                                                                                                                                                                                               |
-| Eager vips module loading with Whisper          | Loading vips modules at import time interferes with PyTorch/Whisper on ARM Macs. Use lazy init pattern.                                                                                                                                                                                                |
+| Approach                                             | Why it fails                                                                                                                                                                                                                                                                                           |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PyMuPDF` DOCX→PDF                                   | Silently drops all embedded images — diagram pages render blank in WEBP output                                                                                                                                                                                                                         |
+| `pyvips` direct DOCX                                 | pyvips has no DOCX loader: "not a known file format" — PDF is always required                                                                                                                                                                                                                          |
+| Skipping WEBP for Office docs                        | Architecture diagrams and visual tables are only readable via LLM vision on WEBP                                                                                                                                                                                                                       |
+| `brew install libreoffice` (no `--cask`)             | Installs the formula, not the app — `soffice` is never linked                                                                                                                                                                                                                                          |
+| `docx2pdf` as primary strategy                       | Word AppleScript is unreliable: permission dialogs, 2-min timeouts, silent drops                                                                                                                                                                                                                       |
+| Assuming `pyvips.Image.pdfload` works                | libvips ships pdfload as a **dynamic module** (vips-poppler.dylib) that may not load at runtime even when `vips --vips-config` says "true". Always probe with `_pdfload_available()` and fall back to `pdftoppm`. The silent failure mode is an empty `AttributeError` with no message — easy to miss. |
+| `os.walk(data/intake)` without `followlinks=True` | `data/intake/` entries are symlinks — walk stops at the symlink, finds zero files. Always use the converter script or pass `followlinks=True` / `find -L` explicitly.                                                                                                                               |
+| Ad-hoc manifest cross-check via custom scan          | Writing a custom file scanner to check what's in the manifest bypasses the converter's symlink handling. Run `doc_converter.py` (dry-run or normal) to get an authoritative view.                                                                                                                      |
+| Whisper `large` model on CPU                         | Extremely slow (~6h for 30-min video on ARM Mac). Use `tiny` or `base` for CPU; reserve `large` for GPU.                                                                                                                                                                                               |
+| Eager vips module loading with Whisper               | Loading vips modules at import time interferes with PyTorch/Whisper on ARM Macs. Use lazy init pattern.                                                                                                                                                                                                |
 
 ---
 
@@ -480,7 +546,7 @@ scripts/.venv/bin/python scripts/doc_converter.py --force
 ## Post-Ingestion Checklist
 
 ```text
-- [ ] All scanned documents have folders in __FRAGMENTS__/
+- [ ] All scanned documents have folders in data/corpus/
 - [ ] Each document has at least one markdown output
 - [ ] PDF documents have non-empty images/ directories
 - [ ] DOCX/PPTX documents have non-empty images/ directories
@@ -488,7 +554,7 @@ scripts/.venv/bin/python scripts/doc_converter.py --force
 - [ ] .drawio files have parsed markdown (components + connections)
 - [ ] Video files have _whisper.vtt in markdown/ (if Whisper installed)
 - [ ] Video files have cadre_NNN.jpg in images/ (if scenedetect installed)
-- [ ] Manual VTT/SRT files from __SPECS__ are preserved in markdown/
+- [ ] Manual VTT/SRT files from data/intake are preserved in markdown/
 - [ ] INDEX.md lists all processed documents
 - [ ] verify_images.py reports no critical issues
 - [ ] No "status": "failed" entries in .manifest.json
@@ -497,8 +563,8 @@ scripts/.venv/bin/python scripts/doc_converter.py --force
 
 ## Composition
 
-- **Downstream:** Feeds `__FRAGMENTS__/` into the **document-survey** skill.
-- Any other analysis workflow can consume `__FRAGMENTS__/` directly.
+- **Downstream:** Feeds `data/corpus/` into the **document-survey** skill.
+- Any other analysis workflow can consume `data/corpus/` directly.
 
 ## Video Processing Details
 
@@ -531,7 +597,7 @@ If no scene changes are detected, the first frame is saved as a fallback.
 
 ### Manual Subtitle Preservation
 
-When video files in `__SPECS__/` have companion `.vtt` or `.srt` files
+When video files in `data/intake/` have companion `.vtt` or `.srt` files
 (e.g. from Microsoft Teams or manual transcription), these are automatically
 copied into the fragment's `markdown/` directory alongside the Whisper output.
 Both manual and Whisper-generated subtitles are preserved — they complement

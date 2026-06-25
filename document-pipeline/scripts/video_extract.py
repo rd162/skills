@@ -6,8 +6,8 @@ Extracts from MP4 (and other video) files:
 1. VTT subtitles using OpenAI Whisper (speech-to-text)
 2. Scene-change images using PySceneDetect + OpenCV
 
-Output follows the same __FRAGMENTS__/ structure as doc_converter.py:
-    __FRAGMENTS__/{VideoName}/
+Output follows the same data/corpus/ structure as doc_converter.py:
+    data/corpus/{VideoName}/
         markdown/{VideoName}_whisper.vtt
         images/cadre_000.jpg, cadre_001.jpg, ...
 
@@ -15,7 +15,7 @@ Integrates with the existing manifest (.manifest.json) for incremental
 processing and SHA256 change detection.
 
 Usage:
-    # Process all videos in __SPECS__ (or current directory):
+    # Process all videos in data/intake (or current directory):
     python scripts/video_extract.py
 
     # Process a single video:
@@ -57,7 +57,7 @@ VIDEO_EXTENSIONS = {".mp4", ".mkv", ".avi", ".mov", ".webm", ".m4v", ".wmv"}
 # Directories to skip when scanning
 SKIP_DIRS = {
     ".git", ".svn", "node_modules", "__pycache__", ".venv", "venv",
-    "__FRAGMENTS__", ".tmp", ".tox", ".mypy_cache", ".pytest_cache",
+    "data/corpus", ".tmp", ".tox", ".mypy_cache", ".pytest_cache",
 }
 
 
@@ -287,11 +287,11 @@ def main():
     )
     parser.add_argument(
         "--scan-dir", type=str,
-        help="Directory to scan (default: __SPECS__ if it exists, else cwd)"
+        help="Directory to scan (default: data/intake if it exists, else cwd)"
     )
     parser.add_argument(
-        "--fragments-dir", type=str, default="__FRAGMENTS__",
-        help="Output fragments directory (default: __FRAGMENTS__)"
+        "--fragments-dir", type=str, default="data/corpus",
+        help="Output fragments directory (default: data/corpus)"
     )
     parser.add_argument(
         "--force", action="store_true",
@@ -333,7 +333,9 @@ def main():
     else:
         scan_dir = Path(args.scan_dir) if args.scan_dir else None
         if scan_dir is None:
-            specs = Path("__SPECS__")
+            specs = Path("data/intake")
+            if not specs.is_dir() and Path(".agents/intake").is_dir():
+                specs = Path(".agents/intake")  # legacy fallback
             scan_dir = specs if specs.is_dir() else Path(".")
         logger.info(f"Scanning {scan_dir} for video files...")
         video_files = scan_for_videos(scan_dir)

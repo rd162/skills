@@ -5,7 +5,7 @@ metadata:
   author: rd162@hotmail.com
 tier: T3
 source_class: llm
-last_updated: 2026-04-29
+last_updated: 2026-06-24
 ---
 
 # PE Library Analyzer
@@ -16,7 +16,7 @@ You are performing a deep structural analysis of a prompt engineering knowledge 
 
 These repos typically contain some combination of:
 - `__SKILLS__/` or skills at `~/.claude/skills/` — reusable Claude Code agent skills
-- `__SPECS__/` or `__FRAGMENTS__/` — raw and converted documents for analysis
+- `data/intake/` / `data/corpus/` (or legacy `.agents/intake/` · `.agents/corpus/`) — raw and converted documents for analysis
 - System prompt files — agent configuration templates
 - Primers and methodology guides — Chain of Thought, ReAct, Chain of Draft, etc.
 - Knowledge management files — AGENTS.md, CLAUDE.md, MEMORY.md, continuation narratives
@@ -85,6 +85,6 @@ A quick-reference map of the most important files and what they contain.
 
 - If a directory has more than 20 files, list the first 10 and note "and N more" rather than reading every one.
 - For large files (>200 lines), read just the first 60–80 lines unless a specific section is clearly relevant.
-- If `__FRAGMENTS__/` exists, note it but don't read fragments — just report the count and source documents.
+- If `data/corpus/` (or legacy `.agents/corpus/`) exists, note it but don't read fragments — just report the count and source documents.
 - If you can't find a standard structure, adapt: explore what's there and map it to the output sections as best you can.
 - Be concrete: name specific files, quote key phrases from docs, list actual skill names. Don't be vague.

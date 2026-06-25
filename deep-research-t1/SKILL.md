@@ -23,7 +23,7 @@ metadata:
   tags: chain-of-knowledge, web-search, source-tiering, deep-research, high-stakes, sub-agent-dispatch, graceful-degradation, domain-escalation, playbook-generation
 tier: T3
 source_class: llm
-last_updated: 2026-04-29
+last_updated: 2026-06-24
 ---
 
 # Deep Research
@@ -107,11 +107,11 @@ Skip if the topic is specific and unambiguous.
 
 ## Termination
 
-| Signal    | Condition                                                        | Action                                            |
-| --------- | ---------------------------------------------------------------- | ------------------------------------------------- |
+| Signal    | Condition                                                       | Action                                            |
+| --------- | --------------------------------------------------------------- | ------------------------------------------------- |
 | SATURATED | Core covered, or depth ≥ max, or relevance < 0.3, or budget out | STOP — synthesize and present findings            |
-| NO_TOOLS  | Zero search/fetch tools available after Δ1 scan                  | Degrade — training knowledge with disclaimer      |
-| EMERGENCY | External verification becomes impossible mid-protocol            | Mark uncertainty — never present as authoritative |
+| NO_TOOLS  | Zero search/fetch tools available after Δ1 scan                 | Degrade — training knowledge with disclaimer      |
+| EMERGENCY | External verification becomes impossible mid-protocol           | Mark uncertainty — never present as authoritative |
 
 ## Graceful Degradation
 
@@ -180,12 +180,12 @@ and @references/domain-knowledge-matrix.md for domain-specific patterns.
 
 Cynefin framework (Snowden & Boone, 2007) grounds depth selection:
 
-| Domain Complexity | CoK Depth | Research Approach |
-| ----------------- | --------- | ----------------- |
-| **Simple** | L0-L2 | Standard Δ1-Δ7, few searches |
-| **Complicated** | L0-L3 | Multiple angles, T1-T2 sources |
-| **Complex** | L0-L4 | Deep research, broad sweep |
-| **Chaotic** | L0-L4 + consequences | Maximum depth, forward-consequence fills |
+| Domain Complexity | CoK Depth            | Research Approach                        |
+| ----------------- | -------------------- | ---------------------------------------- |
+| **Simple**        | L0-L2                | Standard Δ1-Δ7, few searches             |
+| **Complicated**   | L0-L3                | Multiple angles, T1-T2 sources           |
+| **Complex**       | L0-L4                | Deep research, broad sweep               |
+| **Chaotic**       | L0-L4 + consequences | Maximum depth, forward-consequence fills |
 
 ### Expansion Levels and Stop Criteria
 
@@ -204,12 +204,12 @@ budget exhausted, circular references detected.
 
 ## Source Tiers
 
-| Tier | Description                          | Default Confidence | Weight in Conflicts |
-| ---- | ------------------------------------ | ------------------ | ------------------- |
-| T1   | Peer-reviewed / official vendor docs / RFCs / standards bodies — **public sources only** | HIGH | Strongest |
-| T2   | Expert blogs, established trade press, primary partner documents (`__SPECS__/`) | MED | Strong |
-| T3   | Community forums, Stack Overflow, fragments/extracts (`__FRAGMENTS__/`), summaries of prior tiers | LOW | Weak |
-| T4   | Opinions, unverified claims, AI-generated content, project-internal generated docs (surveys, playbooks, memory) | LOW | Weakest |
+| Tier | Description                                                                                                     | Default Confidence | Weight in Conflicts |
+| ---- | --------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------- |
+| T1   | Peer-reviewed / official vendor docs / RFCs / standards bodies — **public sources only**                        | HIGH               | Strongest           |
+| T2   | Expert blogs, established trade press, primary partner documents (`data/intake/`)                            | MED                | Strong              |
+| T3   | Community forums, Stack Overflow, fragments/extracts (`data/corpus/`), summaries of prior tiers              | LOW                | Weak                |
+| T4   | Opinions, unverified claims, AI-generated content, project-internal generated docs (surveys, playbooks, memory) | LOW                | Weakest             |
 
 **T1 is reserved for true public sources.** Internal/closed documents
 never qualify as T1, even when authoritative inside the organization.
@@ -227,10 +227,25 @@ When citing a local file (project doc, fragment, memory entry):
 
 1. Read the file's frontmatter `tier` if present — use it.
 2. If absent, apply default-by-path:
-   - `__SPECS__/**` → T2 (`source_class: specs`)
-   - `__FRAGMENTS__/**` → T3 (`source_class: fragment`)
-   - `.agents/memory/**`, `.claude/memory/**` → T4 (`source_class: llm`)
+   - **Specs (per feature)** → T2 (`source_class: human`).
+     Canonical: `specs/<feature>/{requirements,design,tasks}.md`; legacy `.agents/spec/`;
+     recognize `.kiro/specs/`, Spec-Kit `specs/NNN-*`, OpenSpec `openspec/changes/`.
+   - **Zone 1 (source / intake layer)** → T2 (`source_class: specs`).
+     Canonical path: `data/intake/**` (or CCDS `data/raw/`, `data/external/`).
+     Aliases: `sources/`, `raw/`, `intake/`, `documents/`, `upstream/`, `ingest/`;
+     legacy `.agents/intake/`, `.agents/external-refs/`, `__SPECS__/`.
+   - **Zone 2 (corpus / processed layer)** → T3 (`source_class: fragment`).
+     Canonical path: `data/corpus/**` (or CCDS `data/processed/`).
+     Aliases: `corpus/`, `fragments/`, `knowledge/`, `artifacts/`, `extracted/`,
+     `derived/`, `enriched/`, `processed/`, `index/`;
+     legacy `.agents/corpus/`, `.agents/kb-cache/`, `__FRAGMENTS__/`.
+   - **Generated research** → T4 (`source_class: llm`).
+     Canonical: `data/research/**` (generated surveys/playbooks; lower confidence than corpus); legacy `.agents/research/`.
+   - **Memory (curated)** → T3 (`source_class: llm_human`; T4 if raw).
+     Canonical: project `memory/**` (INDEX + topic files); recognize `memory-bank/`, `.claude/memory/`, `~/.claude/…/memory/`; legacy `.agents/memory/**`.
    - Project-root generated docs (surveys, playbooks, discovery reports) → T4
+   - Ephemeral: `.cache/**` (legacy `.agents/cache/`, `.agents/scratch/`) → below T4, never cited.
+   - See `references/source-tiering.md` §8 for the full canonical layout + cross-tool recognize-map.
 3. If still unresolved, infer from git history + content:
    - `git log --diff-filter=A -- <file>` for first-add date and message
    - "import"/"ingest"/"convert" in commit message → T3 fragment
@@ -346,12 +361,12 @@ systematic review needed, user says "deep dive," or HIGH-STAKES domain.
 and a sub-agent mechanism is available,
 dispatch each subject to a dedicated sub-agent.
 
-| Subject count | Strategy |
-| ------------- | -------- |
-| 1 | Inline Δ1-Δ7 |
-| 2-3 | One sub-agent per subject |
-| 4-6 | Group related subjects (2-3 per agent) |
-| 7+ | Group into 3-5 agents by affinity |
+| Subject count | Strategy                               |
+| ------------- | -------------------------------------- |
+| 1             | Inline Δ1-Δ7                           |
+| 2-3           | One sub-agent per subject              |
+| 4-6           | Group related subjects (2-3 per agent) |
+| 7+            | Group into 3-5 agents by affinity      |
 
 Each sub-agent independently executes full Δ1-Δ7.
 Master synthesizes, compares, and identifies gaps.

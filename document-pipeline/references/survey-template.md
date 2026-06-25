@@ -1,7 +1,7 @@
 ---
 tier: T3
 source_class: llm
-last_updated: 2026-04-29
+last_updated: 2026-06-24
 description: survey template
 ---
 
@@ -9,7 +9,7 @@ description: survey template
 
 **Document Purpose:**
 Structured extraction of all RFP requirements, constraints, and context
-from source documents (`__FRAGMENTS__/`).
+from source documents (`data/corpus/`).
 This document serves as the single source of truth for proposal generation.
 
 | Field                | Value         |
@@ -299,7 +299,7 @@ This document serves as the single source of truth for proposal generation.
 <!-- Reference WEBP images if architecture diagrams exist -->
 
 **Architecture Diagram Source:**
-`__FRAGMENTS__/{doc}/images/{doc}_p{NNN}-{NNN}.webp`
+`data/corpus/{doc}/images/{doc}_p{NNN}-{NNN}.webp`
 
 **Description:**
 
@@ -446,7 +446,7 @@ This document serves as the single source of truth for proposal generation.
 
 | #   | Document        | Type                 | Pages | Fragment Location         |
 | --- | --------------- | -------------------- | ----- | ------------------------- |
-| 1   | {document_name} | {PDF/DOCX/XLSX/PPTX} | {n}   | `__FRAGMENTS__/{folder}/` |
+| 1   | {document_name} | {PDF/DOCX/XLSX/PPTX} | {n}   | `data/corpus/{folder}/` |
 
 ### 11.2 Converter Coverage
 
@@ -460,7 +460,7 @@ This document serves as the single source of truth for proposal generation.
 
 | RFP Topic | Document   | Section         | Fragment Reference              |
 | --------- | ---------- | --------------- | ------------------------------- |
-| {topic}   | {document} | {section_title} | `__FRAGMENTS__/{path}` L{lines} |
+| {topic}   | {document} | {section_title} | `data/corpus/{path}` L{lines} |
 
 ---
 

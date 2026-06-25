@@ -7,14 +7,14 @@ Converts documents (PDF, Word, PPT, Excel, draw.io diagrams, video) to:
 2. WEBP images using pyvips (3-page sliding window for LLM vision processing)
 3. draw.io diagrams: XML-parsed markdown + CLI-exported WEBP images
 4. Video files: VTT subtitles via Whisper + scene-change cadre images via PySceneDetect
-   - Manual VTT/SRT files from __SPECS__ are preserved alongside Whisper-generated VTTs
+   - Manual VTT/SRT files from data/intake are preserved alongside Whisper-generated VTTs
 
 Also handles archives (ZIP, TAR, 7Z) — auto-extracts and processes all
 documents inside using the same pipeline.
 
 By default, scans the current working directory recursively for all
 supported document types (excluding common non-content dirs like .git,
-node_modules, __FRAGMENTS__, .venv, etc.).  If __SPECS__/ exists, it is
+node_modules, data/corpus, .venv, etc.).  If data/intake/ exists, it is
 used as the scan root automatically.  Use --scan-dir to override.
 
 Features:
@@ -26,19 +26,19 @@ Features:
 - Sliding window WEBP images (pages 1-3, 2-4, 3-5 …)
 
 Usage:
-    # Scan project root recursively (auto-detects __SPECS__ if present):
+    # Scan project root recursively (auto-detects data/intake if present):
     python scripts/doc_converter.py
     python scripts/doc_converter.py --force
 
     # Limit to a specific directory:
-    python scripts/doc_converter.py --scan-dir __SPECS__
+    python scripts/doc_converter.py --scan-dir data/intake
     python scripts/doc_converter.py --scan-dir docs/
 
     # Process a single file:
     python scripts/doc_converter.py --file "specific.pdf"
 
     # Backward-compatible (--specs-dir still works):
-    python doc_converter.py --specs-dir __SPECS__ --fragments-dir __FRAGMENTS__
+    python doc_converter.py --specs-dir data/intake --fragments-dir data/corpus
 
 Requirements:
     pip install -r requirements_converter.txt
@@ -154,7 +154,7 @@ SUPPORTED_EXTENSIONS = {
     '.wmv':    'video',
 }
 
-# Subtitle extensions that may accompany video files in __SPECS__
+# Subtitle extensions that may accompany video files in data/intake
 SUBTITLE_EXTENSIONS = {'.vtt', '.srt'}
 
 # Default scene-detection threshold (lower = more sensitive, good for 30-min meetings)
@@ -175,7 +175,7 @@ ARCHIVE_EXTENSIONS = {
 # Directories to exclude when scanning a project root recursively.
 # These are never scanned for source documents.
 EXCLUDED_DIRS = {
-    '__FRAGMENTS__',
+    'corpus',
     '.venv', 'venv', '.env',
     'node_modules',
     '.git', '.svn', '.hg',
@@ -423,7 +423,7 @@ def extract_archive(filepath: Path, dest_dir: Path) -> List[Path]:
 def _source_tier(filepath: Path) -> str:
     """Infer the tier of a source document from its path."""
     path_str = str(filepath).lower()
-    if '__specs__' in path_str or '/specs/' in path_str:
+    if 'intake' in path_str:
         return "T2"
     # Public docs saved locally could be T1; unknown sources default to T2
     # (conservative — most sources in this pipeline are internal partner docs)
@@ -1475,7 +1475,7 @@ def _find_companion_subtitles(video_path: Path) -> List[Path]:
 def _copy_companion_subtitles(
     video_path: Path, markdown_dir: Path, fragments_dir: Path,
 ) -> List[str]:
-    """Copy manual VTT/SRT files from __SPECS__ into the fragment's markdown dir."""
+    """Copy manual VTT/SRT files from data/intake into the fragment's markdown dir."""
     companions = _find_companion_subtitles(video_path)
     copied = []
     for sub in companions:
@@ -1951,7 +1951,7 @@ def _derive_partner_prefix(filepath: Path) -> Optional[str]:
     """
     Extract a human-readable partner/context prefix from the file's path.
 
-    Looks for known directory patterns in __SPECS__:
+    Looks for known directory patterns in data/intake:
       - ``partners-journey/{PartnerDir}/...``  →  partner name
       - ``{Country}/{PartnerDir}/...``          →  partner name
       - Any distinguishing parent dir component
@@ -2047,14 +2047,14 @@ def main():
         description="Convert documents to Markdown + WEBP for LLM processing.\n\n"
                     "By default, scans the current directory recursively for all\n"
                     "supported document types. Use --scan-dir to limit the scan\n"
-                    "to a specific directory (e.g. __SPECS__/).",
+                    "to a specific directory (e.g. data/intake/).",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
         '--scan-dir', type=Path,
         default=None,
         help="Directory to scan for documents. Default: CWD (recursive). "
-             "Use --scan-dir __SPECS__ to limit to that directory.",
+             "Use --scan-dir data/intake to limit to that directory.",
     )
     # Keep --specs-dir as an alias for backward compatibility
     parser.add_argument(
@@ -2064,8 +2064,8 @@ def main():
     )
     parser.add_argument(
         '--fragments-dir', type=Path,
-        default=Path("__FRAGMENTS__"),
-        help="Output directory for converted files (default: ./__FRAGMENTS__/ relative to CWD)",
+        default=Path("data/corpus"),
+        help="Output directory for converted files (default: ./data/corpus/ relative to CWD)",
     )
     parser.add_argument(
         '--force', action='store_true',
@@ -2108,13 +2108,16 @@ def main():
     # Resolve scan directory: --scan-dir > --specs-dir > auto-detect
     scan_dir = args.scan_dir or args.specs_dir
     if scan_dir is None:
-        # Auto-detect: if __SPECS__/ exists, use it; otherwise scan CWD
-        if Path("__SPECS__").exists():
-            scan_dir = Path("__SPECS__")
-            logger.info("Auto-detected __SPECS__/ directory — scanning it.")
+        # Auto-detect: prefer data/intake/, fall back to legacy .agents/intake/, else scan CWD
+        if Path("data/intake").exists():
+            scan_dir = Path("data/intake")
+            logger.info("Auto-detected data/intake/ directory — scanning it.")
+        elif Path(".agents/intake").exists():
+            scan_dir = Path(".agents/intake")
+            logger.info("Auto-detected legacy .agents/intake/ directory — scanning it.")
         else:
             scan_dir = Path(".")
-            logger.info("No __SPECS__/ found — scanning project root recursively.")
+            logger.info("No data/intake/ found — scanning project root recursively.")
     
     if not scan_dir.exists():
         logger.error(f"✗ Scan directory not found: {scan_dir}")

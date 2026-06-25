@@ -1,7 +1,7 @@
 ---
 tier: T3
 source_class: llm
-last_updated: 2026-04-29
+last_updated: 2026-06-24
 description: change tracking
 ---
 
@@ -14,7 +14,7 @@ Every run is incremental by default — only new or changed files are processed.
 
 ## How It Works
 
-`.manifest.json` in `__FRAGMENTS__/` tracks every processed document using its
+`.manifest.json` in `data/corpus/` tracks every processed document using its
 **path relative to CWD** as the stable key (not just the filename).
 This prevents collisions when identically-named files live in different directories
 (e.g. `us/report.pdf` vs `france/report.pdf`).
@@ -112,7 +112,7 @@ each manifest key's source path still exists on disk.
 **New documents added:**
 
 ```text
-∆1: Place new documents anywhere in the project (or in __SPECS__/)
+∆1: Place new documents anywhere in the project (or in data/intake/)
 ∆2: Run converter — only new files are processed; existing files are skipped
 ∆3: Verify with verify_images.py
 ∆4: Check INDEX.md for updated inventory
@@ -139,7 +139,7 @@ each manifest key's source path still exists on disk.
 ```text
 ∆1: Run: scripts/.venv/bin/python scripts/doc_converter.py --force
     (reprocesses all documents regardless of hash)
-    OR: delete __FRAGMENTS__/ entirely, then run without --force
+    OR: delete data/corpus/ entirely, then run without --force
 ```
 
 **Large batch interrupted mid-run:**
@@ -163,7 +163,7 @@ SUMMARY
 ⏭ Unchanged:  43
 ✗ Failed:      1
 🗑 Cleaned:    0
-📁 Output:    __FRAGMENTS__
+📁 Output:    data/corpus
 📋 Tracked:   56 total entry/entries
 DOCX→PDF strategy used: LibreOffice
 ════════════════════════════════════════════════════════════

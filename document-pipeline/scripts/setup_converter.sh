@@ -237,7 +237,7 @@ if [ "$IN_SCRIPTS_SUBDIR" = true ]; then
     echo "     ... doc_converter.py --file name.pdf   # process one file"
     echo "     ... doc_converter.py --help            # full usage"
     echo ""
-    echo "NOTE: __SPECS__/ and __FRAGMENTS__/ are resolved relative to your"
+    echo "NOTE: data/intake/ and data/corpus/ are resolved relative to your"
     echo "      current working directory.  Run from the project root."
 else
     echo "Next steps:"

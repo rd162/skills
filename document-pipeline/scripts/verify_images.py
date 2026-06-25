@@ -5,7 +5,7 @@ Image Verification Script
 Verifies that generated WEBP images are valid and readable for LLM vision processing.
 
 This script:
-1. Scans __FRAGMENTS__ for generated WEBP images
+1. Scans data/corpus for generated WEBP images
 2. Validates image format, dimensions, and readability
 3. Reports on image quality and suitability for vision models
 4. Generates a verification report
@@ -14,7 +14,7 @@ Usage:
     python verify_images.py [--fragments-dir PATH]
 
 Note: The images can be read by LLM vision models using read_file tool
-      with the image path (e.g., read_file("__FRAGMENTS__/docname/images/file.webp"))
+      with the image path (e.g., read_file("data/corpus/docname/images/file.webp"))
 """
 
 import os
@@ -189,7 +189,7 @@ def generate_report(results: List[Dict], fragments_dir: Path) -> Path:
         f.write("To read these images with an LLM that supports vision:\n\n")
         f.write("```python\n")
         f.write("# Using read_file tool (supports vision for image files)\n")
-        f.write('image_content = read_file("__FRAGMENTS__/document_name/images/image.webp")\n')
+        f.write('image_content = read_file("data/corpus/document_name/images/image.webp")\n')
         f.write("# The LLM will receive the image for visual analysis\n")
         f.write("```\n\n")
     
@@ -204,7 +204,7 @@ def main():
     parser.add_argument(
         '--fragments-dir',
         type=Path,
-        default=Path(__file__).parent / "__FRAGMENTS__",
+        default=Path(__file__).parent / "data/corpus",
         help="Directory containing generated fragments"
     )
     parser.add_argument(
