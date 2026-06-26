@@ -5,9 +5,11 @@ description: >-
   AGENTS.md as the single source of truth (specs/, memory/, data/, .agents/skills/, scripts/). New
   projects get the scaffolded layout plus an AGENTS.md whose Tool Onboarding Contract lets any agent tool
   (Claude Code, Copilot, Cursor, Codex, Gemini, Kiro) self-configure by reference, not duplication.
-  Existing tool projects are adopted additively (bridge files, never move the tool's dirs); when
-  explicitly asked to convert/migrate a CUSTOM non-tool layout, physically rename/move its dirs into the
-  canonical ones. Use when the user says initialize / scaffold / standardize / agentize / onboard a
+  Existing tool projects are adopted additively (bridge files, never move the tool's dirs). When an
+  existing tool project ALSO has its own non-tool custom dirs and the user explicitly asks to convert,
+  those non-tool dirs are migrated while the tool's dirs stay untouched (Mode B+M). When explicitly
+  asked to convert a fully CUSTOM non-tool layout, physically rename/move its dirs into the canonical
+  ones (Mode C). Use when the user says initialize / scaffold / standardize / agentize / onboard a
   project, set up AGENTS.md, bootstrap agent structure, or convert / migrate / restructure into the
   AGENTS.md layout.
 metadata:
@@ -70,13 +72,18 @@ third-party tools (pip/pytest/mypy/build) and stays gitignored — agents never 
     EXISTING-CUSTOM = has code + its own ad-hoc dirs, no known tool     → Mode B default
 ∆ Convert gate: did the user EXPLICITLY ask to convert / migrate / restructure / reorganize
     (not merely onboard / adopt / standardize)?  yes + EXISTING-CUSTOM → Mode C.
+∆ Non-tool dirs check (EXISTING-TOOL + explicit convert only):
+    Does the project also have dirs that DON'T belong to any recognized tool AND deviate from
+    the canonical layout? (e.g. .agents/memory/ instead of memory/, .agents/corpus/ instead of
+    data/corpus/, a custom docs/ instead of memory/)
+    yes + explicit convert → Mode B+M (protect tool dirs; migrate project-owned dirs).
 ⚠ NEVER overwrite an existing file. Extend/merge; confirm before any replacement; no .bak (git is the net).
-⚠ Moving/renaming is destructive → Mode C needs the explicit request AND a confirmed move plan.
+⚠ Moving/renaming is destructive → Mode C and B+M both need the explicit request AND a confirmed move plan.
 ```
 
-Routing: NEW → A · recognized tool → B (always additive — never move tool dirs) ·
-custom + explicit convert → C (move/rename) · custom without convert → B (additive).
-Read `references/tool-bridges.md` before writing tool-facing instructions or a Mode C move plan.
+Routing: NEW → A · recognized tool, no non-tool custom dirs → B · recognized tool + non-tool
+custom dirs + explicit convert → B+M · custom + explicit convert → C · all others → B.
+Read `references/tool-bridges.md` before writing tool-facing instructions or a Mode B+M/C move plan.
 
 ## Mode A — NEW project (greenfield)
 
@@ -101,15 +108,56 @@ Read `references/tool-bridges.md` before writing tool-facing instructions or a M
 5. **No symlinks** (git + Windows unsafe). Bridge with `@import` where supported (Claude `CLAUDE.md`) and otherwise with explicit instruction lines ("memory lives in `.claude/memory/` in this project").
 6. Keep the original tool flow intact; document the mapping so both flows coexist and AGENTS.md stays SSOT.
 
+## Mode B+M — EXISTING recognized-tool project: migrate non-tool dirs (explicit convert only)
+
+Use when a recognized tool footprint is present **and** the project also has its own non-tool
+custom dirs that deviate from the canonical layout **and** the user explicitly asked to convert.
+
+The tool's own dirs (`.claude/`, `.cursor/`, `.kiro/`, etc.) are **never touched** — they stay
+exactly where they are. Only the project's own dirs that don't belong to any recognized tool are
+migrated.
+
+1. **Do all Mode B steps first** (AGENTS.md SSOT, recognize-map, bridge files, `.agents/skills/`).
+   These are non-destructive and must happen regardless of whether migration is later confirmed.
+
+2. **Identify non-tool custom dirs**: scan the project for dirs that are neither canonical
+   (`memory/`, `data/`, `specs/`, `scripts/`, `.agents/skills/`, `.agents/rules/`) nor part of a
+   recognized tool (`.claude/`, `.cursor/`, `.kiro/`, etc.). Examples:
+   `.agents/memory/`, `.agents/corpus/`, `.agents/intake/`, `.agents/research/`, `.agents/spec/`
+
+3. **Map each to its canonical home** using the Mode C purpose-table in `references/tool-bridges.md`:
+   `.agents/memory/` → `memory/` · `.agents/corpus/` → `data/corpus/` ·
+   `.agents/intake/` → `data/intake/` · `.agents/research/` → `data/research/` ·
+   `.agents/spec/` → `specs/`
+   Project-specific dirs with no canonical equivalent → list for user to decide (never guess-move).
+
+4. **Scope the reference impact**: `grep -r` each old path across all project files. Report the hit
+   count per dir and which files contain them. If total patching work is large (>40 occurrences or
+   >10 files), surface this clearly: "Migrating these dirs requires patching N references across M
+   files." Let the user confirm — this is a non-trivial mechanical change.
+
+5. **Present the from → to plan** (same table format as Mode C step 2). Confirm before any moves.
+   List dirs staying put (project-specific, no canonical home) separately.
+
+6. **Execute**: `move_path` each confirmed dir (git preserves history). Then `grep` for leftover
+   old-path references and patch with `edit_file`. Update scripts, memory index files, AGENTS.md,
+   and any other referencing files. Reference-fixing is mandatory — a half-migrated project with
+   broken paths is worse than no migration.
+
+7. **Update AGENTS.md**: replace the recognize-map with the canonical layout table. After a
+   successful B+M migration the paths ARE canonical, so the recognize-map becomes the plain
+   layout table — no more recognize-map needed.
+
 ## Mode C — CONVERT a custom / legacy layout (move/rename; explicit request only)
 
 Use ONLY when the user explicitly asks to convert/migrate a repo that has its **own ad-hoc structure**
 (no recognized tool footprint) into the standard. There is no tool flow to preserve, so the project's
 dirs/files are physically **moved/renamed** into the canonical names and the repo becomes natively
 standard — no recognize-map needed.
-⚠ A recognized-tool project (`.claude/` `.cursor/` `.kiro/` `CLAUDE.md` …) is NEVER converted this way
-even if the user says "convert" — moving its dirs breaks the tool → use Mode B (additive, bridge files
-only). Move-vs-create is decided by tool-footprint presence, not by the word "convert".
+⚠ The TOOL'S OWN dirs (`.claude/` `.cursor/` `.kiro/` etc.) are NEVER moved — that breaks the tool.
+But if the project also has non-tool custom dirs, those CAN be migrated: use **Mode B+M** (not Mode C),
+which protects all tool dirs while converting the project's own layout. Mode C is only for projects
+that have **no recognized tool footprint at all**.
 
 1. Inventory the current layout; map each dir/file to its canonical home by PURPOSE
    (`references/tool-bridges.md § Custom/legacy layout → canonical`). Typical:
@@ -152,7 +200,8 @@ This is what makes `AGENTS.md` self-bootstrapping: a new tool reads it, understa
 - [ ] memory/INDEX.md present (+ topic stubs for NEW)
 - [ ] .gitignore covers .cache/ + .venv/ (third-party caches) (+ data/intake/ if it holds symlinks/large originals)
 - [ ] No duplicated instruction content: tool files REFERENCE AGENTS.md, never copy it
-- [ ] EXISTING-TOOL: original tool flow intact + mapping documented (nothing moved)
+- [ ] EXISTING-TOOL (Mode B): original tool flow intact + mapping documented (nothing moved)
+- [ ] Mode B+M: tool dirs untouched · non-tool dirs moved · old-path refs patched · AGENTS.md layout map updated to canonical
 - [ ] Mode C (convert): move plan confirmed first · canonical tree clean · broken refs repaired · no tool dirs moved
 ```
 

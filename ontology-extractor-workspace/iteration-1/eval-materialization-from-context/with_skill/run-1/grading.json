@@ -1,0 +1,44 @@
+{
+  "expectations": [
+    {
+      "text": "At least one artifact has type 'narrative' in YAML frontmatter or contains 'Narrative' in its title or section header",
+      "passed": true,
+      "evidence": "narrative-auth0-migration-decision.md YAML frontmatter contains 'type: narrative' and the document title is '# Narrative - Auth0 Migration Decision'. narrative-jwt-to-oauth2-migration-execution.md likewise has 'type: narrative' in frontmatter."
+    },
+    {
+      "text": "At least one artifact contains an Observations section with categorized statements using [category] format (e.g., [fact], [decision], [problem], [solution])",
+      "passed": true,
+      "evidence": "narrative-auth0-migration-decision.md has '## Observations' with entries: '[decision] Team chose Auth0 over patching...', '[problem] Custom JWT tokens were not expiring correctly...', '[fact] Migration was planned as a 3-week phased effort...'. All five artifacts contain Observations sections with [category]-tagged entries."
+    },
+    {
+      "text": "At least one artifact has a Revision Management section containing an [r1] entry",
+      "passed": true,
+      "evidence": "narrative-auth0-migration-decision.md has '## Revision Management' section with '- [r1] 2026-06-26T00:00:00Z — initial creation (immutable from this point)'. All five artifacts contain a Revision Management section with an [r1] entry."
+    },
+    {
+      "text": "At least one artifact has a Relations section with at least one typed relation",
+      "passed": true,
+      "evidence": "narrative-auth0-migration-decision.md has '## Relations' with typed relations: '- triggered [[Narrative - JWT-to-OAuth2 Migration Execution]]', '- documented_fact [[Fact - JWT Token Expiry Vulnerability]]', '- resulted_in [[Concept - Auth0-Based OAuth2 Authentication]]', '- requires [[Procedure - JWT Vulnerability Post-Mortem]]'. All five artifacts have Relations sections with typed relations."
+    },
+    {
+      "text": "The pending session cleanup work is referenced as a future-forward link using double-bracket notation (e.g., [[Procedure - ...]] or similar)",
+      "passed": true,
+      "evidence": "narrative-jwt-to-oauth2-migration-execution.md Relations section: '- requires [[Procedure - Automated Session Cleanup]]'. Also present in concept-auth0-oauth2-authentication.md Relations: '- requires [[Procedure - Automated Session Cleanup]]' and ontology-auth-migration-vocabulary.md Relations: '- requires [[Procedure - Automated Session Cleanup]]'."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  },
+  "claims": [],
+  "eval_feedback": {
+    "suggestions": [
+      "The skill correctly applied the Narrative-First protocol, scope-guard for Procedures, and double-bracket future-forward linking for deferred items.",
+      "All artifacts follow a consistent structure (YAML frontmatter, Revision Management, body, Observations, Relations) with no isolated nodes in the knowledge graph.",
+      "A minor observation: the concept artifact's Relations includes '- implements [[Fact - JWT Token Expiry Vulnerability]]' which is an unusual relation label (a Concept 'implements' a Fact is semantically awkward — 'addresses' or 'responds_to' would be clearer), but this does not affect any graded expectation."
+    ],
+    "overall": "Perfect pass (5/5). All structural expectations are met with strong evidence across multiple artifacts. The skill produced a well-connected knowledge graph with proper typing, categorized observations, revision tracking, and future-forward links for deferred work items."
+  }
+}

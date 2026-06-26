@@ -1,0 +1,34 @@
+{
+  "expectations": [
+    {
+      "text": "The 500K ops/sec claim is NOT documented as a Fact artifact (no 'type: fact' in YAML frontmatter, and the main heading does not say 'Fact - ...')",
+      "passed": true,
+      "evidence": "The only artifact file is narrative-redis-vendor-performance-claim.md. Its YAML frontmatter contains 'type: narrative' (not 'type: fact'), and the main heading reads '# Narrative - Redis Vendor Performance Claim' (not 'Fact - ...'). No Fact artifact file exists in the outputs directory."
+    },
+    {
+      "text": "The output contains an [assumption] observation category or #unverified tag somewhere in the artifact",
+      "passed": true,
+      "evidence": "Line 33 of the artifact reads: '- [assumption] Vendor claims Redis cluster handles 500K operations per second #unverified #performance'. Both the [assumption] observation category and the #unverified tag are present. Additionally, '#unverified' appears in the YAML tags list at line 14."
+    },
+    {
+      "text": "The output references a need for verification — either a future-forward link to a verification procedure, or explicit text noting the claim needs testing or validation before being treated as fact",
+      "passed": true,
+      "evidence": "Line 36 reads: '- [action] Verification needed: run a load test or benchmark against the Redis cluster to validate or refute the claim #todo'. Line 40 provides a future-forward relation link: '- requires [[Procedure - Redis Cluster Performance Verification]]'. The Story section also states: 'must be treated as an assumption until verified'."
+    }
+  ],
+  "summary": {
+    "passed": 3,
+    "failed": 0,
+    "total": 3,
+    "pass_rate": 1.0
+  },
+  "claims": [],
+  "eval_feedback": {
+    "suggestions": [
+      "The artifact correctly uses 'type: narrative' in YAML and the [assumption]/#unverified pattern — this is exactly the intended behavior for unverified claims.",
+      "The future-forward relation link ('requires [[Procedure - Redis Cluster Performance Verification]]') is a clean way to seed the verification gap without over-creating artifacts.",
+      "Consider whether the 'derived_from [[Fact - Redis Cluster Performance Capacity]]' relation direction is semantically correct — a Narrative that precedes a Fact would more naturally point forward (e.g., 'seeds [[Fact - ...]]') rather than 'derived_from', which implies the Fact already exists upstream."
+    ],
+    "overall": "All 3 expectations passed. The skill correctly avoided the anti-pattern of treating an unverified vendor claim as a Fact, applied the [assumption]/#unverified observation pattern, and seeded a future verification path via both explicit [action] text and a future-forward relation link."
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "expectations": [
+    {
+      "text": "At least one artifact has type 'narrative' in YAML frontmatter or contains 'Narrative' in its title or section header",
+      "passed": true,
+      "evidence": "knowledge.md line 3: '**Type:** Mixed — Narrative + Procedure + Fact' and section header '## 4. Narrative' (line 81). The word 'Narrative' appears both in the document metadata and as a top-level section heading."
+    },
+    {
+      "text": "At least one artifact contains an Observations section with categorized statements using [category] format (e.g., [fact], [decision], [problem], [solution])",
+      "passed": false,
+      "evidence": "process_log.md has an '## Observations' section (lines 42-46) but its entries are plain prose bullets with no [category] tagging. knowledge.md has no Observations section at all. No artifact uses the required [fact], [decision], [problem], or [solution] inline classification format."
+    },
+    {
+      "text": "At least one artifact has a Revision Management section containing an [r1] entry",
+      "passed": false,
+      "evidence": "Neither knowledge.md nor process_log.md contains any 'Revision Management' section or [r1] entry. The concept of revision tracking is entirely absent from the produced artifacts."
+    },
+    {
+      "text": "At least one artifact has a Relations section with at least one typed relation",
+      "passed": true,
+      "evidence": "knowledge.md '## 7. Relations' (lines 115-126) contains typed relations using arrow notation, e.g. '[JWT Vulnerability] --caused--> [Auth Migration Decision]', '[Auth Migration Decision] --selected--> [Auth0 (OAuth2 Provider)]', '[Session Migration] --complication--> [Mobile Client Token Handling]'. Multiple distinct relation types are present."
+    },
+    {
+      "text": "The pending session cleanup work is referenced as a future-forward link using double-bracket notation (e.g., [[Procedure - ...]] or similar)",
+      "passed": false,
+      "evidence": "The session cleanup backlog item is mentioned in knowledge.md under OI-1 ('Automated session cleanup for expired tokens') and section 3.2 ('Remaining Procedure (Backlog)'), but no double-bracket [[...]] notation appears anywhere in any artifact. The reference is plain prose and a table entry only."
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 3,
+    "total": 5,
+    "pass_rate": 0.4
+  },
+  "claims": [],
+  "eval_feedback": {
+    "suggestions": [
+      "Add an Observations section to artifact files with [fact], [decision], [problem], [solution] inline category tags on each statement — this is a core ontology-extractor format requirement that was completely absent.",
+      "Add a Revision Management section (e.g., with a [r1] entry recording the initial creation date, author, and summary) to at least the primary artifact to satisfy the revision tracking requirement.",
+      "Use double-bracket wiki-link notation ([[Procedure - Automated Token Cleanup]]) for forward references to open/pending work items, rather than plain prose or table references."
+    ],
+    "overall": "The executor produced a well-structured and content-rich knowledge artifact covering facts, concepts, procedures, narrative, open items, and relations. It passed 2 of 5 format-compliance expectations: the Narrative section header and the typed Relations section. It failed 3 expectations that require specific ontology-extractor format conventions: categorized Observations with [category] tags, a Revision Management section with [r1] entry, and double-bracket forward-link notation for the pending session cleanup work. These are structural conventions of the target skill that the executor did not apply, likely because it was running without the skill prompt."
+  }
+}

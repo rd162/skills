@@ -1,0 +1,44 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains a Procedure artifact (type field is 'procedure' in YAML frontmatter OR the title or main header contains the word 'Procedure')",
+      "passed": true,
+      "evidence": "File 'Procedure - AWS ECS API Deployment via GitHub Actions.md' has YAML frontmatter with 'type: procedure' (line 3) AND the main header reads '# Procedure - AWS ECS API Deployment via GitHub Actions' (line 25)."
+    },
+    {
+      "text": "The artifact contains numbered steps that cover the 7-step deployment pipeline described in the prompt",
+      "passed": true,
+      "evidence": "The artifact contains exactly 7 numbered steps under '## Steps': 1. Merge to main triggers the workflow; 2. Tests run and must pass; 3. Docker image built and tagged with git SHA; 4. Image pushed to ECR; 5. ECS service updated via new task definition; 6. Health check runs for 5 minutes; 7. Slack notification sent to #deployments channel."
+    },
+    {
+      "text": "The artifact has a Revision Management section with at least one [r1] entry",
+      "passed": true,
+      "evidence": "Lines 19-21: '## Revision Management\\n\\n- [r1] 2026-06-26T00:00:00Z — initial creation'"
+    },
+    {
+      "text": "The artifact has an Observations section with at least one categorized statement using [category] format",
+      "passed": true,
+      "evidence": "Lines 95-105: '## Observations' section contains 9 entries with [category] tags, e.g. '[trigger] Workflow initiates on push/merge to main branch exclusively', '[gate] Test failure is a hard stop', '[design] Git SHA image tagging provides immutable traceability', etc."
+    },
+    {
+      "text": "The artifact has YAML frontmatter including title, type, and last_updated fields",
+      "passed": true,
+      "evidence": "Lines 1-17: YAML frontmatter includes 'title: Procedure - AWS ECS API Deployment via GitHub Actions' (line 2), 'type: procedure' (line 3), and 'last_updated: 2026-06-26' (line 7)."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1.0
+  },
+  "claims": [],
+  "eval_feedback": {
+    "suggestions": [
+      "The eval prompt does not require a specific 7-step enumeration in the prompt itself — the grader infers the 7 steps from the process_log context. A stronger eval would include the exact expected steps in the expectation text to make grading deterministic.",
+      "The [category] format expectation is met strongly — the artifact uses 9 distinct categories including [trigger], [gate], [design], [config], [unverified], [risk], [notification]. The expectation only requires one, so this is well over the bar.",
+      "The Revision Management section uses [r1] with an ISO 8601 timestamp and a description — a robust implementation that exceeds the minimum requirement."
+    ],
+    "overall": "All 5 expectations pass. The Procedure artifact is well-formed: YAML frontmatter contains all three required fields (title, type, last_updated), the 7 pipeline steps are represented as numbered sections with trigger/action/outcome/gate detail, the Revision Management section has a properly formatted [r1] entry, and the Observations section has 9 categorized statements in [category] format. No failures detected."
+  }
+}

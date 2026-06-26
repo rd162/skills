@@ -1,0 +1,303 @@
+{
+  "metadata": {
+    "skill_name": "ontology-extractor",
+    "skill_path": "/Users/rd/.claude/skills/ontology-extractor",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-06-26T00:31:32Z",
+    "evals_run": [
+      1,
+      2,
+      3
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 143.7,
+        "tokens": 27094,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "At least one artifact has type 'narrative' in YAML frontmatter or contains 'Narrative' in its title or section header",
+          "passed": true,
+          "evidence": "narrative-auth0-migration-decision.md YAML frontmatter contains 'type: narrative' and the document title is '# Narrative - Auth0 Migration Decision'. narrative-jwt-to-oauth2-migration-execution.md likewise has 'type: narrative' in frontmatter."
+        },
+        {
+          "text": "At least one artifact contains an Observations section with categorized statements using [category] format (e.g., [fact], [decision], [problem], [solution])",
+          "passed": true,
+          "evidence": "narrative-auth0-migration-decision.md has '## Observations' with entries: '[decision] Team chose Auth0 over patching...', '[problem] Custom JWT tokens were not expiring correctly...', '[fact] Migration was planned as a 3-week phased effort...'. All five artifacts contain Observations sections with [category]-tagged entries."
+        },
+        {
+          "text": "At least one artifact has a Revision Management section containing an [r1] entry",
+          "passed": true,
+          "evidence": "narrative-auth0-migration-decision.md has '## Revision Management' section with '- [r1] 2026-06-26T00:00:00Z \u2014 initial creation (immutable from this point)'. All five artifacts contain a Revision Management section with an [r1] entry."
+        },
+        {
+          "text": "At least one artifact has a Relations section with at least one typed relation",
+          "passed": true,
+          "evidence": "narrative-auth0-migration-decision.md has '## Relations' with typed relations: '- triggered [[Narrative - JWT-to-OAuth2 Migration Execution]]', '- documented_fact [[Fact - JWT Token Expiry Vulnerability]]', '- resulted_in [[Concept - Auth0-Based OAuth2 Authentication]]', '- requires [[Procedure - JWT Vulnerability Post-Mortem]]'. All five artifacts have Relations sections with typed relations."
+        },
+        {
+          "text": "The pending session cleanup work is referenced as a future-forward link using double-bracket notation (e.g., [[Procedure - ...]] or similar)",
+          "passed": true,
+          "evidence": "narrative-jwt-to-oauth2-migration-execution.md Relations section: '- requires [[Procedure - Automated Session Cleanup]]'. Also present in concept-auth0-oauth2-authentication.md Relations: '- requires [[Procedure - Automated Session Cleanup]]' and ontology-auth-migration-vocabulary.md Relations: '- requires [[Procedure - Automated Session Cleanup]]'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 183.1,
+        "tokens": 30018,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains a Procedure artifact (type field is 'procedure' in YAML frontmatter OR the title or main header contains the word 'Procedure')",
+          "passed": true,
+          "evidence": "File 'Procedure - AWS ECS API Deployment via GitHub Actions.md' has YAML frontmatter with 'type: procedure' (line 3) AND the main header reads '# Procedure - AWS ECS API Deployment via GitHub Actions' (line 25)."
+        },
+        {
+          "text": "The artifact contains numbered steps that cover the 7-step deployment pipeline described in the prompt",
+          "passed": true,
+          "evidence": "The artifact contains exactly 7 numbered steps under '## Steps': 1. Merge to main triggers the workflow; 2. Tests run and must pass; 3. Docker image built and tagged with git SHA; 4. Image pushed to ECR; 5. ECS service updated via new task definition; 6. Health check runs for 5 minutes; 7. Slack notification sent to #deployments channel."
+        },
+        {
+          "text": "The artifact has a Revision Management section with at least one [r1] entry",
+          "passed": true,
+          "evidence": "Lines 19-21: '## Revision Management\\n\\n- [r1] 2026-06-26T00:00:00Z \u2014 initial creation'"
+        },
+        {
+          "text": "The artifact has an Observations section with at least one categorized statement using [category] format",
+          "passed": true,
+          "evidence": "Lines 95-105: '## Observations' section contains 9 entries with [category] tags, e.g. '[trigger] Workflow initiates on push/merge to main branch exclusively', '[gate] Test failure is a hard stop', '[design] Git SHA image tagging provides immutable traceability', etc."
+        },
+        {
+          "text": "The artifact has YAML frontmatter including title, type, and last_updated fields",
+          "passed": true,
+          "evidence": "Lines 1-17: YAML frontmatter includes 'title: Procedure - AWS ECS API Deployment via GitHub Actions' (line 2), 'type: procedure' (line 3), and 'last_updated: 2026-06-26' (line 7)."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 46.6,
+        "tokens": 21085,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The 500K ops/sec claim is NOT documented as a Fact artifact (no 'type: fact' in YAML frontmatter, and the main heading does not say 'Fact - ...')",
+          "passed": true,
+          "evidence": "The only artifact file is narrative-redis-vendor-performance-claim.md. Its YAML frontmatter contains 'type: narrative' (not 'type: fact'), and the main heading reads '# Narrative - Redis Vendor Performance Claim' (not 'Fact - ...'). No Fact artifact file exists in the outputs directory."
+        },
+        {
+          "text": "The output contains an [assumption] observation category or #unverified tag somewhere in the artifact",
+          "passed": true,
+          "evidence": "Line 33 of the artifact reads: '- [assumption] Vendor claims Redis cluster handles 500K operations per second #unverified #performance'. Both the [assumption] observation category and the #unverified tag are present. Additionally, '#unverified' appears in the YAML tags list at line 14."
+        },
+        {
+          "text": "The output references a need for verification \u2014 either a future-forward link to a verification procedure, or explicit text noting the claim needs testing or validation before being treated as fact",
+          "passed": true,
+          "evidence": "Line 36 reads: '- [action] Verification needed: run a load test or benchmark against the Redis cluster to validate or refute the claim #todo'. Line 40 provides a future-forward relation link: '- requires [[Procedure - Redis Cluster Performance Verification]]'. The Story section also states: 'must be treated as an assumption until verified'."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.4,
+        "passed": 2,
+        "failed": 3,
+        "total": 5,
+        "time_seconds": 105.6,
+        "tokens": 17607,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "At least one artifact has type 'narrative' in YAML frontmatter or contains 'Narrative' in its title or section header",
+          "passed": true,
+          "evidence": "knowledge.md line 3: '**Type:** Mixed \u2014 Narrative + Procedure + Fact' and section header '## 4. Narrative' (line 81). The word 'Narrative' appears both in the document metadata and as a top-level section heading."
+        },
+        {
+          "text": "At least one artifact contains an Observations section with categorized statements using [category] format (e.g., [fact], [decision], [problem], [solution])",
+          "passed": false,
+          "evidence": "process_log.md has an '## Observations' section (lines 42-46) but its entries are plain prose bullets with no [category] tagging. knowledge.md has no Observations section at all. No artifact uses the required [fact], [decision], [problem], or [solution] inline classification format."
+        },
+        {
+          "text": "At least one artifact has a Revision Management section containing an [r1] entry",
+          "passed": false,
+          "evidence": "Neither knowledge.md nor process_log.md contains any 'Revision Management' section or [r1] entry. The concept of revision tracking is entirely absent from the produced artifacts."
+        },
+        {
+          "text": "At least one artifact has a Relations section with at least one typed relation",
+          "passed": true,
+          "evidence": "knowledge.md '## 7. Relations' (lines 115-126) contains typed relations using arrow notation, e.g. '[JWT Vulnerability] --caused--> [Auth Migration Decision]', '[Auth Migration Decision] --selected--> [Auth0 (OAuth2 Provider)]', '[Session Migration] --complication--> [Mobile Client Token Handling]'. Multiple distinct relation types are present."
+        },
+        {
+          "text": "The pending session cleanup work is referenced as a future-forward link using double-bracket notation (e.g., [[Procedure - ...]] or similar)",
+          "passed": false,
+          "evidence": "The session cleanup backlog item is mentioned in knowledge.md under OI-1 ('Automated session cleanup for expired tokens') and section 3.2 ('Remaining Procedure (Backlog)'), but no double-bracket [[...]] notation appears anywhere in any artifact. The reference is plain prose and a table entry only."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.2,
+        "passed": 1,
+        "failed": 4,
+        "total": 5,
+        "time_seconds": 48.9,
+        "tokens": 16964,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "Output contains a Procedure artifact (type field is 'procedure' in YAML frontmatter OR the title or main header contains the word 'Procedure')",
+          "passed": false,
+          "evidence": "The artifact file api-deployment-process.md has no YAML frontmatter at all. The main header is '# API Deployment Process Documentation', which does not contain the standalone word 'Procedure'. No type field exists anywhere in the file."
+        },
+        {
+          "text": "The artifact contains numbered steps that cover the 7-step deployment pipeline described in the prompt",
+          "passed": true,
+          "evidence": "The file contains '## Deployment Steps' with Steps 1-7: Step 1 (merge to main triggers workflow), Step 2 (test suite gate), Step 3 (Docker image build and SHA tagging), Step 4 (push to ECR), Step 5 (ECS service update via new task definition), Step 6 (5-minute health check), Step 7 (Slack notification to #deployments). All 7 steps are present and substantively described."
+        },
+        {
+          "text": "The artifact has a Revision Management section with at least one [r1] entry",
+          "passed": false,
+          "evidence": "No 'Revision Management' section exists in api-deployment-process.md. No [r1] entries appear anywhere in the file. The file has sections: Overview, Infrastructure at a Glance, Deployment Steps, Process Flow Diagram, Key Properties, History, Open Questions / Gaps."
+        },
+        {
+          "text": "The artifact has an Observations section with at least one categorized statement using [category] format",
+          "passed": false,
+          "evidence": "No 'Observations' section exists in api-deployment-process.md. No [category]-formatted statements appear anywhere in the file."
+        },
+        {
+          "text": "The artifact has YAML frontmatter including title, type, and last_updated fields",
+          "passed": false,
+          "evidence": "The file begins directly with '# API Deployment Process Documentation' on line 1. There is no YAML frontmatter block (no '---' delimiter at the start of the file). The fields title, type, and last_updated are absent."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.667,
+        "passed": 2,
+        "failed": 1,
+        "total": 3,
+        "time_seconds": 22.3,
+        "tokens": 15537,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The 500K ops/sec claim is NOT documented as a Fact artifact (no 'type: fact' in YAML frontmatter, and the main heading does not say 'Fact - ...')",
+          "passed": true,
+          "evidence": "memory-redis-vendor-claim.md has no YAML frontmatter at all. The main heading is '# Memory: Redis Cluster Performance Claim' \u2014 not 'Fact - ...' and contains no 'type: fact' field anywhere in the file."
+        },
+        {
+          "text": "The output contains an [assumption] observation category or #unverified tag somewhere in the artifact",
+          "passed": false,
+          "evidence": "No '[assumption]' observation category and no '#unverified' hashtag appear anywhere in memory-redis-vendor-claim.md. The word UNVERIFIED appears only as bolded prose text ('**UNVERIFIED** \u2014 This figure comes directly from the vendor...'), not as a structured observation category or hashtag tag."
+        },
+        {
+          "text": "The output references a need for verification \u2014 either a future-forward link to a verification procedure, or explicit text noting the claim needs testing or validation before being treated as fact",
+          "passed": true,
+          "evidence": "The file explicitly states: 'Do not treat this number as a confirmed system characteristic until benchmarked internally.' Action items include '[ ] Run internal benchmark against the Redis cluster' and '[ ] Compare results to the 500K ops/sec vendor claim'."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 124.4667,
+        "stddev": 70.2531,
+        "min": 46.6,
+        "max": 183.1
+      },
+      "tokens": {
+        "mean": 26065.6667,
+        "stddev": 4554.4181,
+        "min": 21085,
+        "max": 30018
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.4223,
+        "stddev": 0.2343,
+        "min": 0.2,
+        "max": 0.667
+      },
+      "time_seconds": {
+        "mean": 58.9333,
+        "stddev": 42.5467,
+        "min": 22.3,
+        "max": 105.6
+      },
+      "tokens": {
+        "mean": 16702.6667,
+        "stddev": 1059.4557,
+        "min": 15537,
+        "max": 17607
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.58",
+      "time_seconds": "+65.5",
+      "tokens": "+9363"
+    }
+  },
+  "notes": []
+}

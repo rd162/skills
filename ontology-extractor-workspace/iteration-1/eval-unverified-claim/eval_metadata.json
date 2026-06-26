@@ -1,0 +1,10 @@
+{
+  "eval_id": 3,
+  "eval_name": "unverified-claim",
+  "prompt": "Save memory: our vendor told us our Redis cluster can handle 500K operations per second. I haven't verified this myself yet.",
+  "assertions": [
+    "The 500K ops/sec claim is NOT documented as a Fact artifact (no 'type: fact' in YAML frontmatter, and the main heading does not say 'Fact - ...')",
+    "The output contains an [assumption] observation category or #unverified tag somewhere in the artifact",
+    "The output references a need for verification — either a future-forward link to a verification procedure, or explicit text noting the claim needs testing or validation before being treated as fact"
+  ]
+}

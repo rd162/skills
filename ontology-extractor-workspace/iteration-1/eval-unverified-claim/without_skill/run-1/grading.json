@@ -1,0 +1,33 @@
+{
+  "expectations": [
+    {
+      "text": "The 500K ops/sec claim is NOT documented as a Fact artifact (no 'type: fact' in YAML frontmatter, and the main heading does not say 'Fact - ...')",
+      "passed": true,
+      "evidence": "memory-redis-vendor-claim.md has no YAML frontmatter at all. The main heading is '# Memory: Redis Cluster Performance Claim' — not 'Fact - ...' and contains no 'type: fact' field anywhere in the file."
+    },
+    {
+      "text": "The output contains an [assumption] observation category or #unverified tag somewhere in the artifact",
+      "passed": false,
+      "evidence": "No '[assumption]' observation category and no '#unverified' hashtag appear anywhere in memory-redis-vendor-claim.md. The word UNVERIFIED appears only as bolded prose text ('**UNVERIFIED** — This figure comes directly from the vendor...'), not as a structured observation category or hashtag tag."
+    },
+    {
+      "text": "The output references a need for verification — either a future-forward link to a verification procedure, or explicit text noting the claim needs testing or validation before being treated as fact",
+      "passed": true,
+      "evidence": "The file explicitly states: 'Do not treat this number as a confirmed system characteristic until benchmarked internally.' Action items include '[ ] Run internal benchmark against the Redis cluster' and '[ ] Compare results to the 500K ops/sec vendor claim'."
+    }
+  ],
+  "summary": {
+    "passed": 2,
+    "failed": 1,
+    "total": 3,
+    "pass_rate": 0.667
+  },
+  "claims": [],
+  "eval_feedback": {
+    "suggestions": [
+      "Without the skill, the executor produced a well-intentioned memory file but used ad-hoc prose formatting instead of the structured observation tagging expected by the ontology schema. The [assumption] category and #unverified tag are skill-specific conventions that a baseline executor would not produce organically.",
+      "The executor correctly avoided Fact artifact type (expectation 1) and included verification guidance (expectation 3), but the structured observation taxonomy (expectation 2) is the key differentiator the skill is meant to enforce."
+    ],
+    "overall": "2 of 3 expectations passed. The without-skill output demonstrates that a baseline executor can flag unverified status in prose and note the need for benchmarking, but lacks the structured observation-category tagging ([assumption], #unverified) that the ontology-extractor skill enforces. This is a meaningful differentiator for the skill."
+  }
+}

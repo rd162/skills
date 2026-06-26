@@ -1,0 +1,44 @@
+{
+  "expectations": [
+    {
+      "text": "Output contains a Procedure artifact (type field is 'procedure' in YAML frontmatter OR the title or main header contains the word 'Procedure')",
+      "passed": false,
+      "evidence": "The artifact file api-deployment-process.md has no YAML frontmatter at all. The main header is '# API Deployment Process Documentation', which does not contain the standalone word 'Procedure'. No type field exists anywhere in the file."
+    },
+    {
+      "text": "The artifact contains numbered steps that cover the 7-step deployment pipeline described in the prompt",
+      "passed": true,
+      "evidence": "The file contains '## Deployment Steps' with Steps 1-7: Step 1 (merge to main triggers workflow), Step 2 (test suite gate), Step 3 (Docker image build and SHA tagging), Step 4 (push to ECR), Step 5 (ECS service update via new task definition), Step 6 (5-minute health check), Step 7 (Slack notification to #deployments). All 7 steps are present and substantively described."
+    },
+    {
+      "text": "The artifact has a Revision Management section with at least one [r1] entry",
+      "passed": false,
+      "evidence": "No 'Revision Management' section exists in api-deployment-process.md. No [r1] entries appear anywhere in the file. The file has sections: Overview, Infrastructure at a Glance, Deployment Steps, Process Flow Diagram, Key Properties, History, Open Questions / Gaps."
+    },
+    {
+      "text": "The artifact has an Observations section with at least one categorized statement using [category] format",
+      "passed": false,
+      "evidence": "No 'Observations' section exists in api-deployment-process.md. No [category]-formatted statements appear anywhere in the file."
+    },
+    {
+      "text": "The artifact has YAML frontmatter including title, type, and last_updated fields",
+      "passed": false,
+      "evidence": "The file begins directly with '# API Deployment Process Documentation' on line 1. There is no YAML frontmatter block (no '---' delimiter at the start of the file). The fields title, type, and last_updated are absent."
+    }
+  ],
+  "summary": {
+    "passed": 1,
+    "failed": 4,
+    "total": 5,
+    "pass_rate": 0.2
+  },
+  "claims": [],
+  "eval_feedback": {
+    "suggestions": [
+      "The executor produced well-structured deployment documentation but did not follow the ontology-extractor artifact format at all. The output lacks YAML frontmatter (title, type, last_updated), a Revision Management section with [r1] entries, and an Observations section with [category]-tagged statements.",
+      "The executor appears to have treated the task as a general documentation request rather than a knowledge artifact creation task. This confirms the skill adds significant structural value: without it, the agent produces prose documentation but misses all artifact-specific structural requirements.",
+      "The one passing expectation (numbered 7-step coverage) shows the executor understood the domain content well; the failures are entirely about artifact schema compliance."
+    ],
+    "overall": "1/5 expectations passed (20%). The executor produced readable deployment documentation with correct domain content but failed to produce an ontology-extractor-style Procedure artifact. It omitted YAML frontmatter, Revision Management, and Observations sections entirely — all three are schema requirements that the skill enforces."
+  }
+}

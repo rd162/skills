@@ -1,0 +1,12 @@
+{
+  "eval_id": 1,
+  "eval_name": "materialization-from-context",
+  "prompt": "I've been working on migrating our user auth system from JWT to OAuth2 via Auth0. We decided to go with Auth0 because our own JWT implementation had a security vulnerability — tokens weren't expiring properly. The migration took 3 weeks: we updated the middleware in week 1, handled the token refresh flow in week 2, and migrated existing sessions in week 3. We hit a snag with our mobile app clients which needed special handling for the new token format. The system is live now, but we still need to set up automated session cleanup for expired tokens — that's on the backlog. Materialize knowledge from this context.",
+  "assertions": [
+    "At least one artifact has type 'narrative' in YAML frontmatter or contains 'Narrative' in its title or section header",
+    "At least one artifact contains an Observations section with categorized statements using [category] format (e.g., [fact], [decision], [problem], [solution])",
+    "At least one artifact has a Revision Management section containing an [r1] entry",
+    "At least one artifact has a Relations section with at least one typed relation",
+    "The pending session cleanup work is referenced as a future-forward link using double-bracket notation (e.g., [[Procedure - ...]] or similar)"
+  ]
+}

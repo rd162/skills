@@ -1,0 +1,12 @@
+{
+  "eval_id": 2,
+  "eval_name": "procedure-documentation",
+  "prompt": "Document the context of our API deployment process. We deploy to AWS ECS using GitHub Actions. The steps are: (1) a merge to main triggers the workflow, (2) tests run and must pass, (3) Docker image is built and tagged with the git SHA, (4) image is pushed to ECR, (5) ECS service is updated via a new task definition, (6) a health check runs for 5 minutes, (7) Slack notification is sent to #deployments. We've been using this process since Q3 2025.",
+  "assertions": [
+    "Output contains a Procedure artifact (type field is 'procedure' in YAML frontmatter OR the title or main header contains the word 'Procedure')",
+    "The artifact contains numbered steps that cover the 7-step deployment pipeline described in the prompt",
+    "The artifact has a Revision Management section with at least one [r1] entry",
+    "The artifact has an Observations section with at least one categorized statement using [category] format",
+    "The artifact has YAML frontmatter including title, type, and last_updated fields"
+  ]
+}

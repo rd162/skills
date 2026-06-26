@@ -1,0 +1,42 @@
+{
+  "skill_name": "ontology-extractor",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I've been working on migrating our user auth system from JWT to OAuth2 via Auth0. We decided to go with Auth0 because our own JWT implementation had a security vulnerability — tokens weren't expiring properly. The migration took 3 weeks: we updated the middleware in week 1, handled the token refresh flow in week 2, and migrated existing sessions in week 3. We hit a snag with our mobile app clients which needed special handling for the new token format. The system is live now, but we still need to set up automated session cleanup for expired tokens — that's on the backlog. Materialize knowledge from this context.",
+      "expected_output": "Multiple structured artifacts: at least one Narrative (the migration story, past tense, immutable), and ideally Facts or Concepts for recurring decisions. Each artifact has YAML frontmatter with type/version/last_updated, an Observations section with categorized tagged statements, a Revision Management section, and a Relations section linking artifacts together. Future-forward links for the pending session cleanup work.",
+      "files": [],
+      "expectations": [
+        "At least one artifact has type 'narrative' in YAML frontmatter or header",
+        "At least one artifact contains an Observations section with categorized statements using [category] format",
+        "At least one artifact has a Revision Management section with an [r1] entry",
+        "At least one artifact has a Relations section",
+        "The unfinished session cleanup work is referenced as a future-forward link (double bracket notation)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Document the context of our API deployment process. We deploy to AWS ECS using GitHub Actions. The steps are: (1) a merge to main triggers the workflow, (2) tests run and must pass, (3) Docker image is built and tagged with the git SHA, (4) image is pushed to ECR, (5) ECS service is updated via a new task definition, (6) a health check runs for 5 minutes, (7) Slack notification is sent to #deployments. We've been using this process since Q3 2025.",
+      "expected_output": "A Procedure artifact with YAML frontmatter (type: procedure), numbered steps, an Observations section, a Revision Management section starting at [r1], and a Relations section. The artifact title should clearly indicate it's a deployment procedure.",
+      "files": [],
+      "expectations": [
+        "Output contains a Procedure artifact (type field is 'procedure' in frontmatter or title contains 'Procedure')",
+        "The artifact contains numbered steps covering the deployment pipeline",
+        "The artifact has a Revision Management section with at least one [r1] entry",
+        "The artifact has an Observations section with at least one categorized statement",
+        "The artifact has YAML frontmatter including title, type, and last_updated fields"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Save memory: our vendor told us our Redis cluster can handle 500K operations per second. I haven't verified this myself yet.",
+      "expected_output": "The unverified performance claim must NOT become a Fact. It should be documented as a Narrative or Concept with [assumption] #unverified observation tag. A reference to a verification procedure (or a future-forward link to one) should appear. The output should clearly reflect that this is an unverified claim requiring validation before being elevated to a Fact.",
+      "files": [],
+      "expectations": [
+        "The 500K ops/sec claim is NOT documented as a Fact artifact",
+        "The output contains an [assumption] observation category or #unverified tag",
+        "The output references a need for verification (either a verification procedure, a future-forward link, or an explicit note that the claim needs testing)"
+      ]
+    }
+  ]
+}

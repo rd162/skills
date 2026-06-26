@@ -1,7 +1,7 @@
 ---
 tier: T3
 source_class: llm
-last_updated: 2026-04-29
+last_updated: 2026-06-26
 description: schemas
 ---
 
