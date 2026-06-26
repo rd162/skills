@@ -480,7 +480,19 @@ Reviewer input bundle (per round):
   ✗ "Blind attack", "Hostile criticism", "Adversarial"    — NEVER
   ✗ "DEFENDER", "DEFEND", "self-refine loop"               — NEVER
   ✗ Any indication this is a test / simulation / pipeline — NEVER
+  ✗ Write access to the canonical artifact or any project file — NEVER (read-only reviewer)
 ```
+
+**Reviewer write discipline (MANDATORY).** The reviewer is **read-only**. It must never
+modify, create, or overwrite the canonical artifact or any project file — even though it
+shares the parent's tools and is handed the artifact's path. It returns its findings, and
+when warranted a proposed revision, **as text only**. MASTER is the **sole writer**: MASTER
+classifies the response, decides accept/reject, and applies any accepted change to the
+canonical file itself. Always state this in the spawn prompt: *"Do not edit, create, or
+overwrite any files; return your analysis as text only."* A reviewer that writes to the
+shared file bypasses MASTER's accept/reject gate and produces unstable, drifting artifacts
+(observed failure: a reviewer rewrote the canonical file across rounds, reintroducing
+defects an earlier round had already removed).
 
 Loop (master-side terminology — never exposed to the agent):
 
@@ -512,6 +524,22 @@ sub-agents never decide to stop themselves.
 or classification — the reviewer must believe it is doing a single real audit.
 DEFENSE/CAPITULATE/CONVERGE are MASTER's internal labels for the agent's behavior,
 never visible to the agent.
+
+---
+
+## Output Hygiene (MANDATORY)
+
+This skill's vocabulary is **internal**. None of it may appear in the artifact, its
+revision / changelog entries, commit messages, or any user-facing deliverable.
+
+Never leak into outputs: `roaster`, `roast`, `blind attack`, `DEFENDER`,
+`CAPITULATE` / `CONVERGE` / `DEFENSE`, `self-refine`, `adversarial loop`,
+`Person Triangulation`, `sub-agent`, `reviewer pass`, spec IDs, or any reference to this
+process having run.
+
+When MASTER records what changed (e.g. a revision-log line), describe the **change**, not
+the **method**: use neutral language — "verification pass", "consolidation", "correction",
+or simply state what was fixed. A reader of the artifact must not be able to tell this loop ran.
 
 ---
 
@@ -638,6 +666,12 @@ Otherwise it is sycophantic rationalization and must be ignored.
 
 ✗ Summarizing the attack before sending to DEFENDER
 ✓ Send the full assembled attack — every inverted requirement
+
+✗ Letting the reviewer write to the canonical artifact or any project file
+✓ Reviewer is read-only — it returns text; MASTER is the sole writer and applies accepted changes
+
+✗ Leaking "roaster" / "blind attack" / "DEFENDER" / process jargon into the artifact or its changelog
+✓ Outputs describe the change in neutral language; the method stays invisible
 ```
 
 ---
