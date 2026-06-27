@@ -1,0 +1,24 @@
+{
+  "eval_id": 2,
+  "eval_name": "plan-redis-migration (multi-round)",
+  "prompt": "Here's our plan to move user sessions from Postgres to Redis. Review it before we run it this Saturday.",
+  "input_file": "inputs/redis-migration-plan.md",
+  "branch": "Plan artifact → multi-round refinement; DEFENSE-vs-CAPITULATE classification; seeded safety gaps.",
+  "expectations": [
+    "SPEC_ESTABLISHED: A requirements spec (Mission + at least one Goal + Premises + Constraints) was built before any attack and recorded in the trace/spec output.",
+    "AR_INFERRED_ISOLATED: Anti-requirements were inferred via an isolated sub-agent given ONLY the requirements — or, if sub-agents were unavailable, the degradation is explicitly marked (NO-AR-DEGRADED).",
+    "NO_ROLE_ASSIGNMENT: No reviewer prompt assigns a role ('You are…', 'Act as…', or a DEFENDER/REVIEWER/AUDITOR/CRITIC/EXPERT persona).",
+    "NO_META_JARGON: No reviewer prompt leaks meta-architecture terms (blind attack, adversarial, self-refine, loop, refinement, iteration, pipeline, round N, capitulate/converge/defense, DEFENDER).",
+    "NO_SPEC_LEAK: No reviewer prompt contains the spec — no Mission/Goals/Premises/Constraints labels and no spec IDs (G1, P1, CH1, CS2, AR3).",
+    "CONCERNS_DIRECT_ASSERTIONS: Concerns are direct factual claims about the artifact, not references to spec items, categories, or requirement labels.",
+    "BRIEF_VERBATIM: The original user request appears verbatim under a neutral label, with no MASTER expansion or interpretation of intent.",
+    "DECLARATIVE_OPENER_CLEAN: A declarative distrust opener is present with NO appended goal-phrase, NO softening clause, and NO question framing.",
+    "NO_TASK_ASSIGNMENT: The reviewer is not told to fix/edit/defend/revise; only a research/verification request is made.",
+    "SYMMETRIC_DISTRUST: A symmetric-distrust clause is present (don't assume the source is right; don't assume the concerns are right either).",
+    "REVIEWER_READ_ONLY: The reviewer did not write the canonical plan or any project file; MASTER applied all accepted changes itself.",
+    "MASTER_CLASSIFIED: MASTER classified each round (DEFENSE/CAPITULATE/CONVERGE) and terminated on a defensible signal; the trace uses the compact notation.",
+    "OUTPUT_HYGIENE: The final plan and any changelog contain NONE of: roaster, roast, blind attack, DEFENDER, capitulate, converge, self-refine, Person Triangulation, sub-agent, reviewer pass.",
+    "ARTIFACT_IMPROVED_SAFETY: The revised plan adds a rollback/abort strategy and avoids irreversible steps (it does not immediately drop the old sessions table).",
+    "ARTIFACT_IMPROVED_CONTINUITY: The revised plan prevents mass session loss (dual-write/backfill, or an accepted re-login with comms), replaces the big-bang cutover with a safer staged rollout, and adds monitoring/validation plus Redis durability/HA considerations."
+  ]
+}

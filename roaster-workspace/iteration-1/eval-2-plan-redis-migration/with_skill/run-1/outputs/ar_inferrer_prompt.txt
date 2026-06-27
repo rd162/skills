@@ -1,0 +1,50 @@
+Given the following requirements specification, derive a list of
+anti-requirements — failure patterns and anti-patterns that any solution
+targeting these requirements must avoid.
+
+REQUIREMENTS:
+
+Mission: Provide a migration plan safe and complete enough to execute on a live production session store without losing user sessions, incurring unplanned downtime, or leaving the system unrecoverable — a plan an on-call engineer can run on Saturday and trust.
+
+Goals:
+- G1: Sessions move from Postgres to Redis such that currently-logged-in users are not forcibly logged out, or any forced logout is an explicit, accepted decision rather than an accident.
+- G2: The latency/load improvement (faster logins, less DB load) is actually measured post-cutover, not merely assumed.
+- G3: A rollback path exists if the cutover fails midway, without permanent data loss.
+- G4: The durability/availability posture of the new store is defined — what happens to sessions if Redis restarts, runs out of memory, or the node dies.
+- G5: The plan is concrete enough (per-step preconditions, checks, owners, timings) that a reviewer can approve it and an operator can execute it without filling gaps live.
+
+Premises:
+- PR1: This is a production session store backing active user logins; sessions are stateful authentication data, not a disposable cache.
+- PR2: Redis is in-memory; without explicit persistence (RDB/AOF) and/or replication, a restart or crash loses all keys.
+- PR3: There is a non-trivial population of concurrent active sessions at cutover time.
+- PR4: A single deploy to all servers at once means no canary and no staged rollout — a latent bug in the new read/write path hits 100% of traffic simultaneously.
+- PR5: Dropping the old sessions table is destructive and removes the ability to fall back to Postgres-backed sessions.
+
+Constraints:
+Hard:
+- CH1: The plan must address what happens to in-flight sessions during cutover (dual-read/dual-write, migration of existing keys, or an explicitly accepted logout-everyone decision). Silently dropping every active session is unacceptable.
+- CH2: Standing up a single Redis instance with no replica/failover and no stated persistence makes the auth system strictly less reliable than the Postgres it replaces. Must be addressed.
+- CH3: The destructive step (DROP TABLE) must not share the same window as the unverified cutover; there must be a soak/verification period and a defined rollback while the old table still exists.
+- CH4: Success must be defined in measurable terms (error rates, login latency percentiles, session-loss count, Redis memory/evictions), not by subjective feel.
+Soft:
+- CS1: Redis maxmemory and an appropriate eviction policy should be specified so sessions are not silently evicted.
+- CS2: Session data in Redis should have authentication/TLS/network isolation stated.
+- CS3: Session expiry (TTL) semantics in Redis should match prior Postgres-backed behavior.
+- CS4: Monitoring/alerting for the new store and a rollback decision-owner / comms plan during the window.
+
+For each requirement, consider:
+- What concrete failure mode would directly violate it?
+- What implementation anti-pattern would compromise it?
+- What known industry / domain pitfall applies to a solution of this shape?
+- What edge case or adversarial input would expose a weakness?
+
+Output format: a numbered list of anti-requirements. Each item should be:
+- A specific failure pattern (not a general "be good" statement).
+- Phrased as the pattern itself, not as a forbidding rule
+  (e.g., "hardcoded credentials in source" — not "don't hardcode credentials").
+- Accompanied by a brief consequence ("→ credential leakage on first push",
+  "→ silent data corruption past 10k rows").
+
+Be precise and exhaustive within the scope of the requirements.
+Aim for 5–15 anti-requirements. Quality over quantity.
+Do NOT invent failures unrelated to the requirements above.

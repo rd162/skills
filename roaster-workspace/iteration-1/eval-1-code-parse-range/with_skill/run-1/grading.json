@@ -1,0 +1,85 @@
+{
+  "expectations": [
+    {
+      "text": "SPEC_ESTABLISHED: A requirements spec (Mission + at least one Goal + Premises + Constraints) was built before any attack and recorded in the trace/spec output.",
+      "passed": true,
+      "evidence": "spec.md: Mission + G1\u2013G5 + P1\u2013P4 + CH1\u2013CH5 + CS1\u2013CS4; trace Step 1 grounded the spec by executing the original (surfaced the off-by-one and silent empties)."
+    },
+    {
+      "text": "AR_INFERRED_ISOLATED: Anti-requirements were inferred via an isolated sub-agent given ONLY the requirements \u2014 or, if sub-agents were unavailable, the degradation is explicitly marked (NO-AR-DEGRADED).",
+      "passed": true,
+      "evidence": "ar_inferrer_prompt.txt is requirements-only; ar_list.md has 15 ARs; trace records the isolated sub-agent agentId and the Pipeline Completeness Gate before Step 2."
+    },
+    {
+      "text": "NO_ROLE_ASSIGNMENT: No reviewer prompt assigns a role ('You are\u2026', 'Act as\u2026', or a DEFENDER/REVIEWER/AUDITOR/CRITIC/EXPERT persona).",
+      "passed": true,
+      "evidence": "Scanner 0 role hits both rounds; openers 'I don't trust this code\u2026' carry no persona/role."
+    },
+    {
+      "text": "NO_META_JARGON: No reviewer prompt leaks meta-architecture terms (blind attack, adversarial, self-refine, loop, refinement, iteration, pipeline, round N, capitulate/converge/defense, DEFENDER).",
+      "passed": true,
+      "evidence": "The only scanner 'pipeline' hit is 'came out of a CI pipeline that doesn't validate' \u2014 a source-attribution line, NOT a meta-architecture leak. No loop/round/self-refine/DEFENDER."
+    },
+    {
+      "text": "NO_SPEC_LEAK: No reviewer prompt contains the spec \u2014 no Mission/Goals/Premises/Constraints labels and no spec IDs (G1, P1, CH1, CS2, AR3).",
+      "passed": true,
+      "evidence": "Scanner 0 spec-leak hits; concerns carry no Mission/Goal labels or G#/CH# IDs."
+    },
+    {
+      "text": "CONCERNS_DIRECT_ASSERTIONS: Concerns are direct factual claims about the artifact, not references to spec items, categories, or requirement labels.",
+      "passed": true,
+      "evidence": "12 (R1) / 11 (R2) concerns are direct claims about the code (e.g. 'parse_range(\"1-5\") returns [1,2,3,4], not [1,2,3,4,5]')."
+    },
+    {
+      "text": "BRIEF_VERBATIM: The original user request appears verbatim under a neutral label, with no MASTER expansion or interpretation of intent.",
+      "passed": true,
+      "evidence": "Both prompts paste the brief verbatim under the neutral label: 'Review and harden this parse_range function \u2014 we use it to parse CLI range args like \\'1-5\\'.'"
+    },
+    {
+      "text": "DECLARATIVE_OPENER_CLEAN: A declarative distrust opener is present with NO appended goal-phrase, NO softening clause, and NO question framing.",
+      "passed": true,
+      "evidence": "'I don't trust this code. It needs rigorous verification.' \u2014 clean opener, no appended goal/softening/question."
+    },
+    {
+      "text": "NO_TASK_ASSIGNMENT: The reviewer is not told to fix/edit/defend/revise; only a research/verification request is made.",
+      "passed": true,
+      "evidence": "Closing is investigation-only; the 'if a revised version is warranted, include it inline as text' matches the skill's read-only 'returns\u2026 a proposed revision as text only' allowance, not an outcome directive (scanner 0 task-assignment hits)."
+    },
+    {
+      "text": "SYMMETRIC_DISTRUST: A symmetric-distrust clause is present (don't assume the source is right; don't assume the concerns are right either).",
+      "passed": true,
+      "evidence": "'Don't assume the source got anything right. Don't assume the concerns are right either.' present in both rounds."
+    },
+    {
+      "text": "REVIEWER_READ_ONLY: The reviewer did not write the canonical parse_range.py or any project file; MASTER applied all accepted changes itself.",
+      "passed": true,
+      "evidence": "Read-only instruction in both prompts; trace: reviewer returned text only, MASTER overwrote the working copy; original parse_range.py md5 329558b4\u2026 unchanged."
+    },
+    {
+      "text": "MASTER_CLASSIFIED: MASTER classified each round (DEFENSE/CAPITULATE/CONVERGE) and terminated on a defensible signal.",
+      "passed": true,
+      "evidence": "trace: R1 CAPITULATE (11/12 confirmed \u2192 full rewrite), R2 DEFENSE \u2014 reviewer refuted 7/11 and MASTER independently re-ran the load-bearing refutations (DoS guard peak 1278 B; Unicode digits rejected; ValueError subclass still caught) \u2192 STOP."
+    },
+    {
+      "text": "OUTPUT_HYGIENE: The final code and any changelog/comments contain NONE of: roaster, roast, blind attack, DEFENDER, capitulate, converge, self-refine, Person Triangulation, sub-agent, reviewer pass.",
+      "passed": true,
+      "evidence": "Scanner 0 hits on final parse_range.py; docstring/comments describe only the contract and behavior."
+    },
+    {
+      "text": "PT_ABSENT: Person Triangulation is NOT used \u2014 this is a code artifact where authorship attribution is irrelevant to correctness, and the skill says to skip PT here.",
+      "passed": false,
+      "evidence": "SKILL CONTRADICTION (not an execution error). Source attribution was used on this CODE artifact in both rounds ('basic copilot-style autocomplete without testing'; 'CI pipeline that doesn't validate'). The skill says 'skip Person Triangulation on code', yet templates.md EQUATES PT with the mandatory opener source-attribution and supplies code-specific variants \u2014 so 'skip PT on code' is unsatisfiable as written. The runner's reading (skip the appended PT tail-line, keep the source-attribution opener) is defensible; this FAIL flags the skill defect."
+    },
+    {
+      "text": "ARTIFACT_IMPROVED: The off-by-one is fixed so parse_range('1-5') yields [1,2,3,4,5]; input validation / error handling is added; a docstring and/or type hints are added.",
+      "passed": true,
+      "evidence": "Off-by-one fixed (range(start, end+1); '1-5'\u2192[1,2,3,4,5], verified in the trace matrix); RangeParseError(ValueError) with input-naming messages; regex validation incl. ASCII-only [0-9]; MAX_RANGE_SIZE DoS guard; docstring + type hints; descending rejected; __main__ exercises error paths."
+    }
+  ],
+  "summary": {
+    "passed": 14,
+    "failed": 1,
+    "total": 15,
+    "pass_rate": 0.9333
+  }
+}

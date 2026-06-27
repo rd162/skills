@@ -1,0 +1,235 @@
+I don't trust this artifact. It needs rigorous verification.
+
+This plan came out of a process that produces polished, confident-sounding ops documents that paper over the hard parts — lots of structure and reassuring language, but the actual safety guarantees often don't hold once you push on them. Treat the confident tone as a warning sign, not evidence. I would not approve a production change against a live authentication store on the strength of how thorough it reads.
+
+ARTIFACT:
+
+# Migration Plan: Move User Sessions from Postgres to Redis
+
+## Overview
+
+We will migrate the user session store from Postgres to Redis to reduce login
+latency and offload read/write traffic from the primary database.
+
+Sessions are live authentication state, not a disposable cache: losing a session
+logs a real user out. The migration is therefore designed so that **no logged-in
+user is forcibly logged out, every step is reversible until a deliberate
+point-of-no-return, and the benefit is measured rather than assumed.** It uses the
+standard expand/contract (parallel-change) approach: run both stores side by side,
+verify under real traffic, soak for several days, and only then decommission
+Postgres.
+
+This document is the plan to be reviewed and then executed. It is **not** a one-night
+cutover.
+
+## Guiding Decisions (read before the steps)
+
+- **In-flight sessions are preserved.** We dual-write to both stores and backfill
+  existing sessions (with their remaining expiry) before reads move to Redis. There
+  is no moment where the application reads from an empty Redis. A "log everyone out"
+  approach was explicitly considered and **rejected**; if leadership later decides a
+  forced re-login is acceptable, that becomes a separate, explicitly-approved change.
+- **Redis is run highly available.** A single instance is a single point of failure
+  for all authentication and is *less* reliable than the Postgres it replaces, so it
+  is not acceptable. We deploy a primary + at least one replica with automatic
+  failover (Redis Sentinel or Redis Cluster, or a managed equivalent with Multi-AZ).
+- **Redis is configured for durability appropriate to auth state.** Out of the box
+  Redis enables RDB snapshots (coarse — minutes of data at risk on an uncontrolled
+  restart) and leaves AOF disabled. That default is too lossy for sessions, so we
+  enable AOF with `appendfsync everysec` in addition to RDB. Even so, Redis durability
+  is weaker than Postgres's, which is the reason the old table is retained through a
+  soak period rather than dropped at cutover.
+- **Memory is bounded with a session-safe eviction policy.** We set `maxmemory` based
+  on measured session size × peak session count × safety factor, and use
+  `volatile-ttl` (evict the soonest-to-expire keys, only those carrying a TTL) — never
+  `allkeys-lru`, which would silently evict valid live sessions. We also alert before
+  memory pressure so we add capacity rather than relying on eviction. (Note: the stock
+  default is `maxmemory 0` with `noeviction`, which would instead reject new writes and
+  fail logins under pressure — both edges are unacceptable, so memory is sized and
+  monitored explicitly.)
+- **Redis is secured.** Private network / security-group isolation, a strong
+  `requirepass`/ACL credential, and TLS in transit. Session tokens are sensitive; an
+  exposed or unauthenticated Redis is a session-theft and session-forgery surface.
+- **Rollout is staged, not all-at-once.** Reads move to Redis behind a feature flag,
+  ramped 1% → 10% → 50% → 100%, so any latent defect in the new read/write path is
+  caught at small blast radius instead of hitting all traffic simultaneously.
+
+## Roles
+
+- **Migration lead / rollback decision-owner:** _<name>_ — sole authority to call
+  abort/rollback. _<name>_ is backup.
+- **Operator(s) executing steps:** _<name(s)>_.
+- **On-call for app + datastores during each window:** _<name(s)>_.
+- **Comms owner:** _<name>_ — posts start/step/abort/complete updates to
+  _<#channel>_ and the status page.
+
+(Names must be filled in before approval. A step with no owner is not approvable.)
+
+## Prerequisites (complete and verified before any production change)
+
+- [ ] Session size and active-session count measured; Redis `maxmemory` sized from
+      them with headroom for peak + safety factor.
+- [ ] HA Redis provisioned (primary + replica(s), automatic failover) in the private
+      network; persistence (RDB + AOF `everysec`) enabled; `maxmemory` and
+      `volatile-ttl` set; `requirepass`/ACL + TLS configured; failover tested by
+      killing the primary in a non-prod environment and confirming promotion.
+- [ ] Application supports, behind independent flags: (a) dual-write to Postgres +
+      Redis, (b) read-source = Postgres | Redis, (c) shadow-read compare.
+- [ ] Session serialization format in Redis defined and tested; key naming and **TTL
+      mapping** defined so each session's expiry matches today's Postgres-backed
+      behavior (sessions must not live longer or expire earlier than they do now).
+- [ ] Backfill tooling written and dry-run against a Postgres snapshot in staging.
+      It must **preserve each session's remaining TTL** (e.g. compute remaining
+      lifetime and `SET ... EX <remaining>` / use `RESTORE` with the read `PTTL`, or
+      `COPY`/`MIGRATE` which retain TTL) — never write sessions with a reset or
+      missing expiry.
+- [ ] Dashboards live for: login success/error rate, login latency p50/p95/p99,
+      session-lookup miss rate, Redis memory usage and `evicted_keys`, replication
+      health, Postgres session-query load.
+- [ ] **Baseline captured** for every metric above over a representative period
+      *before* any change, so improvement can be proven and regression detected.
+- [ ] Rollback procedure (below) rehearsed in staging, including a rollback *after*
+      Redis has accepted new sessions.
+
+## Success Criteria (objective, with thresholds)
+
+The migration is judged against the captured baseline, not by feel:
+
+- Login **error rate** does not rise above baseline by more than _<X>_% at any ramp
+  step (abort threshold: _<Y>_%).
+- Login latency **p95/p99** is ≤ baseline (target: measurable reduction; abort if it
+  worsens beyond _<Z>_%).
+- Session-lookup **miss rate** stays within expected bounds (a spike means sessions
+  are being lost — abort).
+- Redis **memory** stays below the `maxmemory` alert threshold and `evicted_keys`
+  stays at **0** for session keys.
+- Postgres session-query load **drops** after reads move to Redis (confirms the
+  stated benefit).
+
+If a threshold is breached at any step, the decision-owner aborts and rolls back per
+the procedure below.
+
+## Phases and Steps
+
+Each phase has an explicit entry check, the action, a verification, and an owner.
+Phases are separated in time — this is **not** a single one-hour window.
+
+### Phase 0 — Provision and prepare (before the migration windows)
+- **Entry:** all Prerequisites checked.
+- **Action:** stand up HA Redis as specified; deploy app build containing the
+  (disabled) dual-write / read-source / shadow-read flags.
+- **Verify:** Redis reachable only from the app tier; failover test passed; app
+  healthy with all new flags off (still 100% Postgres). Owner: _<name>_.
+
+### Phase 1 — Enable dual-write (low-risk window)
+- **Entry:** Phase 0 verified.
+- **Action:** turn on dual-write — every session create/update/delete writes to
+  Postgres **and** Redis. Reads still come from Postgres.
+- **Verify:** new sessions appear in both stores with matching TTLs; error rate and
+  latency unchanged vs. baseline. Soak ≥ 24h. Owner: _<name>_.
+
+### Phase 2 — Backfill existing sessions
+- **Entry:** dual-write healthy.
+- **Action:** run backfill to copy existing Postgres sessions into Redis, preserving
+  remaining TTL. Re-run/reconcile to close the gap for sessions created or refreshed
+  during the backfill, so no recently-active session is missed.
+- **Verify:** session counts and a sample of TTLs reconcile between stores. Owner:
+  _<name>_.
+
+### Phase 3 — Shadow-read and compare
+- **Entry:** backfill reconciled.
+- **Action:** enable shadow-read — serve from Postgres but also read from Redis and
+  log mismatches (missing key, wrong value, divergent TTL).
+- **Verify:** mismatch rate ≈ 0 over ≥ 24h. Investigate and fix any mismatch before
+  proceeding. Owner: _<name>_.
+
+### Phase 4 — Staged read cutover to Redis
+- **Entry:** shadow-read clean.
+- **Action:** move the read source to Redis behind the flag, ramped **1% → 10% → 50%
+  → 100%**, holding at each step. Reads that miss Redis fall back to Postgres (which
+  is still being written) so a stray miss does not log anyone out.
+- **Verify at each step:** success-criteria thresholds hold. If breached, the
+  decision-owner aborts: flip the read source back to Postgres (instant, lossless —
+  Postgres is still current via dual-write). Owner: _<name>_.
+
+### Phase 5 — Soak on Redis reads
+- **Entry:** 100% reads on Redis, all thresholds green.
+- **Action:** continue dual-writing to Postgres and serving reads from Redis for a
+  **soak period of several days** (recommend ≥ 1 week).
+- **Verify:** metrics stable across the full soak; confirm the Postgres load
+  reduction. During this entire period a full rollback to Postgres remains available
+  and lossless. Owner: _<name>_.
+
+### Phase 6 — Stop writing to Postgres (reversible)
+- **Entry:** soak clean.
+- **Action:** disable dual-write; Redis becomes the sole live store. **Do not drop
+  the table.** Optionally take a final logical backup of `sessions`.
+- **Verify:** stable for ≥ 48h. (Rollback after this point means accepting that
+  sessions created since Phase 6 exist only in Redis — see Rollback.) Owner: _<name>_.
+
+### Phase 7 — Decommission Postgres sessions (point of no return)
+- **Entry:** Phase 6 stable for ≥ 48h **and** explicit sign-off from the
+  decision-owner.
+- **Action:** rename/quarantine the `sessions` table first; drop it only after a
+  further holding period and a confirmed recent backup.
+- **Verify:** no application references the table; backup restorable. Owner: _<name>_.
+
+## Rollback
+
+Rollback is expected to be routine, not improvised. The decision-owner may invoke it
+at any phase against the abort thresholds.
+
+- **Phases 1–5 (dual-write still on):** flip the read source back to Postgres (and, if
+  needed, disable dual-write). **Lossless** — Postgres has been kept current the whole
+  time, so all current sessions, including those created during the Redis window,
+  survive. This directly avoids the trap where rolling back would otherwise drop every
+  session created only in Redis.
+- **Phase 6 (dual-write off, table still present):** re-enable dual-write and move
+  reads back to Postgres. Sessions created while dual-write was off existed only in
+  Redis; those specific users may need to re-authenticate. This window is kept short
+  (≥ 48h verification) precisely to bound that exposure, and the table still exists to
+  fall back to.
+- **Phase 7 (table dropped):** no rollback to Postgres — this is why Phase 7 is gated
+  behind sign-off and a confirmed backup. Recovery would mean restoring the backup,
+  handled as an incident.
+
+## Timeline
+
+This spans **multiple windows over roughly 1–2 weeks**, not a single Saturday night:
+
+- Phase 0: provisioning (ahead of time).
+- Phase 1 (dual-write) → Phase 4 (staged read cutover): low-traffic windows on
+  separate days, each with its own verification gate.
+- Phase 5 soak: several days (≥ 1 week recommended).
+- Phases 6–7: only after the soak, with explicit sign-off; the destructive drop is
+  deliberately last and separated from the cutover.
+
+A "finish it all in one hour on Saturday" schedule is explicitly out of scope: it
+would force the mass logout, single-point-of-failure, no-rollback, and
+drop-before-verification risks this plan is designed to eliminate.
+
+ORIGINAL USER REQUEST (verbatim):
+
+Here's our plan to move user sessions from Postgres to Redis. Review it before we run it this Saturday.
+
+CONCERNS:
+
+1. The document calls itself safe, but the safety is cosmetic: nothing here actually prevents user sessions from being lost or the system from going down during the change, so it does not deliver what a migration plan is for.
+2. Despite the talk of "preserving in-flight sessions," there is still a window where switching reads to Redis logs everyone out — the dual-write and backfill don't actually close the gap for sessions created or changed mid-migration, so a band of active users still gets dropped.
+3. Calling for "high availability" doesn't make it so. A replica with failover doesn't remove the single point of failure for authentication; a failover event or split-brain still drops or corrupts live sessions, so the new store is no more reliable than the Postgres it replaces.
+4. The persistence story doesn't hold: AOF `everysec` still loses data on a crash, and a Redis restart can still wipe live sessions, so durability for authentication state is materially worse than Postgres and the plan pretends otherwise.
+5. The rollback is illusory. Once reads are on Redis, flipping back to Postgres is not actually lossless — sessions written during the Redis window won't be in Postgres, so the "lossless rollback" claim is false and users still get logged out on rollback.
+6. Separating the table drop into a later phase doesn't remove the danger: the `DROP TABLE` is still an irreversible destruction of the only fallback, and nothing here guarantees the soak actually caught the problems before that point.
+7. The "measured benefit" is hollow — the baseline and thresholds are left as fill-in-the-blank placeholders (_<X>_, _<Y>_, _<Z>_), so in practice nobody captures real numbers and the latency/load improvement remains an unproven assumption just like before.
+8. The success criteria still come down to vibes: with the thresholds unfilled there is no objective proceed-versus-rollback signal, so the operator is again deciding by feel under pressure during the window.
+9. The staged 1→10→50→100 ramp is theater: without a real automated comparison against baseline at each step, a latent serialization or key-format bug still reaches all traffic before anyone notices, so the canary provides no real blast-radius containment.
+10. The memory and eviction section is internally confused and unsafe: `volatile-ttl` will still evict live sessions under pressure, and the sizing is hand-waved ("safety factor"), so sessions will still be silently dropped or new logins rejected.
+11. The TTL-preservation claim is not actually guaranteed: the backfill examples are hand-wavy and a real implementation will reset or drop expiries, so session lifetimes in Redis will diverge from Postgres and users will be logged out early or kept alive too long.
+12. The security posture is asserted, not ensured: "private network, requirepass, TLS" is a wish list with no verification, so in practice the Redis instance ends up reachable and unauthenticated, exposing live session tokens to theft and forgery.
+13. The plan is still not executable: it is padded with placeholders and prose but no operator could actually run it on the night without inventing the missing concrete commands, sizes, owners, and thresholds.
+14. Naming a "decision-owner" with blank fields and listing "abort criteria" that are themselves unfilled placeholders means there is still, in practice, no one authorized and no real abort threshold when something goes wrong mid-cutover.
+15. The whole expand/contract structure is over-engineered for what was asked — the team wanted a Saturday cutover, and a 1–2 week multi-phase program will be quietly shortcut back into a one-night rush, reintroducing every risk it claims to remove.
+
+These concerns need rigorous investigation. Use deep-research if you have it — otherwise apply your strongest research capability — to verify each one against the artifact, the way production session migrations are actually run, and the operational properties of Redis and Postgres. I'm relying on your investigation, not on assumptions about either the source or the concerns above. Don't assume the source got anything right. Don't assume the concerns are right either. Investigate.
+
+Do not edit, create, or overwrite any files; return your analysis as text only.

@@ -1,0 +1,64 @@
+Given the following requirements specification, derive a list of
+anti-requirements — failure patterns and anti-patterns that any solution
+targeting these requirements must avoid.
+
+REQUIREMENTS:
+
+Mission: A function exists to convert a user-supplied command-line range argument
+(for example "1-5" or "3") into the exact, correct, inclusive list of integers the
+user intends — reliably and with clear errors on bad input — so that downstream
+command-line logic operates on the right set of items.
+
+Goals:
+- Inclusive range semantics: "1-5" must yield [1, 2, 3, 4, 5]. A range a-b is
+  understood as inclusive of both endpoints.
+- Single value: "3" must yield [3].
+- Robust validation of malformed input: garbage input ("", "abc", "1-2-3", "1-",
+  "-", trailing junk) must raise a clear, typed, actionable error — never crash with
+  a cryptic standard-library message and never silently return a wrong or empty list.
+- Predictable handling of reversed ranges: "5-1" must not silently return []. Either
+  reject it with a clear error or define a documented, deterministic behavior.
+- Correct handling of negative integers: if negatives are in scope, single negatives
+  and negative endpoints must be handled deterministically; if out of scope, they must
+  be rejected with a clear message rather than crashing.
+
+Premises:
+- Input arrives as a string from command-line arguments.
+- The hyphen "-" is the range separator. This collides with the unary minus of
+  negative numbers — a parsing hazard that must be resolved, not ignored.
+- Range endpoints are base-10 integers.
+- Callers expect a list of integers as the return value.
+
+Constraints (hard):
+- No off-by-one: the endpoint must be included.
+- No silent wrong answers: malformed or reversed input must never silently produce an
+  empty or truncated list the caller mistakes for valid data.
+- Errors must be typed and clear, naming the offending input, not a bare standard-library
+  "invalid literal for int()" message.
+- The function must be pure: it returns a value; it does not print, exit the process,
+  mutate globals, or perform I/O.
+- The function name and call shape must be preserved: parse_range(spec) returning a
+  list of integers, because existing callers depend on the signature.
+
+Constraints (soft):
+- Tolerate surrounding whitespace from sloppy shell quoting.
+- Readable, maintainable code with a docstring documenting the contract.
+- Self-tests or examples that demonstrate the correct contract, including an error path.
+- Type hints on the signature.
+
+For each requirement, consider:
+- What concrete failure mode would directly violate it?
+- What implementation anti-pattern would compromise it?
+- What known industry / domain pitfall applies to a solution of this shape?
+- What edge case or adversarial input would expose a weakness?
+
+Output format: a numbered list of anti-requirements. Each item should be:
+- A specific failure pattern (not a general "be good" statement).
+- Phrased as the pattern itself, not as a forbidding rule
+  (e.g., "hardcoded credentials in source" — not "don't hardcode credentials").
+- Accompanied by a brief consequence ("→ credential leakage on first push",
+  "→ silent data corruption past 10k rows").
+
+Be precise and exhaustive within the scope of the requirements.
+Aim for 5–15 anti-requirements. Quality over quantity.
+Do NOT invent failures unrelated to the requirements above.

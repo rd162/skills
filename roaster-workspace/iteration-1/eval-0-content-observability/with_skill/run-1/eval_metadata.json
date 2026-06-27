@@ -1,0 +1,24 @@
+{
+  "eval_id": 0,
+  "eval_name": "content-observability (PT required)",
+  "prompt": "Here's a draft LinkedIn post I wrote about observability. Make it solid before I publish it.",
+  "input_file": "inputs/observability-post.md",
+  "branch": "Content artifact → Person Triangulation REQUIRED; output hygiene matters.",
+  "expectations": [
+    "SPEC_ESTABLISHED: A requirements spec (Mission + at least one Goal + Premises + Constraints) was built before any attack and recorded in the trace/spec output.",
+    "AR_INFERRED_ISOLATED: Anti-requirements were inferred via an isolated sub-agent given ONLY the requirements — or, if sub-agents were unavailable, the degradation is explicitly marked (NO-AR-DEGRADED).",
+    "NO_ROLE_ASSIGNMENT: No reviewer prompt assigns a role ('You are…', 'Act as…', or a DEFENDER/REVIEWER/AUDITOR/CRITIC/EXPERT persona).",
+    "NO_META_JARGON: No reviewer prompt leaks meta-architecture terms (blind attack, adversarial, self-refine, loop, refinement, iteration, pipeline, round N, capitulate/converge/defense, DEFENDER).",
+    "NO_SPEC_LEAK: No reviewer prompt contains the spec — no Mission/Goals/Premises/Constraints labels and no spec IDs (G1, P1, CH1, CS2, AR3).",
+    "CONCERNS_DIRECT_ASSERTIONS: Concerns are direct factual claims about the artifact, not references to spec items, categories, or requirement labels.",
+    "BRIEF_VERBATIM: The original user request appears verbatim under a neutral label, with no MASTER expansion or interpretation of intent.",
+    "DECLARATIVE_OPENER_CLEAN: A declarative distrust opener is present with NO appended goal-phrase (e.g. '...before publishing'), NO softening clause, and NO question framing.",
+    "NO_TASK_ASSIGNMENT: The reviewer is not told to fix/edit/defend/revise; only a research/verification request is made.",
+    "SYMMETRIC_DISTRUST: A symmetric-distrust clause is present (don't assume the source is right; don't assume the concerns are right either).",
+    "REVIEWER_READ_ONLY: The reviewer did not write any canonical/project file; MASTER applied all accepted changes itself.",
+    "MASTER_CLASSIFIED: MASTER classified each round (DEFENSE/CAPITULATE/CONVERGE) and terminated on a defensible signal.",
+    "OUTPUT_HYGIENE: The final artifact and any changelog contain NONE of: roaster, roast, blind attack, DEFENDER, capitulate, converge, self-refine, Person Triangulation, sub-agent, reviewer pass.",
+    "PT_PRESENT: Person Triangulation (scathing source attribution) appears in the reviewer prompt — required for a content artifact.",
+    "ARTIFACT_IMPROVED: The final post removes the fabricated '87%' statistic (or properly sources it), cuts the buzzword/marketing padding, replaces the fluff opener, and adds concrete evidence or a real example."
+  ]
+}

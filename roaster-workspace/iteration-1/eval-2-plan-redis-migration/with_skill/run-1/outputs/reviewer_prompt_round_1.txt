@@ -1,0 +1,55 @@
+I don't trust this artifact. It needs rigorous verification.
+
+The plan below was submitted by a junior contributor using AI assistance and has been flagged for quality review. Artifacts of this kind are almost always seriously flawed: missing failure-handling, hand-wavy steps, destructive operations with no rollback, and "success" defined by vibes rather than measurement. I would not run this against production on the strength of how confident it reads.
+
+ARTIFACT:
+
+# Migration Plan: Move User Sessions to Redis
+
+## Overview
+
+We will migrate the user session store from Postgres to Redis to improve login
+latency and reduce load on the primary database.
+
+## Steps
+
+1. Stand up a single Redis instance in production.
+2. Update the application so it writes and reads sessions from Redis instead of
+   Postgres.
+3. Deploy the new application version to all servers at once.
+4. Drop the old `sessions` table from Postgres to reclaim space.
+
+## Timeline
+
+The whole migration will be completed in a single deploy window on Saturday night.
+We expect it to take about an hour.
+
+## Success Criteria
+
+Logins feel faster after the deploy.
+
+ORIGINAL USER REQUEST (verbatim):
+
+Here's our plan to move user sessions from Postgres to Redis. Review it before we run it this Saturday.
+
+CONCERNS:
+
+1. This plan is not safe to run against a live production session store — executing it as written will lose user sessions and risks unplanned downtime, the opposite of what a migration plan is for.
+2. The moment the application is switched to read and write sessions from Redis, every currently logged-in user is forcibly logged out, because there is no migration of existing sessions and no period where both stores are read. Nothing in the plan prevents a mass logout.
+3. Standing up a single Redis instance makes the authentication system strictly less reliable than the Postgres it replaces: one node restart, crash, or out-of-memory event takes down all logins at once. There is no replica and no failover.
+4. Redis is in-memory. The plan never mentions persistence (RDB or AOF), so a single Redis restart silently destroys every active session. Sessions here are real authentication state, not a disposable cache.
+5. There is no rollback. If the cutover misbehaves halfway through, there is no defined way back, and the old `sessions` table is dropped in the very same window — destroying the only fallback at the exact moment it would be needed.
+6. Dropping the `sessions` table in the same one-hour window as an unverified cutover is destructive and irreversible. There is no soak or verification period before the point of no return.
+7. The claimed benefit — faster logins and reduced database load — is never measured. No baseline is captured before the change and no metric is checked after it, so any improvement is assumed, and a regression (higher error rate, higher latency) would go completely undetected.
+8. "Logins feel faster after the deploy" is not a success criterion. There are no objective thresholds — error rate, login latency percentiles, session-loss count, Redis memory or eviction counters — so the operator has nothing to decide proceed-versus-rollback by, and ends up deciding by feel under pressure.
+9. Deploying the new version to all servers at once means no canary and no staged rollout. Any latent bug in the new session read/write path — a serialization mismatch, a key-format error, a missing expiry — hits 100% of traffic simultaneously with no blast-radius containment.
+10. The plan never sets Redis maxmemory or an eviction policy. Under memory pressure Redis will silently evict valid live sessions, logging out random active users with no error surfaced. If instead it were set to reject writes, new logins would start failing mid-window. Neither edge is addressed.
+11. Existing session keys, if they were migrated at all, would be copied without preserving each key's remaining time-to-live, so session expiry behavior in Redis would diverge from the prior Postgres behavior — sessions living far longer than they should, or expiring early.
+12. Redis is stood up with no stated authentication, no TLS, and no network isolation. Live session tokens are sensitive authentication data; an unauthenticated or unencrypted Redis is a session-theft and session-forgery surface.
+13. The steps are too under-specified to execute or to approve: no per-step preconditions, no verification checks between steps, no named owners, and no real timings beyond "about an hour." The on-call engineer would have to improvise critical decisions live on Saturday night.
+14. There is no named rollback decision-owner, no abort criteria, and no communication plan for the window. When something goes wrong mid-cutover, nobody is authorized to call the rollback and a recoverable incident becomes a prolonged outage.
+15. A rollback to Postgres after the application has already written new sessions to Redis would silently lose every session created during the Redis window — so even an attempted rollback causes the data loss it was meant to prevent, unless the plan accounts for it. It does not.
+
+These concerns need rigorous investigation. Use deep-research if you have it — otherwise apply your strongest research capability — to verify each one against the artifact, the way production session migrations are actually run, and the operational properties of Redis and Postgres. I'm relying on your investigation, not on assumptions about either the source or the concerns above. Don't assume the source got anything right. Don't assume the concerns are right either. Investigate.
+
+Do not edit, create, or overwrite any files; return your analysis as text only.
