@@ -1,0 +1,82 @@
+[
+  {
+    "query": "ok so we just finished the big db migration and I want to make sure we capture all the decisions and lessons learned somewhere before we forget everything - can you materialize the knowledge from what we've been discussing?",
+    "should_trigger": true
+  },
+  {
+    "query": "can you document the context here? we decided to go with graphql over rest because our mobile clients need flexible queries and our schema changes constantly - this was a really hard call and I want it saved",
+    "should_trigger": true
+  },
+  {
+    "query": "save memory: we're using blue-green deployments on ECS, the blue env is always the stable one, green gets new releases, and we swap via the ALB target group weights",
+    "should_trigger": true
+  },
+  {
+    "query": "I want to create a knowledge artifact for our microservices auth pattern - each service validates jwts independently using a shared public key from our auth service",
+    "should_trigger": true
+  },
+  {
+    "query": "materialize this as a fact: our api p99 latency is 45ms as measured in our load test two weeks ago with 10k concurrent users",
+    "should_trigger": true
+  },
+  {
+    "query": "summarize progress on the refactoring and save it - we've finished the auth module and payment module, the notification service is still in progress, and we haven't started the reporting module",
+    "should_trigger": true
+  },
+  {
+    "query": "document the context of how we onboard new engineers - first week is reading docs and setting up local dev, second week is first PR, third week is code review ownership for their area",
+    "should_trigger": true
+  },
+  {
+    "query": "I need to create an ontology for our domain model - we have Customers, Orders, Products, Subscriptions, and Invoices and I want each term formally defined so everyone on the team uses them the same way",
+    "should_trigger": true
+  },
+  {
+    "query": "please revise the auth concept artifact we created last week - I realized we're now also using OAuth2 for our partner integrations so the definition needs updating",
+    "should_trigger": true
+  },
+  {
+    "query": "we had a production incident yesterday - the payments service went down for 22 minutes because of a misconfigured rate limit on the stripe webhook endpoint. can you document what happened as a narrative so we have a record of it?",
+    "should_trigger": true
+  },
+  {
+    "query": "search the web for best practices on microservices architecture and give me a summary",
+    "should_trigger": false
+  },
+  {
+    "query": "write me a python script to parse this json file and extract all the customer ids from the orders array",
+    "should_trigger": false
+  },
+  {
+    "query": "can you summarize the main arguments from this blog post about database sharding I'm pasting below?",
+    "should_trigger": false
+  },
+  {
+    "query": "what's the difference between OAuth2 and OpenID Connect? I keep getting confused about which one does authentication vs authorization",
+    "should_trigger": false
+  },
+  {
+    "query": "help me write a good commit message for this change - I refactored the user repository to use the repository pattern instead of direct db calls",
+    "should_trigger": false
+  },
+  {
+    "query": "debug this for me: TypeError: cannot read properties of undefined (reading 'userId') at line 47 in authMiddleware.ts",
+    "should_trigger": false
+  },
+  {
+    "query": "can you take notes on this meeting while I paste the transcript? just bullet points of the key decisions",
+    "should_trigger": false
+  },
+  {
+    "query": "review my PR diff and tell me if there are any obvious bugs or code quality issues I should fix before I request review",
+    "should_trigger": false
+  },
+  {
+    "query": "I want to document our system architecture - can you help me write a README that explains how all the services fit together?",
+    "should_trigger": false
+  },
+  {
+    "query": "explain how our current codebase handles authentication - I'm new to the team and want to understand the flow before touching anything",
+    "should_trigger": false
+  }
+]

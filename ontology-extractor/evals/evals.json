@@ -33,9 +33,10 @@
       "expected_output": "The unverified performance claim must NOT become a Fact. It should be documented as a Narrative or Concept with [assumption] #unverified observation tag. A reference to a verification procedure (or a future-forward link to one) should appear. The output should clearly reflect that this is an unverified claim requiring validation before being elevated to a Fact.",
       "files": [],
       "expectations": [
-        "The 500K ops/sec claim is NOT documented as a Fact artifact",
-        "The output contains an [assumption] observation category or #unverified tag",
-        "The output references a need for verification (either a verification procedure, a future-forward link, or an explicit note that the claim needs testing)"
+        "The 500K ops/sec claim is NOT documented as a Fact artifact (no 'type: fact' in YAML frontmatter, main heading does not follow 'Fact - ...' pattern)",
+        "The artifact is explicitly typed as a Narrative — 'type: narrative' in YAML frontmatter OR main heading follows 'Narrative - ...' pattern",
+        "The output contains an [assumption] observation category AND an #unverified hashtag (both required; plain prose about uncertainty does not satisfy this)",
+        "The output contains a future-forward double-bracket link to a verification procedure or target Fact (e.g., [[Procedure - ...]] or [[Fact - ...]]) — prose references to verification alone do not satisfy this"
       ]
     }
   ]

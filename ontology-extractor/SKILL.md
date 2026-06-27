@@ -198,6 +198,7 @@ Unverified claims follow a specific path to become verified Facts:
 - Unverified claims are Narratives, never Facts
 - Verification execution produces an immutable Process Narrative
 - Facts are updated only after a verification trail exists
+- **Relation direction:** The initial Narrative `seeds [[Fact - ...]]` (forward-pointing, the Fact does not exist yet). After verification, the Fact uses `verified_by [[Process Narrative - ...]]`. Never use `derived_from` to point at a Fact that doesn't exist yet — `derived_from` implies the target already exists upstream.
 
 For detailed verification flow examples with full artifact content,
 see @references/extended-artifact-guide.md.
@@ -330,7 +331,9 @@ tags:
 **Standard Relations:**
 `implements` `requires` `supports` `illustrates` `is_a`
 `derived_from` `verified_by` `supersedes` `superseded_by`
-`documents_execution_of` `alternative_to`
+`documents_execution_of` `alternative_to` `seeds`
+
+`seeds` is for forward-pointing relations from a Narrative to an artifact that does not yet exist but is implied by the story — e.g., a Narrative about an unverified claim seeds a `[[Fact - ...]]` that will be created after verification. This is directionally opposite to `derived_from`: use `seeds [[Future Artifact]]`, not `derived_from [[Future Artifact]]`.
 
 For full artifact templates with detailed examples per type,
 see @references/extended-artifact-guide.md.
