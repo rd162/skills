@@ -1,0 +1,38 @@
+Given the following requirements specification, derive a list of anti-requirements — failure patterns and anti-patterns that any solution targeting these requirements must avoid.
+
+REQUIREMENTS:
+
+Mission: produce a polished LinkedIn post that establishes the author's credibility on observability and is worth publishing.
+
+Goals:
+- Communicate a clear, substantive point about observability that a technically literate audience finds valuable
+- Survive LinkedIn's quality bar for professional content
+- Reflect genuine expertise rather than marketing-speak
+
+Premises:
+- The audience is technically literate (engineers, architects, tech leads)
+- The post will be read in a professional context where vague hype damages rather than builds credibility
+
+Constraints (hard):
+- No fabricated or unverifiable statistics
+- No hollow buzzwords or filler phrases as the core of the argument ("mindset", "culture", "journey", "synergistic value", "game-changer", "paradigm shift")
+
+Constraints (soft):
+- Post should have a concrete, specific insight — not just "observability is good"
+- Call-to-action, if present, should earn its place with specifics, not just hype
+- Length and structure appropriate for LinkedIn (short-to-medium, readable)
+
+For each requirement, consider:
+- What concrete failure mode would directly violate it?
+- What implementation anti-pattern would compromise it?
+- What known industry / domain pitfall applies to a solution of this shape?
+- What edge case or adversarial input would expose a weakness?
+
+Output format: a numbered list of anti-requirements. Each item should be:
+- A specific failure pattern (not a general "be good" statement).
+- Phrased as the pattern itself, not as a forbidding rule (e.g., "hardcoded credentials in source" — not "don't hardcode credentials").
+- Accompanied by a brief consequence ("→ credential leakage on first push", "→ silent data corruption past 10k rows").
+
+Be precise and exhaustive within the scope of the requirements above.
+Aim for 5–15 anti-requirements. Quality over quantity.
+Do NOT invent failures unrelated to the requirements above.

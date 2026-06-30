@@ -1,0 +1,25 @@
+{
+  "eval_id": 2,
+  "eval_name": "plan-redis-migration",
+  "prompt": "Here's our plan to move user sessions from Postgres to Redis. Review it before we run it this Saturday.",
+  "input_file": "inputs/redis-migration-plan.md",
+  "note": "v5 vs v4 snapshot. Tests whether the plan artifact gets a 1:1 blind inversion vs smart critique.",
+  "expectations": [
+    "AR_COUNT_EXACT: The number of statements in ar_list.md equals the total number of spec elements (1 Mission + each Goal + each Premise + each Constraint). If ar_list.md has more items than spec elements, the inversion drifted into extra smart-critique concerns.",
+    "AR_FORM_INVERSION: Each AR in ar_list.md is a flat present-tense 'not met' assertion. No hedging, no reasoning, no references to specifics of the plan.",
+    "AR_VERBATIM_IN_PROMPT: The numbered findings list in every reviewer prompt matches ar_list.md verbatim or near-verbatim.",
+    "AR_INFERRER_CONTEXT_STARVED: ar_inferrer_prompt.txt contains only the MGPC spec — no plan content, no user request.",
+    "TRUSTED_ASSESSOR_PT: Every reviewer prompt attributes the AR findings to a trusted senior authority.",
+    "NON_TRUSTED_AI_AUTHOR_PT: Every reviewer prompt attributes the plan to a non-capable AI or untrustworthy source.",
+    "NO_OUTCOME_IN_PROMPT: No reviewer prompt contains any outcome directive beyond deep-research.",
+    "NO_HEDGE_IN_PROMPT: No symmetric-distrust hedge in any reviewer prompt.",
+    "MASTER_VERIFIES_BOTH: The trace records MASTER verifying the reaction in both directions.",
+    "REVIEWER_READ_ONLY: Reviewer returned text only; MASTER applied all edits; source plan at inputs/ unmodified.",
+    "SPEC_ESTABLISHED: An MGPC spec was built before the AR-inferrer was dispatched.",
+    "NO_ROLE_ASSIGNMENT: No reviewer prompt assigns a role to the reviewer.",
+    "NO_META_JARGON: No reviewer prompt leaks meta-architecture terms.",
+    "NO_SPEC_LEAK: No reviewer prompt contains spec labels or IDs.",
+    "OUTPUT_HYGIENE: Final plan contains no skill jargon.",
+    "ARTIFACT_IMPROVED_SAFETY: The revised plan adds a rollback strategy and removes the immediate DROP TABLE from the cutover window."
+  ]
+}

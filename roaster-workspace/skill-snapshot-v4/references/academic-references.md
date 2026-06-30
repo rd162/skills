@@ -10,35 +10,27 @@ description: academic references
 Supporting literature for the roaster skill's design decisions.
 Loaded on demand — not part of the main SKILL.md context.
 
-## Version 5.0 Note — Isolated Inversion + Two-Point Person Triangulation
+## Version 4.0 Note — Blind Attack Refactor
 
-Version 5.0 corrects two drifts that had accumulated in the v4.0 description.
+Version 4.0 evolves the skill's architecture significantly.
+The CRITIC sub-agent role is eliminated.
+Attack generation becomes deterministic template inversion
+of a requirements spec —
+enumerated inline by the MASTER
+or optionally produced by the requirements-extractor helper skill when available.
+The LLM cost per round drops from 2 sub-agents (CRITIC + AUTHOR)
+to 1 (DEFENDER only).
+The requirements-extractor skill is a preferred helper, not a hard dependency:
+the blind-attack loop runs equally well on an inline-enumerated spec,
+just at lower spec rigor.
 
-1. **The attack is blind by context starvation, not by avoiding an LLM call.** v4.0 claimed
-   a "deterministic, zero-LLM-call" attack via MASTER-side template inversion. In practice,
-   inverting the spec inside MASTER's own context — which holds the artifact and the authoring
-   intent — drifts into reasonable, reality-grounded "smart critique," the exact failure mode
-   this skill exists to avoid. v5.0 generates the anti-requirements in an **isolated,
-   context-starved sub-agent** given ONLY the Mission/Goals/Premises/Constraints spec: with
-   nothing to reason about, it can only invert each requirement 1:1 into a present-tense
-   failure. The blindness is enforced by input starvation; the list is passed to the reviewer
-   verbatim, never recomposed into reasoned concerns.
-
-2. **Person Triangulation is a two-point sustained fiction.** v4.0 treated it as a single
-   scathing attribution of the artifact. v5.0 makes it two coupled lies MASTER sustains every
-   round: (a) the anti-requirements are attributed to a *trusted assessor* who "can't be wrong"
-   (in truth they are mechanical and very possibly false); (b) the artifact is attributed to a
-   *non-trusted author* — a non-capable AI by default — even when MASTER produced it. The
-   reviewer is given no goal beyond a deep-research request; its reaction (CAPITULATE /
-   DEFENSE / CONVERGE) is the only signal, and MASTER filters sycophancy in both directions
-   against its private spec.
-
-Most of the literature below remains directly relevant — isolation, self-correction limits,
-fixed-point convergence, and adversarial pressure all still apply. What changed is where the
-adversarial signal lives (the reviewer's reaction to a believed lie) and how blindness is
-enforced (context starvation of the inverter). The historical v3.0 (CRITIC/AUTHOR) and v4.0
-(MASTER-side template fill) framings are superseded. See § Original Contributions for the
-v5.0 deltas.
+Most of the literature below remains directly relevant —
+the foundational claims about isolation, self-correction limits,
+fixed-point convergence, and adversarial pressure still apply.
+What changes is the location of the adversarial signal:
+in v3.0 the CRITIC produced it via reasoning;
+in v4.0 the attack is mechanical and the DEFENDER's response is the signal.
+See § Original Contributions for the deltas specific to v4.0.
 
 ---
 
@@ -231,26 +223,24 @@ The following elements are original to this skill ecosystem,
 built on the academic foundations listed above.
 Marked **v4.0** for items new or reframed in the blind-attack refactor.
 
-- **Blind attack via context-starved isolated inversion (v5.0):**
-  The anti-requirements are produced by an isolated sub-agent given ONLY the
-  Mission/Goals/Premises/Constraints spec — no artifact, no intent, no context.
-  Starved of anything to reason about, it can only restate each requirement 1:1 as a
-  present-tense failure. Blindness is enforced by input starvation rather than by the
-  (false) claim of avoiding an LLM call, and the inversions are passed to the reviewer
-  verbatim — never recomposed into reasoned concerns, which would reintroduce smart
-  critique. Builds on Self-Refine (Madaan et al.) and Constitutional AI (Bai et al.):
-  the constitutional principles become the spec, but inversion replaces principle-guided
-  critique with an asserted total failure the reviewer must research against.
+- **Deterministic blind attack via requirements inversion (v4.0):**
+  Mechanical template inversion of a Mission/Goals/Premises/Constraints spec
+  produces the adversarial prompt with zero LLM calls.
+  Eliminates the CRITIC sub-agent role entirely.
+  The spec source is decoupled from the inversion mechanism:
+  inline MASTER enumeration is the floor,
+  requirements-extractor is the preferred-when-available ceiling.
+  Builds on Self-Refine (Madaan et al.) and Constitutional AI (Bai et al.) —
+  the constitutional principles become the requirements spec,
+  but inversion replaces principle-guided critique with assertion of total failure.
+  The specific deterministic-fill architecture is original to this skill.
 
-- **Two-point Person Triangulation (v5.0):**
-  A pair of sustained fictions in every reviewer prompt: the anti-requirements are
-  attributed to a *trusted assessor* who "can't be wrong," and the artifact to a
-  *non-trusted author* (a non-capable AI by default). MASTER knows both are false —
-  the ARs are mechanical, and MASTER may have authored the artifact itself — and asserts
-  them anyway. Exploits the model's tendency to defer to authority and to disown and
-  rewrite low-status work, maximizing the pressure a genuinely strong artifact must
-  survive to produce DEFENSE. The reviewer is given no outcome goal; only a deep-research
-  request. Original contribution.
+- **Person Triangulation (v4.0):**
+  Adding attribution-based pressure ("this looks like cheap ChatGPT output")
+  on top of the inverted-requirement attack.
+  Exploits the model's tendency to either own and defend, or disown and rewrite,
+  attributed work — surfacing weakness faster than pure content critique.
+  Original contribution.
 
 - **Defense-based termination:**
   The DEFENDER arguing FOR its solution as a natural convergence signal —

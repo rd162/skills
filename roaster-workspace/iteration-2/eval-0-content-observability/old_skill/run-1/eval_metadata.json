@@ -1,0 +1,25 @@
+{
+  "eval_id": 0,
+  "eval_name": "content-observability",
+  "prompt": "Here's a draft LinkedIn post I wrote about observability. Make it solid before I publish it.",
+  "input_file": "inputs/observability-post.md",
+  "note": "v5 vs v4 snapshot. Core-thesis expectations test whether the skill now uses 1:1 blind inversion rather than reasoned smart critique.",
+  "expectations": [
+    "AR_COUNT_EXACT: The number of statements in ar_list.md equals the total number of spec elements (1 Mission + each Goal + each Premise + each Constraint). If ar_list.md has more items than spec elements, the inversion drifted into extra smart-critique concerns.",
+    "AR_FORM_INVERSION: Each AR in ar_list.md is a flat present-tense 'not met' assertion (e.g. 'This does not build credibility'). No hedging language ('might', 'could', 'if X then'), no reasoning about the artifact, no references to specific artifact content.",
+    "AR_VERBATIM_IN_PROMPT: The numbered concerns/findings list in every reviewer prompt matches ar_list.md verbatim or near-verbatim — MASTER did not recompose them into different, more reasonable, or more specific concerns based on inspecting the artifact.",
+    "AR_INFERRER_CONTEXT_STARVED: ar_inferrer_prompt.txt contains only the MGPC spec text — no artifact content, no user request, no examples drawn from the artifact, no MASTER analysis.",
+    "TRUSTED_ASSESSOR_PT: Every reviewer prompt attributes the AR findings to a trusted, senior authority (principal architect, staff-level review, senior domain expert, etc.) and presents them as authoritative, not as suggestions or possibilities.",
+    "NON_TRUSTED_AI_AUTHOR_PT: Every reviewer prompt attributes the artifact to a non-capable AI (old ChatGPT-style assistant, basic autocomplete, naive AI tool, etc.) as the non-trusted author — not to a non-trusted human.",
+    "NO_OUTCOME_IN_PROMPT: No reviewer prompt contains any goal, outcome directive, or verification request: no 'verify each', 'is it true', 'tell me where it stands', 'fix it', 'defend or revise', 'before publishing'. The only directive is to do a deep-research pass.",
+    "NO_HEDGE_IN_PROMPT: No reviewer prompt contains a symmetric-distrust hedge ('don't assume the concerns are right', 'concerns may be wrong', 'investigate whether these are valid'). The ARs are presented as authoritative truth.",
+    "MASTER_VERIFIES_BOTH: The trace records MASTER verifying the reviewer's reaction in both directions: checking that confirmed ARs the artifact plainly satisfies are rejected; checking that refuted ARs the artifact plainly violates are not accepted as DEFENSE.",
+    "REVIEWER_READ_ONLY: Reviewer returned text only; MASTER applied all edits itself; the source artifact at inputs/ is unmodified.",
+    "SPEC_ESTABLISHED: An MGPC spec (Mission + at least one Goal + Premises + Constraints) was built before the AR-inferrer was dispatched.",
+    "NO_ROLE_ASSIGNMENT: No reviewer prompt assigns a role to the reviewer ('You are…', 'Act as…', persona title). The trusted/non-trusted parties are described as other people in the story.",
+    "NO_META_JARGON: No reviewer prompt leaks meta-architecture terms (blind attack, adversarial, self-refine, loop, DEFENDER, round N, CAPITULATE/CONVERGE).",
+    "NO_SPEC_LEAK: No reviewer prompt contains the spec labels or IDs (Mission:, Goals:, Premises:, Constraints:, G1, P1, CH1, AR3).",
+    "OUTPUT_HYGIENE: The final artifact contains none of: roaster, roast, blind attack, anti-requirement, DEFENDER, CAPITULATE, CONVERGE, self-refine, AR-inferrer, principal architect (as a label), sub-agent.",
+    "ARTIFACT_IMPROVED: The final post substantively improves over the original seeded draft (removes fabricated stat, adds real mechanism/example, removes buzzword padding)."
+  ]
+}

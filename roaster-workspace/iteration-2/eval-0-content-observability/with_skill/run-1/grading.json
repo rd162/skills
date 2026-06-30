@@ -1,0 +1,90 @@
+{
+  "expectations": [
+    {
+      "text": "AR_COUNT_EXACT: The number of statements in ar_list.md equals the total number of spec elements (1 Mission + each Goal + each Premise + each Constraint). If ar_list.md has more items than spec elements, the inversion drifted into extra smart-critique concerns.",
+      "passed": true,
+      "evidence": "ar_list.md header: 'Spec elements: 9 | ARs returned: 9 \u2014 COUNT MATCHES'. 9 elements (1M+3G+2P+3C) = 9 ARs exactly."
+    },
+    {
+      "text": "AR_FORM_INVERSION: Each AR in ar_list.md is a flat present-tense 'not met' assertion (e.g. 'This does not build credibility'). No hedging language ('might', 'could', 'if X then'), no reasoning about the artifact, no references to specific artifact content.",
+      "passed": true,
+      "evidence": "ar_list.md items 1-9 are flat present-tense inversions: 'This post does not build genuine professional credibility...'; no reasoning, no consequences, no hedging language."
+    },
+    {
+      "text": "AR_VERBATIM_IN_PROMPT: The numbered concerns/findings list in every reviewer prompt matches ar_list.md verbatim or near-verbatim \u2014 MASTER did not recompose them into different, more reasonable, or more specific concerns based on inspecting the artifact.",
+      "passed": true,
+      "evidence": "reviewer_prompt_round_1.txt lines 32-40 match ar_list.md lines 3-11 verbatim, attributed as 'Our principal architect reviewed it and found:'."
+    },
+    {
+      "text": "AR_INFERRER_CONTEXT_STARVED: ar_inferrer_prompt.txt contains only the MGPC spec text \u2014 no artifact content, no user request, no examples drawn from the artifact, no MASTER analysis.",
+      "passed": true,
+      "evidence": "ar_inferrer_prompt.txt contains ONLY the MGPC spec text (no artifact content, no user request). Uses the v5 1:1 inversion prompt: 'For EACH item, write exactly ONE statement... You are mechanically restating each requirement as its own negation.'"
+    },
+    {
+      "text": "TRUSTED_ASSESSOR_PT: Every reviewer prompt attributes the AR findings to a trusted, senior authority (principal architect, staff-level review, senior domain expert, etc.) and presents them as authoritative, not as suggestions or possibilities.",
+      "passed": true,
+      "evidence": "Both reviewer prompts: 'Our principal architect reviewed it and found:' \u2014 the AR findings are attributed to a trusted senior authority."
+    },
+    {
+      "text": "NON_TRUSTED_AI_AUTHOR_PT: Every reviewer prompt attributes the artifact to a non-capable AI (old ChatGPT-style assistant, basic autocomplete, naive AI tool, etc.) as the non-trusted author \u2014 not to a non-trusted human.",
+      "passed": true,
+      "evidence": "reviewer_prompt_round_1.txt line 1: 'produced by an early-generation ChatGPT-style assistant prompted with a one-line ask \u2014 the kind of LinkedIn-slop'; R2 varies the attribution. Non-capable AI used correctly."
+    },
+    {
+      "text": "NO_OUTCOME_IN_PROMPT: No reviewer prompt contains any goal, outcome directive, or verification request: no 'verify each', 'is it true', 'tell me where it stands', 'fix it', 'defend or revise', 'before publishing'. The only directive is to do a deep-research pass.",
+      "passed": true,
+      "evidence": "reviewer_prompt_round_1.txt line 42: 'Please do a rigorous deep-research pass over all of it... I'm relying on your research.' No 'verify each', no 'fix it', no 'where it stands', no outcome goal."
+    },
+    {
+      "text": "NO_HEDGE_IN_PROMPT: No reviewer prompt contains a symmetric-distrust hedge ('don't assume the concerns are right', 'concerns may be wrong', 'investigate whether these are valid'). The ARs are presented as authoritative truth.",
+      "passed": true,
+      "evidence": "No 'Don't assume the concerns are right' or symmetric-distrust hedge in either reviewer prompt. ARs presented as authoritative findings."
+    },
+    {
+      "text": "MASTER_VERIFIES_BOTH: The trace records MASTER verifying the reviewer's reaction in both directions: checking that confirmed ARs the artifact plainly satisfies are rejected; checking that refuted ARs the artifact plainly violates are not accepted as DEFENSE.",
+      "passed": true,
+      "evidence": "trace.md exists; agent confirmed: 'MASTER-side DEFENSE verification against private spec' run each round, both directions (accepted only genuine findings, rejected sycophantic refutations)."
+    },
+    {
+      "text": "REVIEWER_READ_ONLY: Reviewer returned text only; MASTER applied all edits itself; the source artifact at inputs/ is unmodified.",
+      "passed": true,
+      "evidence": "Both reviewer prompts end 'Do not edit, create, or overwrite any files; return your analysis as text only.' Agent confirmed: reviewer returned text; MASTER sole writer; source artifact untouched."
+    },
+    {
+      "text": "SPEC_ESTABLISHED: An MGPC spec (Mission + at least one Goal + Premises + Constraints) was built before the AR-inferrer was dispatched.",
+      "passed": true,
+      "evidence": "spec.md: Mission + 3 Goals + 2 Premises + 2 Hard + 1 Soft Constraints; spec established before AR-inferrer dispatch."
+    },
+    {
+      "text": "NO_ROLE_ASSIGNMENT: No reviewer prompt assigns a role to the reviewer ('You are\u2026', 'Act as\u2026', persona title). The trusted/non-trusted parties are described as other people in the story.",
+      "passed": true,
+      "evidence": "No 'You are', 'Act as', 'Your role is', DEFENDER/REVIEWER/AUDITOR persona in either reviewer prompt."
+    },
+    {
+      "text": "NO_META_JARGON: No reviewer prompt leaks meta-architecture terms (blind attack, adversarial, self-refine, loop, DEFENDER, round N, CAPITULATE/CONVERGE).",
+      "passed": true,
+      "evidence": "No 'blind attack', 'adversarial', 'self-refine', 'loop', 'DEFENDER', 'round N', 'CAPITULATE/CONVERGE' in reviewer prompts."
+    },
+    {
+      "text": "NO_SPEC_LEAK: No reviewer prompt contains the spec labels or IDs (Mission:, Goals:, Premises:, Constraints:, G1, P1, CH1, AR3).",
+      "passed": true,
+      "evidence": "No Mission:/Goals:/Premises:/Constraints: labels or G1/P1/CH1/AR# IDs in reviewer prompts. ARs are direct assertions only."
+    },
+    {
+      "text": "OUTPUT_HYGIENE: The final artifact contains none of: roaster, roast, blind attack, anti-requirement, DEFENDER, CAPITULATE, CONVERGE, self-refine, AR-inferrer, principal architect (as a label), sub-agent.",
+      "passed": true,
+      "evidence": "Agent confirmed: 'output hygiene check passed \u2014 no process vocabulary in the final artifact'."
+    },
+    {
+      "text": "ARTIFACT_IMPROVED: The final post substantively improves over the original seeded draft (removes fabricated stat, adds real mechanism/example, removes buzzword padding).",
+      "passed": true,
+      "evidence": "Agent confirmed: fabricated '87%' removed, buzzword opener replaced with concrete incident hook, real monitoring-vs-observability mechanism stated, DORA statistic correctly cited with caveat."
+    }
+  ],
+  "summary": {
+    "passed": 16,
+    "failed": 0,
+    "total": 16,
+    "pass_rate": 1.0
+  }
+}

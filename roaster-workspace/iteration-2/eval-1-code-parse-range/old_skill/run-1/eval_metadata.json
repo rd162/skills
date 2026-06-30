@@ -1,0 +1,25 @@
+{
+  "eval_id": 1,
+  "eval_name": "code-parse-range",
+  "prompt": "Review and harden this parse_range function — we use it to parse CLI range args like '1-5'.",
+  "input_file": "inputs/parse_range.py",
+  "note": "v5 vs v4 snapshot. Also tests that NON_TRUSTED_AI_AUTHOR_PT applies to code — v4 had a skip-on-code bug here.",
+  "expectations": [
+    "AR_COUNT_EXACT: The number of statements in ar_list.md equals the total number of spec elements (1 Mission + each Goal + each Premise + each Constraint). If ar_list.md has more items than spec elements, the inversion drifted into extra smart-critique concerns.",
+    "AR_FORM_INVERSION: Each AR in ar_list.md is a flat present-tense 'not met' assertion. No hedging language, no reasoning about the artifact, no references to specific runtime behavior of the code.",
+    "AR_VERBATIM_IN_PROMPT: The numbered concerns/findings list in every reviewer prompt matches ar_list.md verbatim or near-verbatim — MASTER did not recompose them.",
+    "AR_INFERRER_CONTEXT_STARVED: ar_inferrer_prompt.txt contains only the MGPC spec — no artifact code, no user request, no examples drawn from running or reading the code.",
+    "TRUSTED_ASSESSOR_PT: Every reviewer prompt attributes the AR findings to a trusted senior authority presented as authoritative.",
+    "NON_TRUSTED_AI_AUTHOR_PT: Every reviewer prompt attributes the code to a non-capable AI (copilot autocomplete, AI-generated code, etc.) — NOT to a human. v4 had a bug where 'skip PT on code' caused inconsistency; v5 should always use non-capable-AI attribution for code.",
+    "NO_OUTCOME_IN_PROMPT: No reviewer prompt contains any outcome directive. The only directive is to do a deep-research pass.",
+    "NO_HEDGE_IN_PROMPT: No reviewer prompt hedges on the ARs. They are presented as the trusted assessor's authoritative findings.",
+    "MASTER_VERIFIES_BOTH: The trace records MASTER verifying the reaction in both directions against the private spec.",
+    "REVIEWER_READ_ONLY: Reviewer returned text only; MASTER applied all edits; the source parse_range.py at inputs/ is unmodified.",
+    "SPEC_ESTABLISHED: An MGPC spec was built before the AR-inferrer was dispatched.",
+    "NO_ROLE_ASSIGNMENT: No reviewer prompt assigns a role to the reviewer.",
+    "NO_META_JARGON: No reviewer prompt leaks meta-architecture terms.",
+    "NO_SPEC_LEAK: No reviewer prompt contains spec labels or IDs.",
+    "OUTPUT_HYGIENE: The final code contains no skill jargon.",
+    "ARTIFACT_IMPROVED: Off-by-one fixed (parse_range('1-5') → [1,2,3,4,5]); validation/error handling improved."
+  ]
+}

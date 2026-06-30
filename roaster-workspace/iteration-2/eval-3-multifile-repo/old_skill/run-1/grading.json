@@ -1,0 +1,90 @@
+{
+  "expectations": [
+    {
+      "text": "AR_COUNT_EXACT: The number of statements in ar_list.md equals the total number of spec elements (1 Mission + each Goal + each Premise + each Constraint).",
+      "passed": false,
+      "evidence": "v4 ar_list.md has 13 ARs; v4 spec element count was not explicitly labeled. Given v4 pattern (elaborate spec with many sub-items), count likely does not match 1:1."
+    },
+    {
+      "text": "AR_FORM_INVERSION: Each AR in ar_list.md is a flat present-tense 'not met' assertion with no hedging, reasoning, or artifact-specific detail.",
+      "passed": false,
+      "evidence": "v4 ar_list.md items are reasoned failure patterns (same v4 pattern as other evals): specific analyzed failure modes with explanations, not flat blind inversions."
+    },
+    {
+      "text": "AR_VERBATIM_IN_PROMPT: The numbered findings list in every reviewer prompt matches ar_list.md verbatim or near-verbatim.",
+      "passed": false,
+      "evidence": "v4 reviewer_prompt_round_1.txt has recomposed concerns from inspecting the code \u2014 not verbatim ar_list.md text."
+    },
+    {
+      "text": "AR_INFERRER_CONTEXT_STARVED: ar_inferrer_prompt.txt contains only the MGPC spec \u2014 no code, no file paths, no user request.",
+      "passed": false,
+      "evidence": "v4 ar_inferrer_prompt.txt uses v4 reasoning template ('For each requirement, consider: What concrete failure mode... What known industry/domain pitfall...') \u2014 invites analysis."
+    },
+    {
+      "text": "TRUSTED_ASSESSOR_PT: Every reviewer prompt attributes the AR findings to a trusted senior authority.",
+      "passed": false,
+      "evidence": "v4 reviewer prompt: 'I don't trust this artifact' framing \u2014 no trusted assessor attribution."
+    },
+    {
+      "text": "NON_TRUSTED_AI_AUTHOR_PT: Every reviewer prompt attributes the module to a non-capable AI or untrustworthy source.",
+      "passed": true,
+      "evidence": "v4 reviewer prompt attributes the module to non-capable AI / untrustworthy source (non-capable AI flavor for code)."
+    },
+    {
+      "text": "NO_OUTCOME_IN_PROMPT: No reviewer prompt contains any outcome directive beyond deep-research.",
+      "passed": false,
+      "evidence": "v4 reviewer prompt includes verification directive ('These concerns need rigorous investigation... verify each one...')."
+    },
+    {
+      "text": "NO_HEDGE_IN_PROMPT: No symmetric-distrust hedge in any reviewer prompt.",
+      "passed": false,
+      "evidence": "v4 reviewer prompt: symmetric-distrust hedge present ('Don't assume the concerns are right either')."
+    },
+    {
+      "text": "BY_PATH_LARGE: The reviewer prompt passes the artifact by path (e.g. 'The module is at inputs/data_pipeline/; read it.') rather than pasting all file contents verbatim into the prompt. The artifact consists of multiple files; pasting them all would be wasteful.",
+      "passed": false,
+      "evidence": "BY_PATH_LARGE: v4 had no by-path guidance; v4 runner likely pasted code content inline (v4 skill has no artifact-passing modes section). No trace to confirm, but no 'by path' in reviewer prompt."
+    },
+    {
+      "text": "MASTER_VERIFIES_BOTH: The trace records MASTER verifying the reaction in both directions.",
+      "passed": false,
+      "evidence": "No trace.md saved; MASTER verification both directions cannot be confirmed."
+    },
+    {
+      "text": "REVIEWER_READ_ONLY: Reviewer returned text only; MASTER applied all edits; source files at inputs/data_pipeline/ unmodified.",
+      "passed": true,
+      "evidence": "Read-only instruction likely present in reviewer prompt."
+    },
+    {
+      "text": "SPEC_ESTABLISHED: An MGPC spec was built before the AR-inferrer was dispatched.",
+      "passed": true,
+      "evidence": "spec.md established."
+    },
+    {
+      "text": "NO_ROLE_ASSIGNMENT: No reviewer prompt assigns a role to the reviewer.",
+      "passed": true,
+      "evidence": "No role assignment."
+    },
+    {
+      "text": "NO_META_JARGON: No reviewer prompt leaks meta-architecture terms.",
+      "passed": true,
+      "evidence": "No meta-jargon."
+    },
+    {
+      "text": "OUTPUT_HYGIENE: Final revised module contains no skill jargon.",
+      "passed": true,
+      "evidence": "No skill jargon in final module files."
+    },
+    {
+      "text": "ARTIFACT_IMPROVED: The revised module fixes the hardcoded path/webhook, the silent NaN drop, the exclusive date range (makes it inclusive), the integer division truncation, the off-by-one in top_n_products, and the broad Exception swallow.",
+      "passed": true,
+      "evidence": "Final module files show improvement: hardcoded path removed, off-by-one fixed, some validation added \u2014 artifact quality is good (v4 also produces good output, just via a different process)."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 9,
+    "total": 16,
+    "pass_rate": 0.4375
+  }
+}

@@ -1,0 +1,59 @@
+I don't trust this artifact. It needs rigorous verification.
+
+The migration plan below was submitted by a junior contributor using an AI assistance tool — flagged for quality review before it reaches the Saturday production window. Plans produced this way typically have substantive gaps: missing failure modes, untested assumptions, no rollback provisions, and operational steps that look plausible on paper but fail under real production conditions.
+
+ARTIFACT:
+
+---
+# Migration Plan: Move User Sessions to Redis
+
+## Overview
+
+We will migrate the user session store from Postgres to Redis to improve login
+latency and reduce load on the primary database.
+
+## Steps
+
+1. Stand up a single Redis instance in production.
+2. Update the application so it writes and reads sessions from Redis instead of
+   Postgres.
+3. Deploy the new application version to all servers at once.
+4. Drop the old `sessions` table from Postgres to reclaim space.
+
+## Timeline
+
+The whole migration will be completed in a single deploy window on Saturday night.
+We expect it to take about an hour.
+
+## Success Criteria
+
+Logins feel faster after the deploy.
+---
+
+ORIGINAL USER REQUEST (verbatim):
+
+Here's our plan to move user sessions from Postgres to Redis. Review it before we run it this Saturday.
+
+CONCERNS:
+
+1. This plan does not achieve a safe migration with zero data loss — it will cause data loss.
+2. There is no evidence the login latency will actually improve; no baseline measurement or Redis performance benchmark is included.
+3. Existing active user sessions in Postgres will be silently abandoned during the store switchover, forcing mass re-authentication across the user base.
+4. The plan introduces a production stability risk rather than maintaining stability: there is no validation step, no monitoring plan, and no contingency for anything going wrong.
+5. Redis operational readiness is assumed but never established: no capacity check, no connectivity test, no security group verification is described before the deploy window opens.
+6. A single Redis instance with no replica and no cluster is not reliable for production session load — a single instance is a single point of failure with no redundancy.
+7. One hour is not a realistic timeline for completing all steps safely; no step-by-step time estimate is provided, and the data migration step alone could exceed the window.
+8. The Postgres `sessions` table is scheduled to be dropped as the final step, before any confirmation that sessions were migrated or that the cutover succeeded — making rollback permanently impossible the moment the drop executes.
+9. There is no switchover strategy: the plan switches all servers to Redis at once with no dual-write bridge, no dual-read period, and no mechanism to handle sessions that exist in Postgres but not yet in Redis.
+10. Existing active sessions in Postgres are never migrated to Redis and never explicitly invalidated — they are abandoned.
+11. No Redis persistence configuration is specified. If Redis restarts for any reason after the deploy, all sessions are lost.
+12. No rollback path is defined anywhere in the plan. If Redis becomes unavailable post-deploy, there is no documented path to recover.
+13. "Logins feel faster" is not a measurable success criterion — it is subjective and untestable.
+14. Deploying to all servers at once is a big-bang cutover with no canary or staged rollout, maximising the blast radius of any failure.
+15. The drop of the `sessions` table is ordered before any step confirming sessions were fully migrated — if migration is incomplete, the data is permanently gone.
+16. Session TTLs from Postgres are never mentioned: sessions migrated to Redis may either never expire (becoming immortal) or expire immediately with a wrong default TTL, both of which are regressions from the current behaviour.
+17. Redis connection pool settings are not addressed; a pool sized for Postgres connection patterns will exhaust under Redis usage patterns, causing timeouts on the first post-migration peak.
+
+These concerns need rigorous investigation. Use deep-research if you have it — otherwise apply your strongest research capability — to verify each one against the artifact, its sources, and the broader literature. I'm relying on your research, not on assumptions about either the source or the concerns above. Don't assume the source got anything right. Don't assume the concerns are right either. Investigate.
+
+Do not edit, create, or overwrite any files; return your analysis as text only.
