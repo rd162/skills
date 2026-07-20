@@ -723,9 +723,8 @@ Report section progress in chat using CoD format:
 
 - **Upstream:** Receives survey from **document-survey** skill.
 - **Composes with:** **deep-research** for Phase B technology verification.
-- **Composes with:** **think-deeper** for 2–3 high-stakes decisions
+- **Composes with:** **roaster** (EXPLORE mode) for 2–3 high-stakes decisions
   (team shape, architecture pattern, timeline strategy).
-- **Composes with:** **continuation-and-handoff** at session boundaries.
 - **Internal:** Feasibility assessment uses Ssegawa & Muzinda (2021) framework.
   Requirements coverage uses Lahlou et al. (2022) fit-gap methodology.
   Deviation classification uses Soh, Kien & Tay-Yap (2000) taxonomy.
