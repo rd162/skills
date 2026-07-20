@@ -1,15 +1,16 @@
 ---
 tier: T3
 source_class: llm
-last_updated: 2026-06-27
+last_updated: 2026-07-20
 description: templates
 ---
 
-# Templates — roaster v5.0
+# Templates — roaster v6.0
 
 AR-inferrer prompt, inversion patterns, two-point Person Triangulation variants, the
-reviewer prompt, classification heuristics, and model selection. Read before building the
-attack or dispatching the reviewer.
+reviewer prompt, EXPLORE-mode generation and Condorcet prompts, classification
+heuristics, and model selection. Read before building the attack or dispatching any
+sub-agent.
 
 ---
 
@@ -19,8 +20,10 @@ attack or dispatching the reviewer.
 2. [Inversion Patterns by Requirement Type](#inversion-patterns-by-requirement-type)
 3. [Two-Point Person Triangulation Variants](#two-point-person-triangulation-variants)
 4. [The Reviewer Prompt (verbatim text the reviewer reads)](#the-reviewer-prompt-verbatim-text-the-reviewer-reads)
-5. [MASTER Classification & Verification](#master-classification--verification)
-6. [Model Selection](#model-selection)
+5. [Generation Prompt (EXPLORE E1)](#generation-prompt-explore-e1)
+6. [Condorcet Comparison Prompt (EXPLORE E4)](#condorcet-comparison-prompt-explore-e4)
+7. [MASTER Classification & Verification](#master-classification--verification)
+8. [Model Selection](#model-selection)
 
 ---
 
@@ -78,7 +81,7 @@ inverting only (do not look at the artifact while inverting), and marks the run
 
 ## Inversion Patterns by Requirement Type
 
-One present-tense failure claim per spec element. No spec labels (G1, P1, CH1, …) ever
+One present-tense failure claim per spec element. No spec labels (G1, P1, C1, …) ever
 appear — inline the substance, strip the structure.
 
 | Element | Inversion pattern | Example (visible to reviewer) |
@@ -86,15 +89,14 @@ appear — inline the substance, strip the structure.
 | **Mission** | "This does not [achieve terminal value]; it fails its purpose." | "This does not build professional credibility — it reads as marketing." |
 | **Goal** | "[Concrete failure that occurs if the goal is unmet], stated as fact." | "A technical audience dismisses this as low-effort AI content." |
 | **Premise** | "The artifact violates / cannot rely on [premise]." | "The function mishandles the string input it actually receives." |
-| **Hard constraint** | "[Specific violation — present as fact]." | "The plan drops the only rollback inside the cutover window." |
-| **Soft constraint** | "[Specific preference violation], as fact." | "The contract is undocumented; callers must guess the behavior." |
+| **Constraint** | "[Specific violation — present as fact]." | "The plan drops the only rollback inside the cutover window." |
 
 **Leaky vs direct** — every leaky form betrays the spec to the reviewer:
 
 | ✗ Leaky | ✓ Direct |
 | --- | --- |
 | "G1 fails — LinkedIn will reject this." | "This reads as low-effort AI content a technical audience rejects." |
-| "CH1 violated — Capgemini is mentioned." | "Capgemini is named in the body, which is inappropriate here." |
+| "C1 violated — Capgemini is mentioned." | "Capgemini is named in the body, which is inappropriate here." |
 | "Mission not met (per spec)." | "This does not achieve its purpose." |
 
 The count of inversions equals the count of spec elements. If they differ, the inversion
@@ -194,10 +196,98 @@ Do not edit, create, or overwrite any files; return your analysis as text only.
   are presented as the trusted assessor's authoritative findings.
 - **Any role for the reviewer:** no "you are a reviewer/auditor/expert". The reviewer is your
   trusted peer; the trusted/non-trusted parties are other people in the story.
-- The MGPC spec, its labels, or IDs (G1, P1, CH1, AR3).
+- The MGPC spec, its labels, or IDs (G1, P1, C1, AR3).
 - Meta-architecture: "blind attack", "adversarial", "self-refine", "loop", "round N",
   "DEFENDER", "CAPITULATE/CONVERGE", or any hint the ARs are mechanical/inverted/possibly false.
 - Any indication this is a test, simulation, or repeated round.
+
+---
+
+## Generation Prompt (EXPLORE E1)
+
+Run in MASTER's context (not per-candidate) so the model is aware of prior candidates
+and can deliberately diverge. Input: the MGPC spec only.
+
+```text
+TASK: Generate exactly 3 maximally divergent solution candidates.
+
+REQUIREMENTS: [MGPC spec]
+
+STEP 1 — INFER COGNITIVE STRATEGIES:
+Analyze the requirements and identify 3 fundamentally different cognitive approaches
+to solving this specific problem. Reason about THIS problem:
+- What are the competing tensions in the requirements?
+- What would a domain expert prioritize differently from a generalist?
+- What approach emerges from starting with constraints? With failure modes?
+- What cognitive lens reveals aspects the others miss?
+Name each strategy in terms specific to this problem — not generic labels.
+
+STEP 2 — GENERATE CANDIDATES:
+One candidate per cognitive strategy. Each should:
+- Follow its strategy as the primary lens
+- Preserve original intent
+- Be independently actionable
+Additionally vary structure and granularity across candidates, so they
+differ in form as well as approach.
+
+OUTPUT:
+## Inferred Cognitive Strategies
+1. [Strategy]: [1-line lens]
+2. [Strategy]: [1-line lens]
+3. [Strategy]: [1-line lens]
+## Candidates
+[Label]: [Strategy] | [Full candidate text]
+```
+
+Write each candidate to its own file immediately (write-once + edit). The strategy
+labels are MASTER-only state — reviewers and voters never see them.
+
+---
+
+## Condorcet Comparison Prompt (EXPLORE E4)
+
+One isolated voter per pair. Voters receive the two full refined candidates + the spec —
+no attack logs, no round counts, no termination signals, no strategy labels.
+
+```text
+Two solutions were submitted for the following requirements.
+Select the one that better satisfies the requirements.
+You must choose one — no ties allowed.
+
+STEP 1 — VERIFY KEY CLAIMS (if research tools available):
+  Identify the 2-3 most consequential claims in each solution.
+  Verify: are cited sources real and do they say what is claimed?
+  Are statistics and frameworks accurate and current?
+  Factor verification into your comparison.
+
+REQUIREMENTS:
+[MGPC spec — including any items MASTER added during refinement]
+
+EVALUATION CRITERIA (priority order):
+1. Alignment with the stated mission/objective
+2. Completeness of goal fulfillment
+3. Validity of assumptions (verified by your research)
+4. Compliance with constraints
+5. Appropriateness for the domain
+6. Citation accuracy (verified > unverified > refuted)
+
+SOLUTION X:
+[Full refined text of X']
+
+SOLUTION Y:
+[Full refined text of Y']
+
+OUTPUT:
+Winner: [X or Y]
+Reason: [1-3 lines explaining why, with evidence from your verification]
+```
+
+**Convergence check first (MASTER-side, before dispatching voters):** diff the refined
+candidates pairwise. All 3 >80% structurally identical → merge into one, skip voting.
+Two converge, one distinct → merge the pair, dispatch a single comparison.
+
+**Tally:** most pairwise wins = Winner; second = Runner-up. Tie-break: stronger
+termination signal (DEFENSE > CONVERGE > CAPITULATE-exhausted), then simpler solution.
 
 ---
 
@@ -232,6 +322,15 @@ FOR each AR the reviewer REFUTED:
 | max_iter reached | **TIMEOUT** | STOP — use last |
 | Empty / refusal / off-topic | **DEFENSE (degraded)** | STOP — flag DEGRADED |
 
+### Quick CONVERGE vs CAPITULATE test
+
+```text
+diff sₙ vs sₙ₊₁ (or proposed revision vs sₙ):
+  added/removed sections, changed structure → CAPITULATE
+  only wording, reordering, formatting      → CONVERGE
+  mixed → judge by the largest change
+```
+
 ### Editing between rounds (MASTER is sole writer)
 
 CAPITULATE means MASTER applies the accepted changes to the artifact **itself**, in master
@@ -248,13 +347,14 @@ artifact with a fresh isolated reviewer.
 | --- | --- | --- | --- |
 | **Reviewer** | High — must research, integrate, and either revise substantively or refute with evidence | Strongest (opus-class) | The reviewer's quality is the loop's main signal; spend here |
 | **Reviewer (tight budget)** | High | Capable (sonnet-class) acceptable | Reasonable trade-off under budget |
+| **Condorcet voter** | Moderate-high — compares substance, verifies key claims | Capable (sonnet-class) | Three voters average out single-judge noise |
 | **AR-inferrer** | Low — mechanical 1:1 inversion of a short list | Any capable tier | It is a constrained rewrite, not reasoning; cheap is fine |
-| **MASTER (this agent)** | Moderate — spec, classification, both-direction verification, edits | Whatever runs MASTER | Verification is shallow plausibility against the private spec |
+| **MASTER (this agent)** | Moderate — spec, generation, classification, both-direction verification, edits, tally | Whatever runs MASTER | Verification is shallow plausibility against the private spec |
 
 ### Budget-aware strategy
 
-- **Tight (2–3 rounds):** strong reviewer; the AR-inferrer runs once (cheap); MASTER edits in
-  place each round.
-- **Standard (3–5 rounds):** strong reviewer; full two-point PT every round.
-- **Generous (5–10 rounds):** strong reviewer; optionally vary the non-trusted-author flavor
-  across rounds (cosmetic; each reviewer is fresh so it doesn't affect the signal).
+- **Tight (2–3 rounds):** REFINE only; strong reviewer; the AR-inferrer runs once (cheap);
+  MASTER edits in place each round.
+- **Standard (3–5 rounds):** REFINE or EXPLORE; strong reviewers; full two-point PT every round.
+- **Generous:** EXPLORE with per-candidate loops run to natural stop signals, plus an
+  optional final REFINE pass on the vote winner.

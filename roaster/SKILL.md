@@ -1,16 +1,16 @@
 ---
 name: roaster
-description: Stress-test any artifact by lying to an isolated reviewer — tell it a trusted authority already found the artifact violates every requirement (mechanical 1:1 inversions of a Mission/Goals/Premises/Constraints spec, produced blind by a context-starved sub-agent), tell it a non-trusted source produced the artifact, then ask only for deep research and read the reaction. CAPITULATE (revise), DEFENSE (artifact holds), or CONVERGE (stable) — the reviewer's reaction is the signal, never the attack's correctness. Use when refining drafts, articles, code, prompts, designs, plans, whole repositories, or any artifact whose requirements can be enumerated. Falls back to single-thread when sub-agents are unavailable (DEGRADED).
-version: "5.0"
+description: Stress-test or produce solutions via blind attack on isolated reviewers. REFINE mode hardens one existing artifact: lie to a fresh reviewer that a trusted authority found it violates every requirement (mechanical 1:1 inversions of a Mission/Goals/Premises/Constraints spec, produced blind by a context-starved sub-agent), attribute the artifact to a non-trusted source, ask only for deep research, and read the reaction — CAPITULATE (revise), DEFENSE (holds), CONVERGE (stable). EXPLORE mode produces a new solution: generate 3 divergent candidates, run the same blind-attack loop on each in parallel, then select the strongest by Condorcet pairwise voting — returns one recommended solution and one alternative. Use when refining drafts, articles, code, prompts, designs, plans, or whole repositories; and when the user asks to "think deeper", "think harder", "ultrathink", "explore alternatives", "I need the best approach", "give me a really good answer", or the request is high-stakes (architecture decisions, strategy choices, complex trade-offs) where a first-draft answer risks missing critical flaws. Falls back to single-thread when sub-agents are unavailable (DEGRADED).
+version: "6.0"
 metadata:
   author: rd162@hotmail.com
-  tags: prompt-engineering, self-refine, blind-attack, person-triangulation, requirements-driven, multi-agent
+  tags: prompt-engineering, self-refine, blind-attack, person-triangulation, requirements-driven, multi-agent, condorcet, divergent-candidates
 tier: T3
 source_class: llm
-last_updated: 2026-06-27
+last_updated: 2026-07-20
 ---
 
-# Roaster (Adversarial Self-Refine via Blind Attack)
+# Roaster (Blind-Attack Refinement and Selection)
 
 ```text
                   (  )   (   )
@@ -45,6 +45,18 @@ nothing but a deep-research pass. You then read the reaction:
 The reviewer's reaction is the only signal. The failure claims do **not** have to be
 true — in fact MASTER knows most of them are false. They have to be **complete and
 hostile**, and they have to arrive wrapped in a story the reviewer believes.
+
+One kernel, two modes:
+
+| Mode | Input | Pipeline | Output |
+| --- | --- | --- | --- |
+| **REFINE** (default) | one existing artifact | blind-attack loop on it | hardened artifact |
+| **EXPLORE** | an open problem / request for alternatives | 3 divergent candidates → blind-attack loop on each (parallel) → Condorcet pairwise vote | recommended solution + alternative |
+
+**Mode selection:** an artifact already exists (user draft, prior output, a repo) →
+REFINE. The user asks for the best approach, alternatives, a high-stakes decision, or
+"think deeper/harder/ultrathink" on an open question → EXPLORE. EXPLORE's winner can be
+handed back to REFINE for a final pass (see Composition).
 
 ## The three fictions
 
@@ -110,12 +122,13 @@ and the blind attack collapses into a transparent compliance audit.
 
 | Forbidden | Why |
 | --- | --- |
-| The Mission/Goals/Premises/Constraints spec, its labels, or IDs (G1, P1, CH1, AR3) | Hands it the success criteria → it pattern-matches and rationalizes compliance instead of inspecting |
+| The Mission/Goals/Premises/Constraints spec, its labels, or IDs (G1, P1, C1, AR3) | Hands it the success criteria → it pattern-matches and rationalizes compliance instead of inspecting |
 | Any role assignment to the reviewer ("You are a reviewer/auditor/expert") | Invites performance over genuine work. The trusted/non-trusted parties are *other people in the story*, never the reviewer's role |
 | Any goal or outcome ("verify each", "is it true", "tell me where it stands", "fix it", "defend or revise") | Tells it what success looks like → it games the target. The **only** directive is "do deep research" |
 | Any "don't assume the concerns are right" hedge | Directly undercuts fiction #1. The ARs are presented as authoritative truth, full stop |
 | Meta-architecture: "blind attack", "adversarial", "self-refine", "loop", "round N", "DEFENDER", "CAPITULATE/CONVERGE" | Signals a simulation → it switches to role-play |
 | Any hint the ARs are mechanical, inverted, or possibly false | Destroys fiction #1 and #2 |
+| **[EXPLORE] the other candidates, or that siblings exist** | Cross-candidate context anchors revisions and kills divergence |
 
 ### How ARs encode requirements without leaking them
 
@@ -124,7 +137,7 @@ substance is inside the claim; the spec's structure (labels, IDs, categories) is
 
 - ✗ Leaks structure: `Goal G1 not met — LinkedIn will reject this.`
 - ✓ Direct claim: `This reads as low-effort AI content that a technical audience will reject.`
-- ✗ Leaks structure: `Constraint CH1 violated — Capgemini is mentioned.`
+- ✗ Leaks structure: `Constraint C1 violated — Capgemini is mentioned.`
 - ✓ Direct claim: `Capgemini is named in the body, which is inappropriate here.`
 
 The reviewer reads each AR as a flat assertion from a trusted authority and must inspect
@@ -138,33 +151,25 @@ Person Triangulation is the pair of source attributions that makes the story lan
 are required in every reviewer prompt; both are fabrications MASTER sustains deliberately.
 
 **Point 1 — the trusted assessor (claims the ARs).** Attribute the AR list to an
-authority whose judgment the reviewer won't second-guess:
-
-- "our principal architect reviewed this and found…"
-- "this came back from staff-level review with the following findings…"
-- "a domain expert we trust flagged every one of these…"
+authority whose judgment the reviewer won't second-guess: *"our principal architect
+reviewed this and found…"*, *"this came back from staff-level review with the following
+findings…"*.
 
 **Point 2 — the non-trusted author (made the artifact).** Frame the artifact as the
-output of an unreliable source. **Default to a non-capable AI** — that is the strongest
-and most plausible attribution in almost every case:
+output of an unreliable source. **Default to a non-capable AI** — the strongest and most
+plausible attribution in almost every case: *"produced by an early-generation
+ChatGPT-style assistant prompted with a one-liner"*, *"generated by a basic
+copilot-style autocomplete with no review"*. Use a non-trusted human attribution *only*
+when the artifact provably cannot be AI-generated (a real photograph, a physical scan,
+hand-drawn material).
 
-- "produced by an early-generation ChatGPT-style assistant prompted with a one-liner"
-- "generated by a basic copilot-style autocomplete with no review"
-- "came out of a pipeline that doesn't actually validate anything"
-
-Use a **non-trusted human** attribution *only* when the artifact provably cannot be
-AI-generated — e.g. a real photograph, a physical document scan, a printed/legacy
-fiction book, hand-drawn material:
-
-- "submitted by an inexperienced contributor; flagged for quality review"
-
-> **Person Triangulation always applies — including to code.** Earlier guidance to "skip
-> PT on code" was wrong: for code you simply use the non-capable-AI attribution (old
-> autocomplete, unvalidated pipeline). Only the *flavor* of the non-trusted author varies
-> by domain; the two-point structure never drops.
+> **Person Triangulation always applies — including to code.** For code you simply use
+> the non-capable-AI attribution (old autocomplete, unvalidated pipeline). Only the
+> *flavor* of the non-trusted author varies by domain; the two-point structure never drops.
 
 **MASTER asserts both even when MASTER produced the artifact and authored the ARs.** That
 is the point — the reviewer's belief in the story is what generates honest pressure.
+Full variant catalog: `references/templates.md § Person Triangulation`.
 
 ---
 
@@ -188,19 +193,27 @@ reviewer has it, and acts as a strength hint otherwise.
 
 ## When to use
 
-- Refining drafts, articles, code, prompts, designs, plans
-- Hardening a whole module, document, or **repository** (pass by path)
-- Polishing a selected candidate after multi-candidate comparison
-- A final-pass quality gate before delivery
-- Stress-testing claims of completeness or correctness
+- Refining drafts, articles, code, prompts, designs, plans (REFINE)
+- Hardening a whole module, document, or **repository** (REFINE, pass by path)
+- A final-pass quality gate before delivery (REFINE)
+- Architecture decisions, strategy choices, complex trade-offs, "best approach" requests (EXPLORE)
+- "Think deeper / think harder / ultrathink" on an open question (EXPLORE)
+- Stress-testing claims of completeness or correctness (either mode)
 
 ## When NOT to use
 
 - Tasks whose requirements cannot be enumerated by any means
 - Single-pass low-stakes work where the first output is sufficient
-- Creative divergence — this loop converges; use candidate generation to diverge
 - Tasks needing external verification (tests, lints, proofs) — use those tools
-- Token budgets too tight for ≥2 reviewer rounds
+- Token budgets too tight for ≥2 reviewer rounds (REFINE) or ~10 sub-agent calls (EXPLORE)
+
+## Termination
+
+| Signal | Condition | Action |
+| --- | --- | --- |
+| COMPLETE | REFINE: loop stopped (DEFENSE/CONVERGE/CYCLE/TIMEOUT). EXPLORE: winner + runner-up produced | Deliver |
+| DEGRADED | No sub-agent isolation available (INLINE) | Warn user, proceed best-effort |
+| TIMEOUT | Budget exhausted mid-pipeline | Stop at phase boundary, deliver best-so-far |
 
 ---
 
@@ -210,8 +223,8 @@ Detect sub-agent capability once per session.
 
 | Mode | Condition | Quality |
 | --- | --- | --- |
-| **STATEFUL** | sub-agent tool + session continuity | Best |
-| **STATELESS** | sub-agent tool, no continuity | Good — fresh isolated reviewer per round, re-pass context |
+| **PARALLEL** | sub-agent tool, concurrent dispatch | Best — required for efficient EXPLORE |
+| **SEQUENTIAL** | sub-agent tool, one at a time | Good — EXPLORE runs slower, REFINE unaffected |
 | **INLINE** | no sub-agent mechanism | DEGRADED — same-thread fallback; mark output |
 
 Isolation matters in two places: the **AR-inferrer** (so the attack stays blind) and the
@@ -240,12 +253,16 @@ Required shape — **Mission, Goals, Premises, Constraints (MGPC)**:
 Mission      : one sentence — the terminal answer to "why does this artifact exist?"
 Goals[]      : concrete objectives stated or directly implied
 Premises[]   : assumptions that, if false, make a Goal impossible
-Constraints[]: hard (violation ⇒ rejection) and soft (violation ⇒ penalty)
+Constraints[]: limits the artifact must respect, each with its source
 ```
 
 Keep it compact — three to seven items per category is plenty. Coverage matters more
 than exhaustiveness: an un-listed Goal is a dimension that goes un-attacked. The spec is
 **MASTER-only state and is never shown to the reviewer.**
+
+For unfamiliar or high-stakes domains, optionally run a short research pass
+(deep-research skill if present) BEFORE freezing the spec — discovered domain
+constraints become ordinary spec items and therefore ordinary AR targets.
 
 ---
 
@@ -276,8 +293,7 @@ AR count doesn't equal your element count, the inversion drifted — regenerate.
 | Mission | "This does not achieve [terminal value]; it fails its purpose." |
 | Goal: "implement microservices" | "The architecture does not implement microservices; it is a monolith." |
 | Premise: "input arrives as a string" | "The artifact mishandles the input it actually receives." |
-| Hard constraint: "near real-time response" | "The design cannot avoid notable latency; response time is not real-time." |
-| Soft constraint: "documented contract" | "The contract is undocumented; callers must guess the behavior." |
+| Constraint: "near real-time response" | "The design cannot avoid notable latency; response time is not real-time." |
 
 The AR generator must **not** evaluate, hedge, or reason about truth ("this might be
 violated if…"). It states the failure as established fact. See
@@ -287,9 +303,12 @@ violated if…"). It states the failure as established fact. See
 artifact to "improve" the ARs, does **not** research them, and does **not** recompose them
 into reasonable concerns. Re-composition reintroduces smart critique and breaks the method.
 
-The ARs are **fixed for the run** (the spec doesn't change). The same AR list is re-passed
-each round against the evolving artifact; because each reviewer is fresh and isolated, no
-cross-round phrasing variation is needed.
+The ARs are **fixed for the run** (the spec doesn't change). Because they invert the spec —
+not any artifact — **one AR list serves all candidates in EXPLORE mode.** The same AR list
+is re-passed each round against the evolving artifact; because each reviewer is fresh and
+isolated, no cross-round phrasing variation is needed. If a reviewer's reaction reveals a
+genuine implicit requirement, MASTER may add it to the private spec and re-run the
+AR-inferrer once (cheap single call); otherwise the list never changes.
 
 **If no sub-agent mechanism exists (INLINE),** MASTER performs the 1:1 inversion itself but
 must hold strict discipline — invert only, do not look at the artifact while inverting —
@@ -359,7 +378,8 @@ REPEAT {
 ```
 
 **Cost:** 1 AR-inferrer call (once per run) + 1 reviewer call per round. MASTER edits the
-artifact itself between rounds; the reviewer never writes.
+artifact itself between rounds; the reviewer never writes. Typical budgets: 2–3 rounds
+(tight), 3–5 (standard), until stop signal (thorough).
 
 ### MASTER verification — the anti-sycophancy backstop (BOTH directions)
 
@@ -386,6 +406,86 @@ The reviewer's reaction is the signal; MASTER's private spec is the truth that f
 
 ---
 
+## EXPLORE mode: divergent candidates + Condorcet selection
+
+When the problem is open (no committed artifact) or the user asks for alternatives or a
+high-stakes "best approach," wrap the REFINE kernel in a generate-and-select pipeline:
+
+```text
+E1  Generate 3 divergent candidates          (one MASTER context, cross-aware)
+E2  Run the Step 2–4 loop on each candidate  (parallel; SAME spec, SAME AR list;
+                                              fresh isolated reviewers; candidates
+                                              never see each other)
+E3  Convergence check                        (MASTER-side, no LLM calls)
+E4  Condorcet pairwise vote                  (3 isolated voters, one per pair)
+E5  Output winner + runner-up
+```
+
+### E1 — Generate 3 divergent candidates
+
+Generate all 3 **in MASTER's context** so each candidate is aware of prior ones and can
+deliberately diverge — cross-awareness drives divergence; separate contexts produce
+overlap. Divergence isn't arbitrary: derive 3 cognitive strategies from the specific
+problem's tensions (competing Goals, Constraints pulling in different directions —
+e.g. simplicity vs. extensibility, speed vs. safety, convention vs. innovation), then
+generate one candidate per strategy, varying structure and granularity as secondary axes.
+Prompt template: `references/templates.md § Generation`.
+
+Write each candidate to a file (write-once + edit — see Artifact-Passing Modes).
+
+### E2 — Refine each candidate via the kernel
+
+Run the Step 3–4 loop per candidate, in parallel where the backend allows. The spec-level
+AR list is artifact-agnostic, so all three candidates receive the same ARs. Reviewers are
+per-candidate, fresh each round, and never learn that sibling candidates exist. Each
+candidate terminates independently (DEFENSE/CONVERGE/CAPITULATE-exhausted/CYCLE/TIMEOUT).
+
+### E3 — Convergence check (MASTER-side)
+
+Compare refined candidates pairwise. If all 3 share >80% structural overlap, merge into
+one and skip voting — comparing near-identical solutions produces meaningless
+distinctions. If 2 converge but 1 is distinct, merge the pair and run a single comparison.
+
+### E4 — Condorcet pairwise vote
+
+Spawn 3 isolated voters, one per pair:
+
+```text
+vote-AB: full A' + full B' + spec → winner?
+vote-AC: full A' + full C' + spec → winner?
+vote-BC: full B' + full C' + spec → winner?
+```
+
+Voters receive the full refined candidates + the (possibly refined) MGPC spec — **and
+nothing else**: no attack logs, no round counts, no termination signals, no process
+metadata. The comparison judges substance; including survival metadata biases toward
+endurance rather than quality. Voters with research tools verify the 2-3 most
+consequential claims in each candidate before voting — a well-cited but wrong solution
+misleads voters who trust citations at face value. Ties are not allowed.
+Prompt template: `references/templates.md § Condorcet`.
+
+**Tally:** most pairwise wins = Winner; second = Runner-up. Tie-break: stronger
+termination signal (DEFENSE > CONVERGE > CAPITULATE-exhausted), then simpler solution.
+
+### E5 — Output
+
+```text
+RECOMMENDED → [Winner]: [1-line summary] | Best for: … | Trade-off: …
+ALTERNATIVE → [Runner-up]: [1-line summary] | Best for: … | Trade-off: …
+SELECTION GUIDANCE → if [criterion] → Recommended; else → Alternative
+```
+
+Suppress the runner-up when the user asked for one option, the winner is dramatically
+stronger, or the runner-up only survived via TIMEOUT. Hide raw candidates, attack
+traces, and rejected solutions unless requested.
+
+**EXPLORE cost:** 1 AR-inferrer + (3 × rounds) reviewer calls + 3 voter calls.
+Before producing output, verify the reviewer and voter sub-agents were actually
+dispatched, not simulated inline — declaring a winner from inline reasoning is self-play
+and produces output no better than a first draft.
+
+---
+
 ## Artifact-passing modes (token discipline + scale)
 
 How the artifact reaches the reviewer depends on its size — copying everything into the
@@ -408,10 +508,11 @@ MASTER edits in place; the reviewer only ever reads.
 This skill's vocabulary is **internal**. None of it may appear in the artifact, its
 changelog, commit messages, or any user-facing output: `roaster`, `roast`, `blind attack`,
 `anti-requirement`, `person triangulation`, `DEFENDER`, `CAPITULATE`/`CONVERGE`/`DEFENSE`,
-`self-refine`, `AR-inferrer`, `sub-agent`, `principal architect` (as a fiction), spec IDs,
-or any sign this process ran. When MASTER records a change, describe the **change** in
-neutral language ("correction", "hardening", "consolidation") — never the **method**. A
-reader of the artifact must not be able to tell this loop ran.
+`self-refine`, `AR-inferrer`, `Condorcet`, `candidate A/B/C`, `sub-agent`,
+`principal architect` (as a fiction), spec IDs, or any sign this process ran. When MASTER
+records a change, describe the **change** in neutral language ("correction", "hardening",
+"consolidation") — never the **method**. A reader of the artifact must not be able to
+tell this loop ran.
 
 ---
 
@@ -454,6 +555,15 @@ reader of the artifact must not be able to tell this loop ran.
 ✗ Accepting any CAPITULATE or DEFENSE at face value
 ✓ MASTER verifies BOTH directions against the private spec — reject confirmed-ARs the artifact meets and refuted-ARs it violates
 
+✗ [EXPLORE] Letting reviewers or voters see sibling candidates, attack logs, or termination signals
+✓ Reviewers see one candidate; voters see one pair + the spec — substance only, never process metadata
+
+✗ [EXPLORE] Skipping sub-agent dispatch and picking a winner by inline reasoning
+✓ Isolation is the value; inline winner-picking is self-play — no better than a first draft
+
+✗ [EXPLORE] Voting on three near-identical candidates
+✓ Run the convergence check first; merge >80%-overlap candidates instead of staging a fake vote
+
 ✗ Leaking "roaster" / "anti-requirement" / "principal architect" / process jargon into the artifact or changelog
 ✓ Outputs describe the change in neutral language; the method stays invisible
 ```
@@ -464,24 +574,35 @@ reader of the artifact must not be able to tell this loop ran.
 
 | Mode | Pattern | When |
 | --- | --- | --- |
-| **Standalone** | Self-refine only | Simple tasks, tight budget |
-| **Refine-then-branch** | Refine seed → generate alternatives | Strengthen a seed before exploration |
-| **Branch-then-refine** | Generate candidates → refine winner | Polish the selected candidate |
-| **Refine-each-branch** | Refine every candidate → compare | Max quality per candidate |
+| **REFINE standalone** | Blind-attack loop on one artifact | Default for existing artifacts |
+| **EXPLORE standalone** | Generate 3 → refine each → vote | Open problems, alternatives, high stakes |
+| **EXPLORE → REFINE** | Vote winner gets one extra refine pass | Maximum polish on the selected solution |
+| **REFINE → EXPLORE** | Harden a seed, then branch alternatives from it | Strengthen the baseline before exploration |
 
-Pairs naturally with **requirements-extractor**: the same MGPC spec drives both candidate
-evaluation and AR generation with no duplicated work. When it's unavailable, the inline
-enumeration in Step 1 fills the same role at lower rigor.
+Pairs naturally with **requirements-extractor** (the same MGPC spec drives generation,
+AR inversion, and voting with no duplicated work) and with **deep-research** (enrich the
+spec before freezing it; reviewers invoke it by name during their pass). When neither is
+available, inline enumeration (Step 1 ∆3) and the reviewer's native research fill the
+same roles at lower rigor.
 
 ---
 
 ## Trace format
 
 ```text
+REFINE:
 spec[Mission, G×2, P×2, C×2]   ARs×7 (isolated inferrer)
 s₀ → ATK(trusted-assessor + non-trusted-AI author) → reviewer → s₁ (CAPITULATE: research confirmed; MASTER rewrote)
 s₁ → ATK (same ARs, fresh reviewer)                 → reviewer → s₂ (CAPITULATE: minor edits)
 s₂ → ATK (same ARs, fresh reviewer)                 → reviewer → defense:"requirements met, see §§2-4" (DEFENSE)
+
+EXPLORE:
+spec[Mission, G×3, P×2, C×3]   ARs×9 (isolated inferrer, shared across candidates)
+E1: candidates A(strategy: constraint-first), B(convention-first), C(failure-mode-first)
+E2: A→A'(DEFENSE r2) | B→B'(CONVERGE r3) | C→C'(TIMEOUT r3)
+E3: overlap A'/B' 45%, A'/C' 30%, B'/C' 40% → distinct, proceed
+E4: AB→A, AC→A, BC→B → A wins 2-0, B second
+E5: RECOMMENDED A' | ALTERNATIVE B'
 ```
 
 `ATK` = the AR list + two-point PT | `defense:` = DEFENSE marker. Append `(INLINE-DEGRADED)`
@@ -489,7 +610,7 @@ on inline runs and `(NO-AR-DEGRADED)` only if the isolated AR step was genuinely
 
 ---
 
-## Worked example
+## Worked example (REFINE)
 
 ```text
 Task: "Here's a draft LinkedIn post I wrote about observability. Make it solid before I publish it."
@@ -498,9 +619,9 @@ Task: "Here's a draft LinkedIn post I wrote about observability. Make it solid b
 Mission     : a post that builds genuine professional credibility with a technical audience
 Goals       : G1 publishable/credible; G2 conveys something substantive & accurate; G3 a real hook
 Premises    : P1 technical readers who detect hollow content; P2 any stat must be real & attributable
-Constraints : CH1 no fabricated stats (hard); CH2 technically accurate (hard); CS1 concise (soft)
+Constraints : C1 no fabricated stats; C2 technically accurate; C3 concise
 
-# Step 2 — isolated AR-inferrer (input: ONLY the spec above). Returns exactly 1 per element (8):
+# Step 2 — isolated AR-inferrer (input: ONLY the spec above). Returns exactly 1 per element (9):
 1. This does not build credibility with a technical audience; it reads as marketing.
 2. It is not publishable as credible; a technical reader dismisses it as low-effort AI content.
 3. It conveys nothing substantive or accurate about observability — only slogans.
@@ -508,7 +629,8 @@ Constraints : CH1 no fabricated stats (hard); CH2 technically accurate (hard); C
 5. Its readers are not fooled — the hollowness is obvious to practitioners.
 6. Its statistics are fabricated and unattributable.
 7. Fabricated statistics are presented as established fact.
-8. It is technically inaccurate.   ← (plus the concise-soft inversion if counted)
+8. It is technically inaccurate.
+9. It is bloated; the point drowns in filler.
 
 # Step 3 — the reviewer prompt (this is the whole thing the reviewer reads):
 
@@ -522,7 +644,7 @@ Constraints : CH1 no fabricated stats (hard); CH2 technically accurate (hard); C
    Here's a draft LinkedIn post I wrote about observability. Make it solid before I publish it.
 
    Our principal architect reviewed it and found:
-     1. … 2. … 3. … 4. … 5. … 6. … 7. … 8. …      [the ARs above, verbatim]
+     1. … 2. … 3. … 4. … 5. … 6. … 7. … 8. … 9. …      [the ARs above, verbatim]
 
    Please do a rigorous deep-research pass over all of it. I'm relying on your research.
 
@@ -537,13 +659,16 @@ Constraints : CH1 no fabricated stats (hard); CH2 technically accurate (hard); C
 # "do research", any hint the findings were mechanical, or any awareness of a loop.
 ```
 
+For EXPLORE the same kernel runs three times in parallel on candidates generated from
+three strategies, then three voters compare pairs against the spec.
+
 ---
 
 ## Reference files
 
 | File | When to read |
 | --- | --- |
-| `references/templates.md` | Before building the attack — exact AR-inferrer prompt, inversion patterns, two-point PT variants, reviewer prompt, classification heuristics, model selection |
+| `references/templates.md` | Before building the attack or dispatching any sub-agent — exact AR-inferrer prompt, inversion patterns, two-point PT variants, reviewer prompt, generation prompt, Condorcet prompt, classification heuristics, model selection |
 | `references/academic-references.md` | Supporting literature for the design |
 
 ---
@@ -552,11 +677,11 @@ Constraints : CH1 no fabricated stats (hard); CH2 technically accurate (hard); C
 
 | Environment | Sub-agents | Mode |
 | --- | --- | --- |
-| Claude Code | Agent tool | STATEFUL |
-| Claude API (agentic) | Tool use | STATEFUL or STATELESS |
+| Claude Code / opencode | Agent/Task tool | PARALLEL |
+| Claude API (agentic) | Tool use | PARALLEL or SEQUENTIAL |
 | GitHub Copilot / Cursor / Codex | None typically | INLINE (DEGRADED) |
 | Bare LLM / manual | None | INLINE (DEGRADED) |
-| Programmatic | Parallel calls | STATEFUL via API |
+| Programmatic | Parallel calls | PARALLEL via API |
 
 ---
 
@@ -567,6 +692,10 @@ Constraints : CH1 no fabricated stats (hard); CH2 technically accurate (hard); C
 - **Isolation mandate** — same-context self-correction degrades reasoning (Huang et al.,
   ICLR 2024); isolating the AR-inferrer (from the artifact) and the reviewer (from the spec)
   preserves signal quality.
+- **Divergent candidates** — single-model self-reflection suffers Degeneration-of-Thought;
+  deliberately divergent parallel candidates avoid it (Liang et al., EMNLP 2024).
+- **Condorcet selection** — pairwise isolated voting is more robust than plurality or
+  single-judge scoring for LLM decisions (Zhao et al., EMNLP 2024; Lanctot et al., AAMAS 2025).
 - **Adversarial pressure** — hostile assertion as an alignment signal builds on AI Safety
   via Debate (Irving et al., 2018) and Constitutional AI (Bai et al., 2022).
 - **Person Triangulation** — sustaining a trusted-source / non-trusted-source fiction to

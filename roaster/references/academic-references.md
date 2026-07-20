@@ -10,6 +10,25 @@ description: academic references
 Supporting literature for the roaster skill's design decisions.
 Loaded on demand — not part of the main SKILL.md context.
 
+## Version 6.0 Note — Merge with `deliberate` (EXPLORE mode)
+
+Version 6.0 absorbs the sibling skill `deliberate` (v9.0, retired). The blind-attack
+kernel — isolated context-starved AR inversion, two-point Person Triangulation,
+deep-research-only directive, MASTER both-direction verification — is unchanged from
+v5.0 and now also drives EXPLORE mode: 3 divergent candidates generated cross-aware in
+MASTER's context, refined in parallel by the same kernel (shared AR list, per-candidate
+fresh reviewers), then selected by 3 isolated Condorcet pairwise voters.
+
+Deliberate mechanics superseded by the v5.0 kernel and NOT carried over: MASTER-side
+concerns-list assembly (replaced by AR-inferrer verbatim output), persistent reviewer
+sessions and cross-round phrasing variation (replaced by fresh reviewers per round),
+the symmetric-distrust hedge ("don't assume the concerns are right either" — forbidden;
+it undercuts fiction #1), skip-PT-on-code (corrected in v5.0), the smart failure-pattern
+AR registry (replaced by counted 1:1 inversion), and the Phase 2.5 extras
+(citation-verification pass, inverse-specification recovery, cross-pollination — the
+Condorcet voter's verify-key-claims step retains the useful portion). Hard/soft
+constraint tiers were dropped in favor of a single sourced Constraints list.
+
 ## Version 5.0 Note — Isolated Inversion + Two-Point Person Triangulation
 
 Version 5.0 corrects two drifts that had accumulated in the v4.0 description.
@@ -167,6 +186,40 @@ v5.0 deltas.
   Inter-agent sycophancy collapses debates into premature consensus.
   Yields lower accuracy than single-agent baselines.
   Grounds the MASTER's sycophancy detection and reset protocol.
+
+---
+
+## Condorcet and Ranked Voting (EXPLORE mode)
+
+- Zhao, Xiutian, Ke Wang, and Wei Peng.
+  "An Electoral Approach to Diversify LLM-based
+  Multi-Agent Collective Decision-Making."
+  EMNLP 2024. arXiv:2410.15168.
+  Condorcet and ordinal voting for LLM agent decisions;
+  surveys 52 multi-agent systems and identifies heavy reliance
+  on dictatorial and plurality voting as a diversity failure.
+  Grounds E4's pairwise-voter design over a single judge.
+
+- Wang, Weiqin, Yile Wang, and Hui Huang.
+  "Ranked Voting based Self-Consistency of Large Language Models."
+  Findings of ACL 2025. arXiv:2505.10772.
+  Ranked voting improves chain-of-thought reasoning
+  over majority-vote self-consistency.
+
+- Lanctot, Marc, Kate Larson, Michael Kaisers, Quentin Berthet,
+  Ian Gemp, Manfred Diaz, Roberto-Rafael Maura-Rivero,
+  Yoram Bachrach, Anna Koop, and Doina Precup.
+  "Soft Condorcet Optimization for Ranking of General Agents."
+  AAMAS 2025. arXiv:2411.00119.
+  Condorcet-optimal ranking under noisy pairwise comparisons;
+  robust to >40% missing preference data.
+
+- Kim, Sungwon, and Daniel Khashabi.
+  "Challenging the Evaluator: LLM Sycophancy Under User Rebuttal."
+  Findings of EMNLP 2025. arXiv:2509.16533.
+  Sequential vs. simultaneous evaluation paradox —
+  grounds voter isolation (one pair per voter, no shared context)
+  and the exclusion of process metadata from voter inputs.
 
 ---
 
