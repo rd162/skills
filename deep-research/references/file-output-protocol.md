@@ -14,7 +14,7 @@ Loaded on demand from the main SKILL.md.
 
 ## Create mode (file does not exist)
 
-1. Run Δ1-Δ7 with sub-agent fan-out if 2+ research angles needed.
+1. Run the seven-step core protocol with sub-agent fan-out if 2+ research angles needed.
 2. Group findings into 5-10 logical sections.
 3. Write the file with frontmatter (see `source-tiering.md`):
 
@@ -68,7 +68,7 @@ format and append the tier keys at the end of the frontmatter block.
 Bump `version` and update `last_updated` on substantive content changes.
 
 1. Read the existing file. Note section headings, Sources list, and voice/style.
-2. Run Δ1-Δ7 targeted to what has changed since the `*Captured:*` date.
+2. Run the seven-step core protocol targeted to what has changed since the `*Captured:*` date.
 3. For each new finding:
    - Locate the correct existing section.
    - Use Edit to merge inline — NEVER create a "New Findings" subsection.

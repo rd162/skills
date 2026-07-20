@@ -1,491 +1,197 @@
 ---
 name: deep-research
-version: "2.3"
+version: "3.0"
 description: >-
-  Systematically gathers, validates, and synthesizes external knowledge
-  using CoK graph-based expansion until saturation, combining a structured
-  web search protocol (Δ1-Δ7) with temporal-aware querying, domain-specific
-  source tiering (T1-T4), and deep research pipelines with sub-agent fan-out.
-  Escalates research depth for high-stakes domains (medical, legal,
-  pharmacology, psychology, engineering, financial) using forward-consequence
-  CoK fills, T1-only evidence constraints, and safety disclaimers.
-  Resolves source conflicts via tier-weighted recency ranking,
-  exposes contradictions rather than silently resolving them,
-  and degrades gracefully to training-knowledge-only mode.
-  Use when user asks to "research this", "verify this", "deep dive",
-  "think deeper", "systematic review", or needs authoritative knowledge.
-  Supports sub-agent fan-out and persistent playbook generation.
+  Systematically gathers, validates, and synthesizes external knowledge:
+  temporal-aware multi-angle searching, domain-specific source tiering
+  (T1-T4) with tier-weighted conflict resolution, gap-driven iteration
+  until saturation, and sub-agent fan-out for multi-subject research.
+  Escalates depth for high-stakes domains (medical, legal, pharmacology,
+  psychology, engineering, financial) with T1-only evidence and
+  forward-consequence queries. Exposes contradictions rather than
+  silently resolving them; degrades gracefully to training-knowledge-only
+  mode. Use when the user asks to "research this", "verify this",
+  "deep dive", "systematic review", or needs authoritative current
+  knowledge. Can write findings to a persistent playbook file.
 
 argument-hint: "<topic> [--file deep_research.md]"
 allowed-tools: WebSearch, WebFetch, Read, Write, Edit, Grep, Glob, AskUserQuestion
 metadata:
   author: rd162@hotmail.com
-  tags: chain-of-knowledge, web-search, source-tiering, deep-research, high-stakes, sub-agent-dispatch, graceful-degradation, domain-escalation, playbook-generation
+  tags: web-search, source-tiering, deep-research, high-stakes, sub-agent-dispatch, graceful-degradation, playbook-generation
 tier: T3
 source_class: llm
-last_updated: 2026-06-24
+last_updated: 2026-07-20
 ---
 
 # Deep Research
 
-Systematic methodology for gathering, validating, and synthesizing
-external knowledge using Chain of Knowledge (CoK) graph-based expansion
-until saturation, executed via the Δ1-Δ7 web search protocol
-with domain-specific source tiering.
+Gather, validate, and synthesize external knowledge with source tiering,
+temporal awareness, and explicit contradiction handling.
 
-## Invocation Context
+## Invocation
 
-This skill runs in two distinct environments with different activation mechanics:
+As a slash command (`/deep-research <topic> [--file path.md]`), parse arguments:
+`--file <path>` (or a bare token ending in `.md`) → **file mode** (write a playbook);
+everything else is the topic → **inline mode** (answer in conversation).
+Empty arguments → show usage and stop. In other environments, infer topic and mode
+from conversation context (see `references/invocation-context.md` for MCP setup).
 
-### Claude Code (native runtime)
-
-`/deep-research` is a first-class slash command with argument parsing.
-
-```text
-/deep-research swift concurrency
-/deep-research kubernetes cost optimization --file infra.md
-/deep-research --file existing-playbook.md   (re-researches and updates)
-```
-
-`argument-hint`, `user-invocable`, and `$ARGUMENTS` only work here.
-All other environments ignore these frontmatter fields.
-
-**Argument Parsing** — parse `$ARGUMENTS` before doing anything:
-
-1. If `$ARGUMENTS` contains `--file <path>` — extract as output path.
-   Everything else is the topic.
-2. Else if a token ends in `.md` or contains `/` — treat as output path.
-   Everything else is the topic.
-3. Else treat ALL of `$ARGUMENTS` as the topic.
-   Auto-generate path: `<topic-slug>.md` in the current working directory.
-4. If `$ARGUMENTS` is empty — show help and stop:
-
-```text
-Usage:
-  /deep-research swift concurrency
-  /deep-research kubernetes cost optimization --file infra.md
-  /deep-research --file existing-playbook.md   (re-researches and updates)
-```
-
-**Output mode:**
-
-- File path resolved → `mode = file` (write playbook, see File Output section)
-- No file path → `mode = inline` (answer in conversation, standard Δ1-Δ7)
-
-For MCP environment setup (Zed, Cursor, Windsurf, Claude Desktop),
-see @references/invocation-context.md.
-
-## Disambiguation Step
-
-_(Applies in all environments. In Claude Code, runs after argument parsing.
-In MCP environments, runs based on conversation context.)_
-
-Before executing, use **AskUserQuestion** if ANY of these apply:
-
-- Topic has multiple common meanings — ask which one.
-- Topic is too broad — ask what aspect matters.
-- Topic implies unstated context (cloud provider, language, audience level).
-- `mode = file` and file already exists — confirm update or overwrite.
-
-Skip if the topic is specific and unambiguous.
+**Disambiguate first** when the topic has multiple meanings, is too broad, or implies
+unstated context (cloud provider, language, audience) — use AskUserQuestion.
+In file mode, confirm update vs. overwrite if the file exists.
 
 ## When to Use
 
 - Factual claims requiring verification against current sources
 - Current knowledge needed (versions, APIs, best practices, pricing)
-- Technical comparisons or benchmarks
-- Contested topics needing multiple authoritative sources
+- Technical comparisons, benchmarks, contested topics
 - Implementation or debugging with unfamiliar tools/APIs
-- User explicitly asks to research, verify, or find current information
 
 ## When NOT to Use
 
-- Pure logic or mathematical proofs (no external knowledge needed)
-- Creative writing or opinion pieces
-- Tasks where all information is already in project context
+- Pure logic or math (no external knowledge needed)
+- All information already in project context
 - User explicitly says to use training knowledge only
 
-## Termination
+## Termination and Degradation
 
-| Signal    | Condition                                                       | Action                                            |
-| --------- | --------------------------------------------------------------- | ------------------------------------------------- |
-| SATURATED | Core covered, or depth ≥ max, or relevance < 0.3, or budget out | STOP — synthesize and present findings            |
-| NO_TOOLS  | Zero search/fetch tools available after Δ1 scan                 | Degrade — training knowledge with disclaimer      |
-| EMERGENCY | External verification becomes impossible mid-protocol           | Mark uncertainty — never present as authoritative |
+| Signal    | Condition                                              | Action                                       |
+| --------- | ------------------------------------------------------ | -------------------------------------------- |
+| SATURATED | Core covered, or an iteration adds nothing new, or budget out | STOP — synthesize and present          |
+| NO_TOOLS  | Zero search/fetch tools available                      | Training knowledge ONLY, explicit disclaimer |
+| EMERGENCY | Verification becomes impossible mid-protocol           | Mark uncertainty — never present as authoritative |
 
-## Graceful Degradation
-
-- **Full tooling** (search + scrape + summarize): Complete Δ1-Δ7 with deep research pipeline.
-- **Partial tooling** (any single search tool): Δ1-Δ7 with reduced coverage.
-- **No external tools:** Training knowledge ONLY with explicit disclaimer.
-- **Limited budget:** Δ1-Δ3 only (strategy + execute), skip deep research pipeline.
-
-The skill always produces output. The confidence level varies.
+The skill always produces output; only the confidence level varies.
+Tight budget → strategy + execute only (skip the deep pipeline).
 
 ---
+
+## Source Tiers (the contract)
+
+| Tier | Description                                                                                                      | Confidence | Weight in Conflicts |
+| ---- | ---------------------------------------------------------------------------------------------------------------- | ---------- | ------------------- |
+| T1   | Peer-reviewed / official vendor docs / RFCs / standards bodies — **public sources only**                         | HIGH       | Strongest           |
+| T2   | Expert blogs, established trade press, primary partner documents (`data/intake/`)                                | MED        | Strong              |
+| T3   | Community forums, Stack Overflow, fragments/extracts (`data/corpus/`), summaries of prior tiers                  | LOW        | Weak                |
+| T4   | Opinions, unverified claims, AI-generated content, project-internal generated docs (surveys, playbooks, memory)  | LOW        | Weakest             |
+
+**T1 is reserved for true public sources** — internal documents never qualify, however
+authoritative. When sources conflict: higher tier + more recent = stronger evidence.
+Annotate every cited source with its tier. Expose contradictions; never silently resolve.
+
+### Local document tier resolution
+
+When citing a local file: (1) use its frontmatter `tier` if present; (2) else default
+by path — specs `specs/<feature>/` → T2 · intake zone `data/intake/` (aliases:
+`sources/`, `raw/`, `documents/`) → T2 · corpus zone `data/corpus/` (aliases:
+`fragments/`, `knowledge/`, `processed/`) → T3 · generated research `data/research/`
+and root-level generated docs → T4 · curated `memory/` → T3 · `.cache/` → never cite;
+(3) else infer from git history and content (import/ingest commits → T3 fragment;
+LLM-slop signals → T4; clearly human-authored → T2). Unclear → T4.
+
+Full policy — `source_class` taxonomy, frontmatter schema, canonical layout,
+cross-tool recognize-map, inference algorithm: `references/source-tiering.md`.
+
+---
+
+## Core Protocol
+
+Seven steps. Skip none.
+
+1. **Tools** — scan available search/fetch tools; zero → degraded mode.
+2. **Strategy** — get the current date from `now()` (NEVER hardcode years). Check for
+   high-stakes domain (below). Plan 3+ searches from different angles: official/primary,
+   practitioner experience, comparative/benchmarks. 5-8 searches for high-stakes.
+3. **Execute** — search with temporal qualifiers (`{current_year}`); record each
+   finding with source URL + date + tier.
+4. **Organize** — SOURCES (≥3, tier-annotated) · CONSENSUS · CONTRADICTIONS (and why)
+   · GAPS.
+5. **Iterate on gaps** — for each gap or newly-surfaced unknown, run a targeted
+   follow-up search. Stop when an iteration adds nothing new, the core is covered,
+   or budget runs out.
+6. **Output** — answer with per-claim citations and tiers, dated
+   ("Based on N sources, searched {current_date}"). If contested: say so and name the
+   authority to consult. If degraded: state "training knowledge only".
+7. **Validate** — current date dynamic? 3+ searches? 3+ tiered sources cited?
+   contradictions exposed? high-stakes extras done? Fix any failure before presenting.
 
 ## High-Stakes Domain Escalation
 
-**CRITICAL: Some domains carry life-affecting consequences.**
-A wrong answer in medicine can cause death; in psychology, suicide;
-in legal advice, imprisonment; in pharmacology, poisoning;
-in structural engineering, building collapse.
-
-**High-stakes domains:** Medical, Psychology, Pharmacology, Legal (advisory),
-Structural/Civil engineering, Nutrition (medical), Childcare, Financial (advisory).
-
-**Detection heuristic:**
-If the answer could plausibly influence a decision affecting someone's
-physical health, mental health, legal standing, financial security,
-or physical safety — treat as high-stakes. When uncertain, **escalate**.
-This follows Signal Detection Theory (Green & Swets, 1966):
-false negative cost (catastrophic) >> false positive cost (tokens).
-
-**Mandatory protocol when high-stakes detected:**
-
-1. **Deep research MANDATORY.** Use the strongest available research tool.
-   If none exists, compensate with 5-8 targeted searches constrained to T1 sources.
-2. **Forward-consequence CoK MANDATORY.** Fill consequence and contraindication gaps:
-   `(recommendation, interacts_with, ?)`, `(advice, contraindicated_for, ?)`,
-   `(solution, assuming, ?)`, `(approach, if_wrong, ?)`,
-   `(recommendation, superseded_by, ?)`, `(treatment, withdrawn_in, ?)`.
-3. **T1 sources ONLY** for high-stakes claims. T2-T4 may inform direction but never override T1.
-4. **Safety disclaimers ALWAYS.** "Consult a qualified [professional]."
-   Mark confidence. Expose contradictions — never silently resolve them.
-5. **CoK depth minimum L0-L4.** Do not stop at L2 — forward-consequence fills
-   often reveal critical gaps at L3-L4.
-
-See @references/domain-knowledge-matrix.md for forward-consequence CoK patterns by domain.
-
----
-
-## Chain of Knowledge (CoK) Methodology
-
-Build linked triples `(subject, relation, object)`,
-identify gaps, and fill them via targeted search.
-
-### Forward-Fill Pattern
-
-```text
-Known:  (Next.js, supports, SSR)  (SSR, improves, SEO)
-Gaps:   (SSR, requires, ?)  (SEO, measured_by, ?)  (Next.js, competes_with, ?)
-Action: Fill each ? via targeted search → expand graph → repeat
-```
-
-Forward-consequence fill extends this to discover what COULD GO WRONG —
-mandatory for high-stakes domains. See High-Stakes Domain Escalation above
-and @references/domain-knowledge-matrix.md for domain-specific patterns.
-
-### Complexity-Informed Research Depth
-
-Cynefin framework (Snowden & Boone, 2007) grounds depth selection:
-
-| Domain Complexity | CoK Depth            | Research Approach                        |
-| ----------------- | -------------------- | ---------------------------------------- |
-| **Simple**        | L0-L2                | Standard Δ1-Δ7, few searches             |
-| **Complicated**   | L0-L3                | Multiple angles, T1-T2 sources           |
-| **Complex**       | L0-L4                | Deep research, broad sweep               |
-| **Chaotic**       | L0-L4 + consequences | Maximum depth, forward-consequence fills |
-
-### Expansion Levels and Stop Criteria
-
-```text
-L0: Initial topic → direct triples (relevance 1.0)
-L1: First expansion → related concepts (~0.7)
-L2: Second expansion → supporting details (~0.5)
-L3: Third expansion → peripheral context (~0.3)
-L4: Predicted relevance < 0.3 → STOP
-
-Stop when ANY: all core covered, depth ≥ max, relevance < 0.3,
-budget exhausted, circular references detected.
-```
-
----
-
-## Source Tiers
-
-| Tier | Description                                                                                                     | Default Confidence | Weight in Conflicts |
-| ---- | --------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------- |
-| T1   | Peer-reviewed / official vendor docs / RFCs / standards bodies — **public sources only**                        | HIGH               | Strongest           |
-| T2   | Expert blogs, established trade press, primary partner documents (`data/intake/`)                            | MED                | Strong              |
-| T3   | Community forums, Stack Overflow, fragments/extracts (`data/corpus/`), summaries of prior tiers              | LOW                | Weak                |
-| T4   | Opinions, unverified claims, AI-generated content, project-internal generated docs (surveys, playbooks, memory) | LOW                | Weakest             |
-
-**T1 is reserved for true public sources.** Internal/closed documents
-never qualify as T1, even when authoritative inside the organization.
-
-When sources conflict, higher tier + more recent = stronger evidence.
-Annotate every cited source with its tier.
-
-See `references/source-tiering.md` for the full policy: `source_class`
-taxonomy, default tier per path, frontmatter schema, and conflict
-resolution rules.
-
-### Local Document Tier Resolution
-
-When citing a local file (project doc, fragment, memory entry):
-
-1. Read the file's frontmatter `tier` if present — use it.
-2. If absent, apply default-by-path:
-   - **Specs (per feature)** → T2 (`source_class: human`).
-     Canonical: `specs/<feature>/{requirements,design,tasks}.md`; legacy `.agents/spec/`;
-     recognize `.kiro/specs/`, Spec-Kit `specs/NNN-*`, OpenSpec `openspec/changes/`.
-   - **Zone 1 (source / intake layer)** → T2 (`source_class: specs`).
-     Canonical path: `data/intake/**` (or CCDS `data/raw/`, `data/external/`).
-     Aliases: `sources/`, `raw/`, `intake/`, `documents/`, `upstream/`, `ingest/`;
-     legacy `.agents/intake/`, `.agents/external-refs/`, `__SPECS__/`.
-   - **Zone 2 (corpus / processed layer)** → T3 (`source_class: fragment`).
-     Canonical path: `data/corpus/**` (or CCDS `data/processed/`).
-     Aliases: `corpus/`, `fragments/`, `knowledge/`, `artifacts/`, `extracted/`,
-     `derived/`, `enriched/`, `processed/`, `index/`;
-     legacy `.agents/corpus/`, `.agents/kb-cache/`, `__FRAGMENTS__/`.
-   - **Generated research** → T4 (`source_class: llm`).
-     Canonical: `data/research/**` (generated surveys/playbooks; lower confidence than corpus); legacy `.agents/research/`.
-   - **Memory (curated)** → T3 (`source_class: llm_human`; T4 if raw).
-     Canonical: project `memory/**` (INDEX + topic files); recognize `memory-bank/`, `.claude/memory/`, `~/.claude/…/memory/`; legacy `.agents/memory/**`.
-   - Project-root generated docs (surveys, playbooks, discovery reports) → T4
-   - Ephemeral: `.cache/**` (legacy `.agents/cache/`, `.agents/scratch/`) → below T4, never cited.
-   - See `references/source-tiering.md` §8 for the full canonical layout + cross-tool recognize-map.
-3. If still unresolved, infer from git history + content:
-   - `git log --diff-filter=A -- <file>` for first-add date and message
-   - "import"/"ingest"/"convert" in commit message → T3 fragment
-   - Heavy LLM-slop signal (generic bullets, em dashes, no concrete data,
-     no source links) → T4 if low-quality model, T3 if premium model output
-   - Clearly human-authored (typos, idiosyncratic voice, named refs) →
-     T2 default; T1 only if it cites external public authority
-   - Unclear → T4 (safe conservative default)
-4. Tier inference is implicit — no flag is written. To signal human
-   review, change `source_class: llm` → `source_class: llm_human`.
-
-See `references/source-tiering.md` §5 for the full inference algorithm.
-
----
-
-## Web Search Protocol (Δ1-Δ7)
-
-Seven steps from tool discovery to validated output. Skip none.
-
-### Δ1: Tool Availability
-
-Scan available tools. If zero external tools, switch to degraded mode.
-
-### Δ2: Strategy
-
-Get the current date (mandatory — NO hardcoded years):
-
-```text
-current_date = now(timezone="local")
-current_year = extract year from current_date
-```
-
-**Check for high-stakes domain** (see above). If detected:
-escalate to deep research, plan 5-8 searches, constrain to T1,
-include forward-consequence CoK queries.
-
-Plan 3+ searches covering different angles (5-8 for high-stakes):
-
-- **Primary:** Official / peer-reviewed sources
-- **Practitioner:** Real-world usage and experience
-- **Comparative:** Benchmarks / analysis / alternatives
-- **[HIGH-STAKES] Consequences:** Contraindications, interactions, failure modes
-- **[HIGH-STAKES] Superseded:** Updated guidelines, retracted findings
-
-See @references/domain-knowledge-matrix.md for domain-specific
-tool selection, query patterns, and CoK depth guidance.
-
-### Δ3: Execute
-
-For each planned search: execute with temporal qualifiers
-(use `{current_year}`, never hardcode),
-record each finding with source URL + date + tier (T1-T4).
-
-### Δ4: Organize
-
-```text
-SOURCES: [Source]:[Finding](T#) — at least 3
-CONSENSUS: [What sources agree on]
-CONTRADICTIONS: [Where sources disagree and why]
-GAPS: [What remains unclear]
-```
-
-### Δ5: Weight
-
-Resolve conflicts using source tier priority.
-Higher tier + more recent = stronger evidence.
-
-### Δ6: Output
-
-```text
-Based on [N] sources (searched: {current_date}):
-
-[ANSWER]
-
-Evidence:
-- [Claim] (Source: [cite], T#)
-
-[IF contested] Sources vary. Consult [authority].
-[IF degraded] Training knowledge only. No external verification.
-```
-
-### Δ7: Validation Checklist
-
-- Current date obtained (not hardcoded)?
-- 3+ searches executed (5+ for high-stakes)?
-- 3+ sources cited with URLs and tiers?
-- Contradictions explicitly exposed?
-- [HIGH-STAKES] Deep research tool used (or 5-8 T1-targeted searches)?
-- [HIGH-STAKES] Forward-consequence CoK completed?
-- [HIGH-STAKES] Safety disclaimer included?
-
-If any item fails, fix before presenting.
-
----
-
-## Deep Research Pipeline
-
-For comprehensive research (20-50+ references). Use when: novel/niche topic,
-systematic review needed, user says "deep dive," or HIGH-STAKES domain.
-
-```text
-1. Broad sweep: 20-50 references via multiple search tools
-2. Filter: top 10 by relevance and tier
-3. Summarize: key points from each candidate
-4. Select: top 3-5 highest-quality sources
-5. Extract: full content from selected sources
-6. Synthesize: build CoK triples → comprehensive cited answer
-```
-
-### Sub-Agent Dispatch for Multi-Subject Research
-
-**MANDATORY:** When research covers 2+ independent subjects
-and a sub-agent mechanism is available,
-dispatch each subject to a dedicated sub-agent.
-
-| Subject count | Strategy                               |
-| ------------- | -------------------------------------- |
-| 1             | Inline Δ1-Δ7                           |
-| 2-3           | One sub-agent per subject              |
-| 4-6           | Group related subjects (2-3 per agent) |
-| 7+            | Group into 3-5 agents by affinity      |
-
-Each sub-agent independently executes full Δ1-Δ7.
-Master synthesizes, compares, and identifies gaps.
-
-See @references/sub-agent-dispatch.md for dispatch patterns,
-output budgets, grouping heuristics, and model selection guidance.
-
-### Deep Research Agent Polling Protocol
-
-For asynchronous deep research tools: wait **minimum 30 seconds** between checks.
-Use wait time productively — run standard Δ3 searches in parallel.
-
-For HIGH-STAKES domains, ALWAYS use the deepest/pro model.
-See @references/sub-agent-dispatch.md for full polling protocol.
-
----
-
-## Knowledge Sources (Priority Order)
-
-1. **Local docs** — project files, READMEs (project-specific context)
-2. **LLM pattern files** — `llms*.txt` in current directory (domain patterns)
-3. **Library docs** — Context7, official API references (authoritative)
-4. **Web search** — any available search/scrape tools (current/external)
-5. **Memory systems** — session memory, notes (cross-session continuity)
-
+Wrong answers in some domains cause death, imprisonment, poisoning, collapse, or ruin:
+**medical, psychology, pharmacology, legal, structural/civil engineering, nutrition
+(medical), childcare, financial (advisory)**. If the answer could plausibly influence
+someone's health, legal standing, financial security, or physical safety — treat as
+high-stakes. When uncertain, escalate (a false negative costs far more than tokens).
+
+Mandatory when detected:
+
+1. **Deepest research available** — strongest tool, or 5-8 searches constrained to T1.
+2. **Forward-consequence queries** — actively search what could go wrong: interactions,
+   contraindications, hidden assumptions, superseded/withdrawn guidance, failure modes.
+3. **T1 only** for high-stakes claims — T2-T4 may inform direction, never override T1.
+4. **Safety disclaimer always** ("consult a qualified [professional]"), confidence
+   marked, contradictions exposed.
+
+Domain-specific query patterns and tool selection: `references/domain-knowledge-matrix.md`.
+
+## Knowledge Sources (priority order)
+
+1. Local project docs and READMEs → 2. `llms*.txt` pattern files → 3. Library docs
+(Context7, official API refs) → 4. Web search → 5. Memory systems.
 Check local sources before reaching for the web.
-See @references/domain-knowledge-matrix.md for domain-specific tool selection.
 
 ---
 
-## Example
+## Deep Pipeline and Fan-Out
 
-```text
-User: "What's the best state management for React?"
+For comprehensive research (novel/niche topic, systematic review, "deep dive",
+high-stakes): broad sweep (20-50 references) → filter to top ~10 by relevance and
+tier → summarize → select top 3-5 → extract full content → synthesize with citations.
 
-Δ1: Available tools: web search, scrape
-Δ2: Strategy (date from now()):
-  - S1: "React state management {current_year} comparison"
-  - S2: "React state management production usage"
-  - S3: "Redux vs Zustand vs Jotai benchmark {current_year}"
-Δ3: Execute → 6 sources (T1: 2, T2: 3, T3: 1)
-Δ4: Consensus: Zustand growing, Redux dominant in enterprise
-    Contradictions: T3 "Redux is dead" vs T1 adoption data
-Δ5: Weight: T1 > T3 → Redux dominant, Zustand rising fastest
-Δ6: Output with 6 cited sources, tiers annotated
-Δ7: Validation checks pass
-```
+**Multi-subject fan-out (MANDATORY when applicable):** research covering 2+ independent
+subjects with a sub-agent mechanism available → dispatch one sub-agent per subject
+(group into 3-5 agents by affinity when 4+ subjects). Each runs the full protocol
+independently; master synthesizes and identifies gaps.
+Dispatch patterns, output budgets, model selection: `references/sub-agent-dispatch.md`.
+
+**Async research tools:** poll no more than every 30 seconds; run standard searches in
+parallel while waiting. High-stakes → always the deepest/pro model.
+
+**Video sources:** when the topic touches project video material, existing transcripts
+or AI descriptions answer only the questions asked WHEN they were produced. Use them as
+a relevance filter only; run a NEW analysis pass prompted with the CURRENT question;
+persist under a topic-qualified filename; cross-check against text sources (video
+analysis is T3). Protocol and proof case: `references/video-source-reanalysis.md`.
 
 ---
 
-## File Output (mode = file)
+## File Output (file mode)
 
-When a file path is resolved from `$ARGUMENTS`, write findings
-to a persistent markdown playbook instead of answering inline.
-
-- **Create mode** (file doesn't exist): Run Δ1-Δ7, group into sections, write with source URLs
-- **Update mode** (file exists): Target changes since `Captured:` date, merge inline, preserve voice
-- Every claim MUST have a source URL. Voice: direct, concise, practitioner-focused.
-
-See @references/file-output-protocol.md for full create/update protocols,
-templates, and the verification step.
+Write findings to a persistent markdown playbook instead of answering inline.
+**Create:** run the protocol, group into sections, every claim with a source URL,
+prepend tier frontmatter (`tier: T4, source_class: llm`), stamp `Captured:` date.
+**Update:** target changes since the `Captured:` date, merge inline, preserve voice.
+Full protocol and templates: `references/file-output-protocol.md`.
 
 ---
 
 ## Anti-Patterns
 
 ```text
-✗ Hardcoded years in search queries ("React 2024 state management")
-✓ Dynamic year from now() ("React {current_year} state management")
-
-✗ Single search, single source → presenting as authoritative
-✓ 3+ searches, 3+ sources with tier annotations
-
-✗ Skipping source tiers → treating blog post same as official docs
-✓ T1-T4 tier annotation on every cited source
-
-✗ Ignoring contradictions between sources
-✓ Explicitly exposing contradictions with tier-weighted resolution
-
-✗ Halting because no search tools are available
-✓ Degrade gracefully: use training knowledge with explicit disclaimer
-
-✗ Presenting training knowledge as current fact without verification
-✓ Search first, cite sources, mark uncertainty when present
-
-✗ Standard-depth search for medical, psychology, or legal questions
-✓ HIGH-STAKES: deep research mandatory, T1 only, forward-consequence CoK
-
-✗ Researching 3+ independent subjects sequentially in master context
-✓ Fan-out to sub-agents: one per subject, each runs Δ1-Δ7 independently
-
-✗ Polling deep research status every 5 seconds
-✓ Wait minimum 30 seconds between deep research status checks
+✗ Hardcoded years in queries ("React 2024 …")     ✓ {current_year} from now()
+✗ Single search/source presented as authoritative  ✓ 3+ searches, 3+ tiered sources
+✗ Blog post treated same as official docs          ✓ T1-T4 annotation on every source
+✗ Contradictions silently resolved                 ✓ Exposed, tier-weighted, named
+✗ Halting when no search tools exist               ✓ Degrade: training knowledge + disclaimer
+✗ Standard depth for medical/legal/financial       ✓ High-stakes: T1 only + consequences + disclaimer
+✗ 3+ independent subjects researched sequentially  ✓ Fan-out: one sub-agent per subject
+✗ Polling async research every 5 seconds           ✓ Minimum 30s between checks
+✗ Trusting a stale transcript for a new question   ✓ Re-analyze video for the current question
 ```
-
----
-
-## Environment Compatibility
-
-- **Full capability:** Multiple search + scrape + summarize tools → best results
-- **Partial:** Any single web search tool → reduced coverage, protocol still applies
-- **No external tools:** Training knowledge with explicit disclaimer → degraded but functional
-- **Claude Code / Cursor / Codex / Gemini CLI / Kimi:** Works with any available search tools
-
-## Formal Basis
-
-- **CoK expansion:** Li et al., 2023 — triple-based graph expansion with saturation as fixed-point detection.
-- **Source tiering:** T1-T4 hierarchy operationalizes ISO 25012 Accuracy dimension.
-- **Complexity-informed depth:** Cynefin domains (Snowden & Boone, 2007) map to CoK depth.
-- **High-stakes detection:** Asymmetric threshold per SDT (Green & Swets, 1966).
-- **Knowledge conversion:** Δ4 = SECI Combination; File Output = SECI Externalization (Nonaka & Takeuchi, 1995).
-- **Δ4 output structure:** Frame with named slots per Minsky's Frame Theory (1975).
-
-See `references/academic-references.md` for full citations and provenance.
 
 ## References
 
-See `references/academic-references.md` for full citations and provenance.
-
-Key references: Li et al. 2023 (CoK), Xu et al. 2025 (Search-o1),
-Snowden & Boone 2007 (Cynefin), Green & Swets 1966 (SDT),
-Nonaka & Takeuchi 1995 (SECI).
+`references/academic-references.md` — full citations
+(source tiering operationalizes ISO 25012 accuracy; high-stakes threshold per
+Signal Detection Theory, Green & Swets 1966).

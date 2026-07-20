@@ -59,5 +59,5 @@ There is no `/deep-research` slash command and no `$ARGUMENTS`.
 
 **In MCP mode, topic and output mode are inferred from the conversation.**
 The agent reads the full skill body and applies the Disambiguation Step,
-Δ1-Δ7 protocol, and File Output section based on what the user asked for —
+seven-step core protocol, and File Output section based on what the user asked for —
 no argument parsing required. `$ARGUMENTS` blocks are simply skipped.

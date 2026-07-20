@@ -60,7 +60,7 @@ Loaded on demand — not part of the main SKILL.md context.
   "Search-o1: Agentic Search-Enhanced Large Reasoning Models."
   arXiv:2501.05366, 2025.
   Agentic search integration: interleaving search actions
-  within reasoning chains. Grounds the Δ1-Δ7 protocol's
+  within reasoning chains. Grounds the seven-step core protocol's
   integration of search execution within structured reasoning,
   and the principle that search should be embedded in
   the reasoning process rather than run as a separate pre-step.
@@ -216,7 +216,7 @@ Loaded on demand — not part of the main SKILL.md context.
   in Large Language Models."
   NeurIPS 2022. arXiv:2201.11903.
   Chain-of-Thought reasoning as foundation for structured
-  multi-step inference. The Δ1-Δ7 protocol applies CoT-style
+  multi-step inference. The seven-step core protocol applies CoT-style
   decomposition to research methodology.
 
 - Yao, Shunyu, Dian Yu, Jeffrey Zhao, Izhak Shafran,
@@ -252,14 +252,18 @@ Loaded on demand — not part of the main SKILL.md context.
 The following elements are original to this skill ecosystem,
 built on the academic foundations listed above:
 
-- **Δ1-Δ7 web search protocol:** Structured seven-step
-  research methodology from tool discovery through validated output.
-  Synthesizes agentic search (Xu et al.) with CoK expansion
-  (Li et al.) and source tiering (ISO 25012 Accuracy).
+- **Seven-step core protocol:** Structured research
+  methodology from tool discovery through validated output.
+  Synthesizes agentic search (Xu et al.) with gap-driven
+  iterative expansion (Li et al.) and source tiering
+  (ISO 25012 Accuracy). (Known as the "Δ1-Δ7 protocol"
+  in versions ≤2.3; the CoK triple notation was dropped in
+  v3.0 — the surviving behavior is plain gap-driven iteration
+  until saturation.)
 
-- **Forward-consequence CoK:** Extension of standard CoK
-  forward-fill to include consequence, contraindication,
-  and supersession triples for high-stakes domains.
+- **Forward-consequence queries:** Extension of gap-driven
+  search to actively cover consequences, contraindications,
+  and supersession for high-stakes domains.
   Standard CoK discovers what IS; forward-consequence
   discovers what COULD GO WRONG.
 

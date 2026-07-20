@@ -46,7 +46,7 @@ rather than researching sequentially in the master context.
 ```text
 Research request received →
   How many independent subjects?
-    1 subject  → run Δ1-Δ7 inline (standard)
+    1 subject  → run the core protocol inline (standard)
     2+ subjects, NO dependencies between them →
       sub-agent available? → YES → fan-out (one agent per subject or group)
                            → NO  → sequential with context fencing
@@ -74,7 +74,7 @@ FOR EACH independent subject (or logical group of 2-3 related subjects):
 
 | Subject count | Strategy                                                       |
 | ------------- | -------------------------------------------------------------- |
-| 1             | Inline Δ1-Δ7 in master context                                 |
+| 1             | Core protocol inline in master context                                 |
 | 2-3           | One sub-agent per subject                                      |
 | 4-6           | Group related subjects (2-3 per agent)                         |
 | 7+            | Group into 3-5 agents by affinity; set per-section word limits |
@@ -97,11 +97,11 @@ produces balanced output without explicit limits.
 | Sub-agent dispatch               | Only synthesized reports = 10-25K tokens               |
 | Savings                          | 70-85% reduction in master context usage               |
 
-### Integration with Δ1-Δ7
+### Integration with the Core Protocol
 
-Each sub-agent independently executes the full Δ1-Δ7 protocol
+Each sub-agent independently executes the full seven-step core protocol
 for its assigned subject(s).
-The master does NOT re-run Δ1-Δ7 on the same subjects.
+The master does NOT re-run the core protocol on the same subjects.
 The master's role is synthesis, comparison, and gap identification.
 
 ---
@@ -135,7 +135,7 @@ the research runs in the background and must be polled for results.
     → do NOT give up after 1-2 checks — research takes time
     → maximum patience: 3-5 minutes for complex queries
 
-∆5: On completion → extract findings, integrate into CoK graph
+∆5: On completion → extract findings, integrate into the master synthesis
 ```
 
 ### Why 30 Seconds Minimum
@@ -177,7 +177,7 @@ match model capability to the research task's demands.
 | --- | --- | --- |
 | **Simple factual subjects** | Fast (sonnet-class) | Well-known topics with clear T1 sources; fast model finds them efficiently |
 | **Technical comparisons** | Standard (sonnet-class) | Structured comparison is well-suited to capable but fast models |
-| **HIGH-STAKES subjects** | Strongest (opus-class) | Forward-consequence CoK, T1 source validation, and safety-critical synthesis require deepest reasoning |
+| **HIGH-STAKES subjects** | Strongest (opus-class) | Forward-consequence queries, T1 source validation, and safety-critical synthesis require deepest reasoning |
 | **Novel/niche subjects** | Strongest (opus-class) | Sparse information requires creative search strategies and careful synthesis |
 | **Master synthesis** | Strongest (opus-class) | Cross-subject comparison, gap identification, and unified answer are the highest-value reasoning steps |
 

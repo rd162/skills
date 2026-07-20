@@ -1,38 +1,41 @@
 ---
 tier: T3
 source_class: llm
-last_updated: 2026-04-29
+last_updated: 2026-07-20
 description: domain knowledge matrix
 ---
 
 # Domain Knowledge Matrix
 
-Reference tables for the knowledge saturation skill.
-Maps domains to CoK expansion patterns, source tiers,
+Reference tables for the deep-research skill.
+Maps domains to follow-up question patterns, source tiers,
 tool selection, and query strategies.
 
 Loaded on demand — not part of the main SKILL.md context.
 
 ---
 
-## CoK Patterns by Domain
+## Follow-Up Question Patterns by Domain
 
-| Domain     | CoK Expansion Pattern                                                            | Forward-Fill Focus                   |
-| ---------- | -------------------------------------------------------------------------------- | ------------------------------------ |
-| Technical  | (tool, requires, ?) → (dep, version, ?) → (config, ?)                            | Dependencies, configuration          |
-| Scientific | (finding, replicated_by, ?) → (finding, contradicts, ?)                          | Replication, contradictions          |
-| Historical | (event, caused_by, ?) → (event, context, ?) → (era, ?)                           | Causation, context                   |
-| Debug      | (error, caused_by, ?) → (cause, fixed_by, ?) → (solution, ?)                     | Root cause, solution chain           |
-| ML/AI      | (model, trained_on, ?) → (model, outperforms, ?) → (benchmark, ?)                | Training, benchmarks                 |
-| Compare    | (X, differs_from, Y) → (X, better_at, ?) → (Y, better_at, ?)                     | Trade-offs, use cases                |
-| Psychology | (behavior, caused_by, ?) → (mechanism, modulated_by, ?) → (intervention, ?)      | Mechanisms, interventions            |
-| Physics    | (phenomenon, described_by, ?) → (model, predicts, ?) → (experiment, confirms, ?) | Models, experimental evidence        |
-| Culinary   | (technique, produces, ?) → (ingredient, reacts_with, ?) → (result, ?)            | Techniques, chemistry, substitutions |
-| Business   | (market, driven_by, ?) → (competitor, differentiates_via, ?) → (trend, ?)        | Drivers, competition, trends         |
-| Creative   | (style, influenced_by, ?) → (principle, achieves, ?) → (medium, ?)               | Influences, principles, constraints  |
-| Education  | (concept, prerequisite, ?) → (method, improves, ?) → (assessment, ?)             | Prerequisites, pedagogy              |
-| Policy     | (regulation, mandates, ?) → (compliance, requires, ?) → (enforcement, ?)         | Mandates, compliance, precedent      |
-| Medical    | (condition, treated_by, ?) → (treatment, contraindicated_by, ?) → (outcome, ?)   | Treatments, contraindications        |
+After the first round of findings, expand along the domain's natural chain of
+questions until an iteration adds nothing new:
+
+| Domain     | Question chain                                                              | Focus                                |
+| ---------- | ---------------------------------------------------------------------------- | ------------------------------------ |
+| Technical  | what does the tool require? → which versions? → what configuration?          | Dependencies, configuration          |
+| Scientific | has the finding been replicated? → what contradicts it?                      | Replication, contradictions          |
+| Historical | what caused the event? → what context? → what era dynamics?                  | Causation, context                   |
+| Debug      | what causes the error? → what fixes the cause? → does the fix hold?          | Root cause, solution chain           |
+| ML/AI      | what was it trained on? → what does it outperform? → on which benchmarks?    | Training, benchmarks                 |
+| Compare    | how do X and Y differ? → what is each better at?                             | Trade-offs, use cases                |
+| Psychology | what causes the behavior? → what modulates the mechanism? → what intervenes? | Mechanisms, interventions            |
+| Physics    | what model describes it? → what does it predict? → what confirms it?         | Models, experimental evidence        |
+| Culinary   | what does the technique produce? → what reacts with what?                    | Techniques, chemistry, substitutions |
+| Business   | what drives the market? → how do competitors differentiate? → what trends?   | Drivers, competition, trends         |
+| Creative   | what influenced the style? → what does the principle achieve?                | Influences, principles, constraints  |
+| Education  | what are the prerequisites? → which methods improve outcomes?                | Prerequisites, pedagogy              |
+| Policy     | what does the regulation mandate? → what does compliance require?            | Mandates, compliance, precedent      |
+| Medical    | what treats the condition? → what contraindicates the treatment? → outcomes? | Treatments, contraindications        |
 
 ---
 
@@ -60,12 +63,12 @@ Loaded on demand — not part of the main SKILL.md context.
 
 ---
 
-## Tool Selection + CoK Depth
+## Tool Selection
 
 ### Tool Categories
 
 Tools are grouped by **capability**, not by name.
-At Δ1, identify which capabilities are available
+At the tool-scan step, identify which capabilities are available
 and map to the best available tool per category.
 
 | Capability          | Preferred Tools (if available)                                  | Fallback                                          |
@@ -125,81 +128,80 @@ When uncertain whether a domain is high-stakes, **escalate to deep research**.
 ∆3: Cross-validate against T1 sources ONLY
     → Peer-reviewed journals, clinical guidelines, official regulatory text
     → T2-T4 sources may inform but NEVER override T1 for high-stakes claims
-∆4: Forward-fill CoK to explore consequences and contraindications:
-    → (treatment, interacts_with, ?) — what conflicts exist?
-    → (intervention, contraindicated_for, ?) — who should NOT receive this?
-    → (advice, assuming, ?) — what assumptions might be wrong for this person?
-    → (recommendation, superseded_by, ?) — has this been updated?
+∆4: Ask the forward-consequence questions:
+    → What does this interact or conflict with?
+    → Who should NOT receive this advice / treatment / design?
+    → What assumptions must hold for this to be safe — and might they be wrong here?
+    → Has this been updated, superseded, or withdrawn?
 ∆5: Always include safety disclaimers in output:
     → "Consult a qualified [professional] before acting on this information."
     → Mark confidence level explicitly
     → Expose contradictions between sources — NEVER silently resolve them
 ```
 
-**Forward-Fill CoK for High-Stakes Domains:**
+**Forward-consequence question patterns:**
 
-Standard CoK fills gaps: (subject, relation, ?).
-High-stakes CoK ALSO fills **consequence and contraindication gaps**:
+Standard research asks what IS the case.
+High-stakes research ALSO asks what could go WRONG:
 
 ```text
-Standard fill:
-  (medication X, treats, condition Y)
-  (condition Y, symptoms, ?)         → fill: what symptoms
+Standard:
+  what does medication X treat? what are condition Y's symptoms?
 
-Forward-consequence fill (HIGH-STAKES ONLY):
-  (medication X, interacts_with, ?)  → fill: drug interactions
-  (medication X, contraindicated_for, ?) → fill: who should NOT take this
-  (medication X, superseded_by, ?)   → fill: newer alternatives
-  (medication X, withdrawn_in, ?)    → fill: regulatory actions
-  (treatment, assuming, ?)           → fill: what conditions must be true
-  (advice, if_wrong, ?)              → fill: what happens if this is wrong
+Forward-consequence (HIGH-STAKES — always add):
+  what does X interact with?          → drug interactions
+  who is X contraindicated for?       → who should NOT take this
+  what has superseded X?              → newer alternatives
+  has X been withdrawn anywhere?      → regulatory actions
+  what does this advice assume?       → conditions that must be true
+  what happens if this is wrong?      → consequence of error
 ```
 
 This pattern applies to ALL high-stakes domains:
 
 ```text
 Psychology:
-  (intervention, backfires_when, ?)     → when does this make things worse
-  (therapy, debunked_by, ?)             → has this been disproven
-  (advice, contraindicated_for, ?)      → who should NOT receive this
+  when does the intervention backfire?    → when it makes things worse
+  has the therapy been debunked?          → disproven practices persist
+  who should NOT receive this advice?     → contraindications
 
 Legal:
-  (statute, amended_by, ?)              → has this law changed
-  (precedent, overturned_in, ?)         → is this still valid
-  (advice, jurisdiction_limited_to, ?)  → where does this apply
+  has the statute been amended?           → is the law current
+  has the precedent been overturned?      → is it still valid
+  which jurisdictions does this cover?    → where it applies
 
 Engineering:
-  (calculation, assumes, ?)             → what must be true for this to hold
-  (material, fails_under, ?)            → failure conditions
-  (design, violates_code, ?)            → regulatory compliance
+  what does the calculation assume?       → what must be true to hold
+  under what conditions does it fail?     → failure modes
+  does the design meet current codes?     → regulatory compliance
 ```
 
 ---
 
 ### Domain → Tool Capability Mapping
 
-| Domain     | Primary Capability       | Secondary Capability  | Deep Research | CoK Depth |
+| Domain     | Primary Capability       | Secondary Capability  | Deep Research | Iteration Depth |
 | ---------- | ------------------------ | --------------------- | ------------- | --------- |
-| Code/API   | Code search              | Library docs          | Optional      | L0-L2     |
-| Technical  | Web search               | Page content          | Optional      | L0-L3     |
-| Research   | Academic search          | Page content          | Recommended   | L0-L4     |
-| Current    | News/current             | Web search            | Optional      | L0-L2     |
-| Debug      | Code search              | Web search            | Optional      | L0-L2     |
-| Visual     | Web search (images)      | Page content (vision) | Optional      | L0-L1     |
-| Deep       | Deep research            | Multi-tool sweep      | **YES**       | L0-L4     |
-| Psychology | Academic search          | Deep research         | **MANDATORY** | L0-L4     |
-| Physics    | Academic search          | Page content          | Recommended   | L0-L4     |
-| Culinary   | Web search               | Page content          | Optional      | L0-L2     |
-| Business   | Company/market           | News/current          | Situational   | L0-L3     |
-| Creative   | Web search               | Page content          | Optional      | L0-L2     |
-| Education  | Academic search          | Web search            | Recommended   | L0-L3     |
-| Policy     | Web search (site-scoped) | Deep research         | **MANDATORY** | L0-L4     |
-| Medical    | Academic search          | Deep research         | **MANDATORY** | L0-L4     |
-| Financial  | Company/market           | Deep research         | **MANDATORY** | L0-L4     |
-| Legal      | Academic search          | Deep research         | **MANDATORY** | L0-L4     |
+| Code/API   | Code search              | Library docs          | Optional      | shallow   |
+| Technical  | Web search               | Page content          | Optional      | standard  |
+| Research   | Academic search          | Page content          | Recommended   | deep      |
+| Current    | News/current             | Web search            | Optional      | shallow   |
+| Debug      | Code search              | Web search            | Optional      | shallow   |
+| Visual     | Web search (images)      | Page content (vision) | Optional      | minimal   |
+| Deep       | Deep research            | Multi-tool sweep      | **YES**       | deep      |
+| Psychology | Academic search          | Deep research         | **MANDATORY** | deep      |
+| Physics    | Academic search          | Page content          | Recommended   | deep      |
+| Culinary   | Web search               | Page content          | Optional      | shallow   |
+| Business   | Company/market           | News/current          | Situational   | standard  |
+| Creative   | Web search               | Page content          | Optional      | shallow   |
+| Education  | Academic search          | Web search            | Recommended   | standard  |
+| Policy     | Web search (site-scoped) | Deep research         | **MANDATORY** | deep      |
+| Medical    | Academic search          | Deep research         | **MANDATORY** | deep      |
+| Financial  | Company/market           | Deep research         | **MANDATORY** | deep      |
+| Legal      | Academic search          | Deep research         | **MANDATORY** | deep      |
 
 **Tool availability varies by session.**
-Always scan available tools at Δ1 before planning.
+Always scan available tools first, before planning.
 Map domain to capability, then capability to best available tool.
 If preferred tool unavailable, use the fallback from the capability table.
 If no external tools at all, use embedded search or training knowledge with disclaimer.
@@ -207,7 +209,7 @@ If no external tools at all, use embedded search or training knowledge with disc
 **⚠ For MANDATORY deep research domains:**
 If deep research tool is unavailable,
 compensate with 5-8 targeted searches on T1 sources,
-forward-fill CoK with consequence/contraindication patterns,
+ask the forward-consequence questions above,
 and always include safety disclaimers.
 Never present high-stakes answers without explicit T1 source citations.
 
