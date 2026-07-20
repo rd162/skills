@@ -45,6 +45,7 @@ llms.txt                       optional doc-map for agents (llmstxt.org)        
 .agents/skills/<n>/SKILL.md    skills (Agent Skills open standard; Zed reads here)          [commit]
 specs/<feature>/               SDD triad: requirements.md · design.md · tasks.md  [T2·commit]
 memory/                        durable memory; INDEX.md first, progressive disclosure  [T3·commit]
+                               (maintained per the memory-manager skill: typed wiki-linked artifacts, verification chain)
     INDEX.md · brief.md · patterns.md · decisions.md · preferences.md · active-context.md · glossary.md
 data/intake/                   raw external docs            [T2 · gitignore if symlinks/large]
 data/corpus/                   processed LLM-friendly        [T3 · commit]

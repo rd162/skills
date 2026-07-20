@@ -5,7 +5,7 @@ last_updated: 2026-04-29
 description: sub agent guide
 ---
 
-# Sub-Agent Guide — ontology-extractor
+# Sub-Agent Guide — memory-manager
 
 Patterns for parallelizing artifact materialization via sub-agents,
 with model selection guidance.

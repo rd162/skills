@@ -5,9 +5,9 @@ last_updated: 2026-04-29
 description: academic references
 ---
 
-# Academic References — ontology-extractor
+# Academic References — memory-manager
 
-Supporting literature for the ontology-extractor skill's design decisions.
+Supporting literature for the memory-manager skill's design decisions.
 Loaded on demand — not part of the main SKILL.md context.
 
 ---
