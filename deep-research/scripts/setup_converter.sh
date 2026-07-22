@@ -5,17 +5,24 @@
 # Creates a Python virtual environment and installs all required
 # dependencies for the RFP document conversion pipeline.
 #
-# Installs:
-#   - markitdown + docling     (dual markdown converters)
+# Installs (default):
+#   - docling                  (primary markdown converter)
+#   - markitdown               (fallback markdown converter)
 #   - pyvips + Pillow          (WEBP image rendering)
 #   - python-pptx, python-docx (Office document handling)
 #   - docx2pdf                 (DOCX → PDF via Word/LibreOffice)
 #   - openpyxl                 (Excel handling)
 #   - PyMuPDF                  (PDF page-count fallback)
 #   - py7zr                    (7z archive extraction)
-#   - openai-whisper           (video speech-to-text VTT subtitles)
-#   - scenedetect + opencv     (video scene-change cadre images)
+#   - requests                 (Gemini video transcription/analysis via OpenRouter)
 #   - tqdm                     (progress bars)
+#
+# Video understanding is Gemini-native by default (OPENROUTER_API_KEY + ffmpeg —
+# no heavy local ML deps needed). The LEGACY local video engines (openai-whisper,
+# scenedetect, opencv — several GB with torch) are NOT installed by default;
+# pass --legacy-video to install them for offline/zero-API-cost fallback use:
+#
+#   ./setup_converter.sh --legacy-video
 #
 # Usage (run from project root OR from scripts/ subdirectory):
 #   chmod +x setup_converter.sh
@@ -32,6 +39,13 @@
 #
 
 set -e
+
+INSTALL_LEGACY_VIDEO=false
+for arg in "$@"; do
+    case "$arg" in
+        --legacy-video) INSTALL_LEGACY_VIDEO=true ;;
+    esac
+done
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -121,48 +135,61 @@ echo "  (This may take a few minutes on first run)"
 echo ""
 
 # ── Markdown converters ───────────────────────────────────────────────────────
-echo "  [1/12] markitdown…"
-pip install "markitdown[all]" --quiet
-
-echo "  [2/12] docling…"
+echo "  [1/10] docling  (primary markdown converter)…"
 pip install docling --quiet
 
+echo "  [2/10] markitdown  (fallback markdown converter)…"
+pip install "markitdown[all]" --quiet
+
 # ── Image processing ──────────────────────────────────────────────────────────
-echo "  [3/12] pyvips…"
+echo "  [3/10] pyvips…"
 pip install pyvips --quiet
 
-echo "  [4/12] Pillow…"
+echo "  [4/10] Pillow…"
 pip install Pillow --quiet
 
 # ── Office document libraries ─────────────────────────────────────────────────
-echo "  [5/12] python-pptx / python-docx / openpyxl…"
+echo "  [5/10] python-pptx / python-docx / openpyxl…"
 pip install python-pptx openpyxl python-docx --quiet
 
 # ── DOCX → PDF converter ──────────────────────────────────────────────────────
-echo "  [6/12] docx2pdf  (DOCX → PDF via Word on macOS/Windows)…"
+echo "  [6/10] docx2pdf  (DOCX → PDF via Word on macOS/Windows)…"
 pip install docx2pdf --quiet
 
 # ── PDF fallback ──────────────────────────────────────────────────────────────
-echo "  [7/12] PyMuPDF  (PDF page-count fallback)…"
+echo "  [7/10] PyMuPDF  (PDF page-count fallback)…"
 pip install PyMuPDF --quiet
 
 # ── Archive support ───────────────────────────────────────────────────────────
-echo "  [8/12] py7zr  (7z archive extraction)…"
+echo "  [8/10] py7zr  (7z archive extraction)…"
 pip install py7zr --quiet
 
-# ── Video processing (optional — skipped gracefully if absent) ────────────────
-echo "  [9/12] openai-whisper  (video speech-to-text)…"
-pip install openai-whisper --quiet 2>/dev/null || echo "    ⚠ openai-whisper install failed (optional — video VTT will be skipped)"
-
-echo "  [10/12] scenedetect  (video scene-change detection)…"
-pip install "scenedetect[opencv]" --quiet 2>/dev/null || echo "    ⚠ scenedetect install failed (optional — video cadres will be skipped)"
-
-echo "  [11/12] opencv-python-headless…"
-pip install opencv-python-headless --quiet 2>/dev/null || echo "    ⚠ opencv install failed (optional — video cadres will be skipped)"
+# ── Gemini video understanding (default engine) ───────────────────────────────
+echo "  [9/10] requests  (Gemini video transcription/analysis via OpenRouter)…"
+pip install requests --quiet
 
 # ── Utilities ─────────────────────────────────────────────────────────────────
-echo "  [12/12] tqdm  (progress bars)…"
+echo "  [10/10] tqdm  (progress bars)…"
 pip install tqdm --quiet
+
+# ── LEGACY local video engines (opt-in — heavy: torch is several GB) ──────────
+if [ "$INSTALL_LEGACY_VIDEO" = true ]; then
+    echo ""
+    echo "→ Installing LEGACY local video engines (--legacy-video)…"
+    echo "  [L1/3] openai-whisper  (local speech-to-text fallback)…"
+    pip install openai-whisper --quiet 2>/dev/null || echo "    ⚠ openai-whisper install failed (legacy VTT fallback will be unavailable)"
+
+    echo "  [L2/3] scenedetect  (mechanical scene-change cadre fallback)…"
+    pip install "scenedetect[opencv]" --quiet 2>/dev/null || echo "    ⚠ scenedetect install failed (legacy cadre fallback will be unavailable)"
+
+    echo "  [L3/3] opencv-python-headless…"
+    pip install opencv-python-headless --quiet 2>/dev/null || echo "    ⚠ opencv install failed (legacy cadre fallback will be unavailable)"
+else
+    echo ""
+    echo "ℹ  Legacy local video engines (whisper/scenedetect/opencv) NOT installed."
+    echo "   Video understanding uses Gemini via OpenRouter (OPENROUTER_API_KEY + ffmpeg)."
+    echo "   Re-run with --legacy-video to add the offline/zero-API-cost fallbacks."
+fi
 
 echo ""
 echo "=============================================="
@@ -206,6 +233,25 @@ if command -v pdfinfo &> /dev/null; then
     echo "✓ poppler (pdfinfo): found"
 else
     echo "ℹ  poppler/pdfinfo not found (optional — pyvips handles page counts)"
+fi
+
+# ffmpeg (video compression, chaptering, smart-cadre frame extraction)
+if command -v ffmpeg &> /dev/null; then
+    echo "✓ ffmpeg: found"
+else
+    echo "⚠  ffmpeg NOT found — video compression, chaptering, and smart cadre"
+    echo "   frame extraction will be unavailable."
+    echo "   Install on macOS:   brew install ffmpeg"
+    echo "   Install on Ubuntu:  sudo apt install ffmpeg"
+fi
+
+# OPENROUTER_API_KEY (Gemini-native video transcription + analysis + smart cadres)
+if [ -n "$OPENROUTER_API_KEY" ]; then
+    echo "✓ OPENROUTER_API_KEY: set (Gemini video pipeline available)"
+else
+    echo "⚠  OPENROUTER_API_KEY not set — video transcription and smart cadres"
+    echo "   need it (https://openrouter.ai/keys). Without it the pipeline falls"
+    echo "   back to the legacy local engines (install with --legacy-video)."
 fi
 
 echo ""

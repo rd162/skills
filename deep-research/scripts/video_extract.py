@@ -334,8 +334,6 @@ def main():
         scan_dir = Path(args.scan_dir) if args.scan_dir else None
         if scan_dir is None:
             specs = Path("data/intake")
-            if not specs.is_dir() and Path(".agents/intake").is_dir():
-                specs = Path(".agents/intake")  # legacy fallback
             scan_dir = specs if specs.is_dir() else Path(".")
         logger.info(f"Scanning {scan_dir} for video files...")
         video_files = scan_for_videos(scan_dir)

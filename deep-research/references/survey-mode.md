@@ -5,7 +5,7 @@ last_updated: 2026-06-24
 description: survey mode
 ---
 
-# Survey Mode — data-intake
+# Survey Mode — deep-research
 
 Targeted survey generation from `data/corpus/`. Loaded on demand by the
 parent skill when the user asks to build a survey, summarize specs, or
@@ -15,7 +15,7 @@ A **survey** is `tier: T3, source_class: llm`. Even though it synthesizes
 T1–T2 sources, the survey itself is an LLM-produced derived artifact — not
 a raw source. Use `tier: T4` only if the survey was produced by a weak model
 or contains no cited sources. Emit the frontmatter when writing the output
-file (see `source-tiering.md` in `deep-research/references/`).
+file (see `source-tiering.md` in this references directory).
 
 ## When to Use This Mode
 

@@ -1,0 +1,41 @@
+# Document Converter Requirements
+# Install with: pip install -r requirements_converter.txt
+
+# Markdown Converters (docling is the primary/default; markitdown is the fallback)
+docling>=2.0.0
+markitdown[all]>=0.0.1
+
+# Image Processing
+pyvips>=2.2.0
+Pillow>=10.0.0
+
+# Document Processing
+python-pptx>=0.6.21
+openpyxl>=3.1.0
+python-docx>=1.1.0
+
+# DOCX → PDF (macOS/Windows via Word; Linux via LibreOffice)
+docx2pdf>=0.1.8
+
+# PDF Processing (fallback page-count + rendering)
+PyMuPDF>=1.23.0
+
+# Archive support
+py7zr>=0.20.0          # .7z archives (optional — skipped gracefully if absent)
+
+# Video Understanding (Gemini-native — DEFAULT engine since 2026-07-02)
+# Transcription, analysis, and smart cadre selection all run through
+# scripts/video_analyzer.py via OpenRouter; frame extraction/compression
+# needs system ffmpeg, not a Python package.
+requests>=2.31.0
+
+# LEGACY local video engines (OPTIONAL fallback — NOT installed by default).
+# Heavy: openai-whisper pulls in torch (several GB). Install only for
+# offline/zero-API-cost runs (--legacy-whisper / --legacy-cadres), or run
+# setup_converter.sh --legacy-video. Uncomment to include in pip -r installs:
+# openai-whisper>=20231117    # local ASR fallback (--legacy-whisper)
+# scenedetect[opencv]>=0.6.2  # mechanical scene-change cadre fallback (--legacy-cadres)
+# opencv-python-headless>=4.8.0
+
+# Utilities
+tqdm>=4.66.0

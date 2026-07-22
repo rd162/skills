@@ -3,11 +3,22 @@
 Document Converter Script
 =========================
 Converts documents (PDF, Word, PPT, Excel, draw.io diagrams, video) to:
-1. Markdown using markitdown and docling libraries (dual versions)
+1. Markdown using docling (default single converter; markitdown runs ONLY as a
+   fallback when docling fails or produces empty output — pass --dual-convert
+   to restore the legacy both-converters behavior)
 2. WEBP images using pyvips (3-page sliding window for LLM vision processing)
 3. draw.io diagrams: XML-parsed markdown + CLI-exported WEBP images
-4. Video files: VTT subtitles via Whisper + scene-change cadre images via PySceneDetect
-   - Manual VTT/SRT files from data/intake are preserved alongside Whisper-generated VTTs
+4. Video files — Gemini-native pipeline (default since 2026-07-22):
+   - VTT transcript via Gemini (OpenRouter native video+audio understanding)
+   - gemini_analysis.md + smart cadre images: Gemini watches the video, names
+     the most visually important moments, ffmpeg extracts exactly those frames
+     (smart_cadre_NNN.jpg). Long videos (>20 min) are auto-chaptered.
+   - Legacy local engines kept as fallbacks: Whisper ASR (--legacy-whisper)
+     and PySceneDetect mechanical scene-change cadres (--legacy-cadres);
+     both also engage automatically when OPENROUTER_API_KEY is not set.
+   - Manual VTT/SRT files from data/intake are preserved alongside generated VTTs
+   - Existing transcripts / gemini_analysis.md / smart cadres are never
+     re-billed: found artifacts are reused, even with --force.
 
 Also handles archives (ZIP, TAR, 7Z) — auto-extracts and processes all
 documents inside using the same pipeline.
@@ -21,9 +32,11 @@ Features:
 - Recursive project scanning with smart directory exclusions
 - Archive auto-extraction (ZIP, TAR, TAR.GZ, TGZ, 7Z)
 - Incremental processing (SHA256 hash-based change detection)
-- Dual markdown output (markitdown + docling) for cross-reference
+- Single-converter markdown output (docling; markitdown fallback) —
+  --dual-convert restores dual output for cross-reference
 - draw.io diagram support (XML parse + CLI image export)
 - Sliding window WEBP images (pages 1-3, 2-4, 3-5 …)
+- Gemini-native video understanding (transcript + analysis + smart cadres)
 
 Usage:
     # Scan project root recursively (auto-detects data/intake if present):
@@ -165,10 +178,74 @@ SUPPORTED_EXTENSIONS = {
 SUBTITLE_EXTENSIONS = {".vtt", ".srt"}
 
 # Default scene-detection threshold (lower = more sensitive, good for 30-min meetings)
+# Only used by the LEGACY PySceneDetect cadre path (--legacy-cadres / no API key).
 VIDEO_SCENE_THRESHOLD = 5.0
 
-# Default Whisper model for speech-to-text
+# Default Whisper model for speech-to-text (legacy engine, --legacy-whisper only)
 VIDEO_WHISPER_MODEL = "base"
+
+# Default Gemini model for video transcription via OpenRouter (primary engine since 2026-07-02)
+VIDEO_GEMINI_MODEL = "google/gemini-3.5-flash"
+
+# When True, use the legacy local Whisper engine instead of Gemini (set via --legacy-whisper).
+# Implies legacy cadres too — --legacy-whisper means "fully local, zero-API-cost video run".
+VIDEO_USE_LEGACY_WHISPER = False
+
+# When True, use legacy PySceneDetect mechanical scene-change cadres instead of Gemini
+# smart cadres (set via --legacy-cadres). Smart cadres are the default since 2026-07-22:
+# Gemini watches the video and names the most visually important moments; ffmpeg extracts
+# exactly those frames. PySceneDetect fires on ANY pixel change (cursor movement, window
+# animations) and can produce hundreds of near-duplicate frames per recording.
+VIDEO_USE_LEGACY_CADRES = False
+
+# Max smart cadres per video (Gemini picks between max(3, N//3) and N based on how
+# content-dense the video actually is). 0 disables smart cadres (legacy path used instead).
+VIDEO_SMART_CADRES = 12
+
+# Videos longer than this many minutes are auto-chaptered for the Gemini analysis pass
+# (matches video_analyzer.LONG_VIDEO_WARNING_MINUTES — attention degrades and payloads
+# grow beyond this in a single call).
+VIDEO_AUTO_CHAPTER_THRESHOLD_MINUTES = 20
+
+# Chapter length used when auto-chaptering kicks in.
+VIDEO_AUTO_CHAPTER_MINUTES = 10
+
+# When True (--dual-convert), run BOTH markdown converters for every document
+# (legacy pre-2026-07-22 behavior). Default: docling only, markitdown as fallback.
+DUAL_CONVERT = False
+
+# Generic prompt for the ingestion-time Gemini video analysis pass (smart cadres ride on
+# this call). Deliberately broad — this is the FIRST-PASS artifact; targeted questions
+# get their own later pass via scripts/video_analyzer.py with a topic-qualified output
+# filename (see the data-intake skill's references/video-analysis.md).
+GEMINI_INGESTION_PROMPT = (
+    "Describe in detail what happens in this video, chronologically, including any "
+    "on-screen text, UI elements, application/window names, and spoken content. "
+    "Be specific and factual — note timestamps for key moments. Include a dedicated "
+    "final section listing any numeric constraints, limits, identifiers, or "
+    "configuration values mentioned or shown anywhere in the video."
+)
+
+# Prompt sent to Gemini for transcription-only calls — output must be valid WebVTT, nothing
+# else. Kept deliberately separate from the richer Step 1c "gemini_analysis.md" visual/targeted
+# analysis prompt (see scripts/video_analyzer.py) — this one produces ONLY a transcript so it
+# is a drop-in replacement for the Whisper VTT the rest of the pipeline already expects.
+GEMINI_TRANSCRIPT_PROMPT = (
+    "Transcribe the audio of this video into valid WebVTT format. Output ONLY the raw "
+    "WebVTT content, nothing else (no commentary, no explanation, no markdown code fences).\n\n"
+    "Requirements:\n"
+    "- First line must be exactly: WEBVTT\n"
+    "- Then chronological cues, each with a timestamp line in the format "
+    "HH:MM:SS.mmm --> HH:MM:SS.mmm (estimate timing as accurately as you can from the audio "
+    "pacing), followed by the spoken text, with one blank line between cues.\n"
+    "- Segment cues at natural sentence/phrase boundaries, similar to standard closed "
+    "captioning (roughly 1-2 sentences per cue).\n"
+    "- Transcribe ALL spoken content in its original language, verbatim as closely as "
+    "possible; do not translate, summarize, or paraphrase.\n"
+    "- Skip extended silent/non-speech segments — no cue is needed for silence.\n"
+    "- Do not include speaker labels, visual descriptions, or any content beyond the literal "
+    "transcription of spoken audio."
+)
 
 # Archive types — auto-extracted, contents processed recursively
 ARCHIVE_EXTENSIONS = {
@@ -276,9 +353,12 @@ def _manifest_key(filepath: Path) -> str:
     Using relative paths avoids key collisions when files with the same
     name live in different subdirectories (e.g. docs/req.pdf vs specs/req.pdf).
     """
-    cwd = Path.cwd().resolve()
+    cwd = Path.cwd().absolute()
     try:
-        return str(filepath.resolve().relative_to(cwd))
+        # Use .absolute() instead of .resolve() to avoid following symlinks,
+        # which can cause hangs on network/OneDrive folders and resolves symlinks
+        # outside of the repository.
+        return str(filepath.absolute().relative_to(cwd))
     except ValueError:
         # Fallback for files outside CWD (e.g. archive-extracted temps)
         return str(filepath.name)
@@ -336,7 +416,28 @@ def _clean_orphaned_fragments(
     """Remove fragment directories and manifest entries for orphaned docs.
 
     Returns the number of entries removed.
+
+    SAFETY (fixed 2026-07-02): fragment directories are keyed by filename
+    stem, not by manifest key — the same underlying file can accumulate
+    multiple manifest keys over time (e.g. after a scan-dir or directory
+    rename), so one STALE key's stem can collide with another CURRENT key's
+    stem. Before deleting a fragment directory for an orphaned key, this now
+    checks whether any non-orphaned manifest entry still resolves to the same
+    stem — if so, only the stale manifest key is removed, and the shared
+    fragment directory (still needed by the current entry) is left alone.
+    Confirmed 2026-07-02: without this check, --clean destroyed 66 valid
+    fragment directories in one run. See memory/feedback_clean_after_reorg.md
+    for the full incident writeup.
     """
+    orphaned_set = set(orphaned_keys)
+    protected_stems = set()
+    for key, info in manifest.get("files", {}).items():
+        if key in orphaned_set:
+            continue
+        src = info.get("source", key)
+        if Path(src).exists():
+            protected_stems.add(Path(src).stem)
+
     cleaned = 0
     for key in orphaned_keys:
         info = manifest["files"].get(key, {})
@@ -346,7 +447,12 @@ def _clean_orphaned_fragments(
         safe_stem = Path(display_name).stem
         frag_dir = fragments_dir / safe_stem
 
-        if frag_dir.exists() and frag_dir.is_dir():
+        if safe_stem in protected_stems:
+            logger.info(
+                f"  ⚠ Keeping fragment dir {frag_dir.name}/ (was: {key}) — "
+                f"still backing a current, non-orphaned entry"
+            )
+        elif frag_dir.exists() and frag_dir.is_dir():
             shutil.rmtree(frag_dir)
             logger.info(
                 f"  🗑 Cleaned orphaned fragments: {frag_dir.name}/ (was: {key})"
@@ -357,7 +463,11 @@ def _clean_orphaned_fragments(
             if child_key in manifest["files"]:
                 child_stem = Path(child_key).stem
                 child_dir = fragments_dir / child_stem
-                if child_dir.exists() and child_dir.is_dir():
+                if (
+                    child_stem not in protected_stems
+                    and child_dir.exists()
+                    and child_dir.is_dir()
+                ):
                     shutil.rmtree(child_dir)
                     logger.info(
                         f"  🗑 Cleaned orphaned archive content: {child_dir.name}/"
@@ -446,7 +556,7 @@ def extract_archive(filepath: Path, dest_dir: Path) -> List[Path]:
 # ---------------------------------------------------------------------------
 # Every fragment markdown emits a YAML frontmatter block declaring its
 # tier (inherited from the source) and source_class (fragment). Policy:
-# ~/.claude/skills/deep-research/references/source-tiering.md
+# ~/.claude/skills/deep-research-t1/references/source-tiering.md
 # ---------------------------------------------------------------------------
 
 
@@ -513,6 +623,12 @@ def convert_with_markitdown(filepath: Path, output_dir: Path) -> Optional[Path]:
                 _fragment_frontmatter(filepath, "markitdown", _source_tier(filepath))
             )
             fh.write(result.text_content)
+        if not _markdown_body_has_content(output_file):
+            logger.warning(
+                f"  ✗ markitdown produced empty output for {filepath.name} — discarding"
+            )
+            output_file.unlink(missing_ok=True)
+            return None
         logger.info(f"  ✓ markitdown → {output_file.name}")
         return output_file
     except ImportError:
@@ -580,6 +696,13 @@ with open(output_file, 'w', encoding='utf-8') as fh:
             timeout=300,
         )
         if r.returncode == 0 and output_file.exists():
+            if not _markdown_body_has_content(output_file):
+                logger.warning(
+                    f"  ✗ docling produced empty output for {filepath.name} — "
+                    f"discarding (fallback converter will be tried)"
+                )
+                output_file.unlink(missing_ok=True)
+                return None
             logger.info(f"  ✓ docling → {output_file.name}")
             return output_file
         else:
@@ -593,6 +716,24 @@ with open(output_file, 'w', encoding='utf-8') as fh:
     except Exception as exc:
         logger.error(f"  ✗ docling error for {filepath.name}: {exc}")
         return None
+
+
+def _markdown_body_has_content(md_file: Path) -> bool:
+    """True when a fragment markdown file has a non-empty body after its frontmatter.
+
+    Guards the docling-first single-converter strategy: docling can 'succeed' on a
+    scanned/image-only document yet emit an empty body — that must count as a failure
+    so the markitdown fallback gets its chance.
+    """
+    try:
+        text = md_file.read_text(encoding="utf-8")
+    except Exception:
+        return False
+    if text.startswith("---"):
+        end = text.find("\n---", 3)
+        if end != -1:
+            text = text[end + 4 :]
+    return bool(text.strip())
 
 
 # ---------------------------------------------------------------------------
@@ -870,17 +1011,16 @@ def convert_drawio_to_images(
             ):
                 # Convert PNG to WEBP
                 try:
-                    _lazy_vips_init()
-                    import pyvips
+                    from PIL import Image
 
-                    vips_img = pyvips.Image.new_from_file(str(png_path))
+                    pimg = Image.open(str(png_path)).convert("RGB")
                     webp_name = f"{base_name}_diagram_p{page_idx + 1:03d}.webp"
                     webp_path = output_dir / webp_name
-                    vips_img.webpsave(str(webp_path), Q=WEBP_QUALITY)
+                    pimg.save(str(webp_path), "WEBP", quality=WEBP_QUALITY)
                     images.append(webp_path)
                     logger.info(f"  ✓ drawio page {page_idx + 1} → {webp_name}")
                     continue
-                except Exception as vips_exc:
+                except Exception as pil_exc:
                     # Last resort: keep the PNG as-is (still useful for vision)
                     from shutil import copy2
 
@@ -910,14 +1050,15 @@ def convert_drawio_to_images(
 
 def get_pdf_page_count(filepath: Path) -> int:
     """Return the number of pages in a PDF."""
-    try:
-        _lazy_vips_init()
-        import pyvips
+    if _pdfload_available():
+        try:
+            _lazy_vips_init()
+            import pyvips
 
-        img = pyvips.Image.pdfload(str(filepath), n=1)
-        return img.get("n-pages")
-    except Exception:
-        pass
+            img = pyvips.Image.pdfload(str(filepath), n=1)
+            return img.get("n-pages")
+        except Exception:
+            pass
     try:
         import fitz
 
@@ -1312,18 +1453,8 @@ def convert_pptx_to_images_fallback(
 
 def _pdfload_available() -> bool:
     """Return True if pyvips has a working pdfload operation."""
-    try:
-        _lazy_vips_init()
-        import pyvips
-
-        # Probe with a known-bad path — if the op exists we get a file error,
-        # if the op is missing we get AttributeError before any I/O.
-        pyvips.Image.pdfload("/dev/null", page=0, n=1)
-    except AttributeError:
-        return False
-    except Exception:
-        return True  # op exists, file error is expected
-    return True
+    # Force False to avoid libvips poppler dynamic module segmentation faults on macOS
+    return False
 
 
 def _render_pdf_via_pdftoppm(
@@ -1333,23 +1464,18 @@ def _render_pdf_via_pdftoppm(
     pages_per_image: int = PAGES_PER_IMAGE,
 ) -> List[Path]:
     """
-    Fallback renderer: pdftoppm → PPM files → pyvips WEBP sliding window.
+    Fallback renderer: pdftoppm → PNG files → Pillow WEBP sliding window.
 
     Used when pyvips pdfload (poppler dynamic module) is unavailable.
-    Requires: pdftoppm (poppler-utils) + pyvips (for PPM→WEBP conversion).
+    Requires: pdftoppm (poppler-utils) + Pillow.
     """
     import shutil
     import subprocess
 
+    from PIL import Image
+
     if not shutil.which("pdftoppm"):
         logger.error("  ✗ pdftoppm not found — install poppler (brew install poppler)")
-        return []
-
-    try:
-        _lazy_vips_init()
-        import pyvips
-    except ImportError:
-        logger.error("  ✗ pyvips not installed")
         return []
 
     import tempfile
@@ -1386,24 +1512,50 @@ def _render_pdf_via_pdftoppm(
             page_imgs = []
 
             for page_num in range(start_page, end_page):
-                vimg = pyvips.Image.new_from_file(
-                    str(page_files[page_num]), access="sequential"
-                )
-                # Ensure RGB (no alpha) for consistent WEBP output
-                if vimg.bands == 4:
-                    vimg = vimg.flatten(background=[255, 255, 255])
-                page_imgs.append(vimg)
+                img_path = page_files[page_num]
+                try:
+                    pimg = Image.open(str(img_path))
+                    # Ensure RGBA/LA are converted to RGB
+                    if pimg.mode in ("RGBA", "LA") or (
+                        pimg.mode == "P" and "transparency" in pimg.info
+                    ):
+                        pimg = pimg.convert("RGBA")
+                        background = Image.new("RGBA", pimg.size, (255, 255, 255, 255))
+                        pimg = Image.alpha_composite(background, pimg).convert("RGB")
+                    else:
+                        pimg = pimg.convert("RGB")
+                    page_imgs.append(pimg)
+                except Exception as e:
+                    logger.warning(f"  ⚠ Failed to load image {img_path.name}: {e}")
 
-            img = (
-                pyvips.Image.arrayjoin(page_imgs, across=1)
-                if len(page_imgs) > 1
-                else page_imgs[0]
-            )
+            if not page_imgs:
+                continue
+
+            # Stack vertically
+            target_w = max(im.width for im in page_imgs)
+            normalized_imgs = []
+            for im in page_imgs:
+                if im.width != target_w:
+                    scale = target_w / im.width
+                    new_h = int(im.height * scale)
+                    normalized_imgs.append(
+                        im.resize((target_w, new_h), Image.Resampling.LANCZOS)
+                    )
+                else:
+                    normalized_imgs.append(im)
+
+            total_h = sum(im.height for im in normalized_imgs)
+            composite = Image.new("RGB", (target_w, total_h), color=(255, 255, 255))
+
+            current_y = 0
+            for im in normalized_imgs:
+                composite.paste(im, (0, current_y))
+                current_y += im.height
 
             out_file = (
                 output_dir / f"{base_name}_p{start_page + 1:03d}-{end_page:03d}.webp"
             )
-            img.webpsave(str(out_file), Q=WEBP_QUALITY, effort=4, smart_subsample=True)
+            composite.save(str(out_file), "WEBP", quality=WEBP_QUALITY)
             created.append(out_file)
             logger.info(
                 f"  ✓ Image: pages {start_page + 1}-{end_page} → {out_file.name}"
@@ -1426,23 +1578,23 @@ def render_pdf_pages_to_images(
 
     Strategy:
       1. pyvips pdfload  — fastest, requires poppler dynamic module loaded in libvips
-      2. pdftoppm + pyvips — reliable fallback when pdfload is unavailable
-         (uses pdftoppm to render pages to PNG, then pyvips for WEBP conversion)
+      2. pdftoppm + Pillow — reliable fallback when pdfload is unavailable
+         (uses pdftoppm to render pages to PNG, then Pillow for WEBP conversion)
 
     Window structure (pages_per_image pages stacked horizontally):
       Image p001-003: page 1 | page 2 | page 3
       Image p002-004: page 2 | page 3 | page 4
       …
     """
-    try:
-        _lazy_vips_init()
-        import pyvips
-    except ImportError:
-        logger.error("  ✗ pyvips not installed: pip install pyvips")
-        return []
-
     # --- Strategy 1: pyvips pdfload (requires poppler dynamic module) ---
     if _pdfload_available():
+        try:
+            _lazy_vips_init()
+            import pyvips
+        except ImportError:
+            logger.error("  ✗ pyvips not installed: pip install pyvips")
+            return []
+
         created: List[Path] = []
         try:
             total_pages = get_pdf_page_count(pdf_path)
@@ -1492,7 +1644,7 @@ def render_pdf_pages_to_images(
         except Exception as exc:
             logger.warning(f"  ⚠ pdfload failed ({exc}), falling back to pdftoppm…")
 
-    # --- Strategy 2: pdftoppm + pyvips ---
+    # --- Strategy 2: pdftoppm + Pillow ---
     logger.info("  Using pdftoppm → PNG → WEBP pipeline…")
     return _render_pdf_via_pdftoppm(pdf_path, output_dir, base_name, pages_per_image)
 
@@ -1644,11 +1796,16 @@ def _prompt_for_transcripts(missing: List[tuple]) -> set:
     """
     Report videos that have no transcript and ask what to do.
 
-    Returns the set of video Paths for which Whisper should run.
-    Three outcomes:
-      Enter / y  — re-check, then Whisper for any still missing
-      whisper    — Whisper immediately for all listed videos
-      skip       — skip transcription entirely (cadres still extracted)
+    Returns the set of video Paths for which transcription should run (engine chosen by
+    VIDEO_USE_LEGACY_WHISPER — Gemini via OpenRouter by default, local Whisper if that
+    flag is set or the user explicitly types 'whisper' below).
+    Five outcomes:
+      Enter / y  — re-check, then transcribe any still missing (Gemini by default)
+      gemini     — transcribe immediately for all listed videos (Gemini by default)
+      whisper    — force the legacy local Whisper engine for all listed videos
+                   (also switches cadres to legacy PySceneDetect — fully local run)
+      skip       — skip ALL paid Gemini work for these videos (no transcription, no
+                   smart cadres — legacy PySceneDetect cadres still extracted)
       q          — quit so the user can copy transcripts first
     """
     print("\n" + "=" * 60)
@@ -1661,16 +1818,19 @@ def _prompt_for_transcripts(missing: List[tuple]) -> set:
         print(f"    {vid.parent / (vid.stem + '.vtt')}")
     print("\n" + "-" * 60)
     print("Options:")
-    print("  [Enter]   Re-check directories, then Whisper for any still missing")
-    print("  whisper   Run Whisper now for all listed videos")
-    print("  skip      Skip transcription (cadres still extracted)")
+    print(
+        "  [Enter]   Re-check directories, then transcribe any still missing (Gemini)"
+    )
+    print("  gemini    Transcribe now via Gemini (OpenRouter) for all listed videos")
+    print("  whisper   Force the legacy local engines (Whisper + PySceneDetect)")
+    print("  skip      Skip paid Gemini work (legacy cadres still extracted)")
     print("  q         Quit — copy transcripts first, then re-run")
     print("-" * 60)
 
     try:
         choice = input("Choice: ").strip().lower()
     except (EOFError, KeyboardInterrupt):
-        print("\nNon-interactive — using Whisper for all missing transcripts.")
+        print("\nNon-interactive — transcribing all missing transcripts.")
         return {vid for vid, _ in missing}
 
     if choice == "q":
@@ -1678,13 +1838,18 @@ def _prompt_for_transcripts(missing: List[tuple]) -> set:
         sys.exit(0)
 
     if choice == "whisper":
+        global VIDEO_USE_LEGACY_WHISPER
+        VIDEO_USE_LEGACY_WHISPER = True
+        return {vid for vid, _ in missing}
+
+    if choice == "gemini":
         return {vid for vid, _ in missing}
 
     if choice == "skip":
         print("Skipping transcription for all listed videos.")
         return set()
 
-    # Default (Enter / y): re-check, Whisper only for those still missing
+    # Default (Enter / y): re-check, transcribe only those still missing
     print("\nRe-checking for transcripts…")
     still_missing: set = set()
     for vid, frag_md_dir in missing:
@@ -1692,7 +1857,7 @@ def _prompt_for_transcripts(missing: List[tuple]) -> set:
         stem = frag_md_dir.parent.name
         in_frag = _find_transcript_in_fragment(stem, frag_md_dir.parent.parent)
         if not companions and not in_frag:
-            print(f"  ⚠ Still missing: {vid.name} → will use Whisper")
+            print(f"  ⚠ Still missing: {vid.name} → will transcribe")
             still_missing.add(vid)
         else:
             print(f"  ✓ Transcript found: {vid.name}")
@@ -1743,12 +1908,130 @@ def generate_vtt_subtitles(
     return final
 
 
+def _compress_video_for_gemini(video_path: Path) -> Optional[Path]:
+    """Compress a large video with ffmpeg before sending to Gemini (480p, crf 30).
+
+    Mirrors the manual compression validated in the 2026-07-02 ConnectWise PSA session:
+    a 90MB/720p recording compressed to 9.8MB/480p still preserved exact on-screen text
+    for Gemini to read. Returns a path to a temp file the caller must delete, or None on
+    failure (missing ffmpeg, or the ffmpeg process itself failing).
+    """
+    if shutil.which("ffmpeg") is None:
+        logger.error(
+            "  ffmpeg not found on PATH — cannot compress; skipping Gemini transcription"
+        )
+        return None
+
+    import subprocess
+
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix=".mp4")
+    os.close(tmp_fd)
+    tmp_out = Path(tmp_path)
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(video_path),
+        "-vf",
+        "scale=-2:480",
+        "-c:v",
+        "libx264",
+        "-crf",
+        "30",
+        "-preset",
+        "veryfast",
+        "-c:a",
+        "aac",
+        "-b:a",
+        "96k",
+        str(tmp_out),
+    ]
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, timeout=600)
+    except Exception as exc:
+        logger.error(f"  ffmpeg compression failed: {exc}")
+        tmp_out.unlink(missing_ok=True)
+        return None
+    return tmp_out
+
+
+def generate_vtt_via_gemini(
+    video_path: Path,
+    output_dir: Path,
+    model: str = "google/gemini-3.5-flash",
+) -> Optional[Path]:
+    """Transcribe video audio to a VTT subtitle file using Gemini (via OpenRouter).
+
+    Primary transcription engine since 2026-07-02 — Gemini natively understands audio and
+    video together in one pass, so a separate local ASR tool (Whisper) is no longer the
+    default. Requires OPENROUTER_API_KEY. See generate_vtt_subtitles() for the legacy
+    Whisper path, kept available via --legacy-whisper.
+    """
+    if not os.environ.get("OPENROUTER_API_KEY"):
+        logger.error(
+            "  OPENROUTER_API_KEY not set — cannot use Gemini for transcription "
+            "(export the key, or pass --legacy-whisper to use local Whisper instead)"
+        )
+        return None
+
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from video_analyzer import SIZE_HARD_CAP_MB, analyze_video
+    except ImportError as exc:
+        logger.error(
+            f"  Could not import video_analyzer.py — skipping Gemini transcription ({exc})"
+        )
+        return None
+
+    size_mb = video_path.stat().st_size / (1024 * 1024)
+    src = video_path
+    tmp_compressed: Optional[Path] = None
+    if size_mb > SIZE_HARD_CAP_MB:
+        logger.warning(
+            f"  {video_path.name} is {size_mb:.1f} MB — compressing before sending to Gemini…"
+        )
+        tmp_compressed = _compress_video_for_gemini(video_path)
+        if tmp_compressed is None:
+            logger.error("  Compression failed — skipping Gemini transcription")
+            return None
+        src = tmp_compressed
+
+    try:
+        logger.info(f"  Sending to Gemini ({model}) for transcription…")
+        vtt_text = analyze_video(src, GEMINI_TRANSCRIPT_PROMPT, model=model)
+    except Exception as exc:
+        logger.error(f"  Gemini transcription failed: {exc}")
+        return None
+    finally:
+        if tmp_compressed is not None:
+            tmp_compressed.unlink(missing_ok=True)
+
+    import re
+
+    vtt_text = vtt_text.strip()
+    if vtt_text.startswith("```"):
+        vtt_text = re.sub(r"^```[a-zA-Z]*\n", "", vtt_text)
+        vtt_text = re.sub(r"\n```$", "", vtt_text)
+    if not vtt_text.startswith("WEBVTT"):
+        logger.warning(
+            "  Gemini response did not start with WEBVTT — saving anyway, verify manually"
+        )
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    final = output_dir / f"{video_path.stem}_gemini.vtt"
+    final.write_text(vtt_text, encoding="utf-8")
+    logger.info(f"  VTT saved: {final.name}")
+    return final
+
+
 def extract_scene_frames(
     video_path: Path,
     output_dir: Path,
     threshold: float = 5.0,
 ) -> List[Path]:
-    """Detect scene changes and save the first frame of each new scene as JPEG."""
+    """LEGACY cadre extractor: detect scene changes and save the first frame of each
+    new scene as JPEG (PySceneDetect — fires on ANY pixel change; kept as the fallback
+    when Gemini smart cadres are unavailable or explicitly disabled via --legacy-cadres)."""
     try:
         from scenedetect import ContentDetector, detect
     except ImportError:
@@ -1788,6 +2071,163 @@ def extract_scene_frames(
     return saved
 
 
+def extract_smart_cadres_via_gemini(
+    video_path: Path,
+    markdown_dir: Path,
+    images_dir: Path,
+    model: str = "google/gemini-3.5-flash",
+    max_cadres: int = 12,
+) -> Optional[Dict]:
+    """Gemini-native video analysis + smart cadre extraction (default since 2026-07-22).
+
+    One Gemini pass (via scripts/video_analyzer.py) watches the whole video and:
+      1. writes a chronological visual/audio analysis to markdown/gemini_analysis.md
+      2. names the most visually important moments; ffmpeg extracts exactly those
+         frames as images/smart_cadre_NNN.jpg
+
+    This replaces PySceneDetect's mechanical scene-change cadres as the default —
+    PySceneDetect fires on any pixel change and can emit hundreds of near-duplicate,
+    low-value frames per recording, while Gemini selects frames by CONTENT VALUE
+    (a result screen, an error, a completed config, a diagram). Validated in
+    production: 143 mechanical cadres across 5 videos replaced by 39 curated ones
+    (73% fewer images, each on-topic).
+
+    Long videos (> VIDEO_AUTO_CHAPTER_THRESHOLD_MINUTES) are auto-chaptered into a
+    multi-turn conversation; containers OpenRouter cannot take inline (mkv/avi/…)
+    are routed through the chaptered path too, since chapters are re-encoded to mp4.
+
+    Paid-artifact protection: if markdown/gemini_analysis.md or any smart_cadre_*.jpg
+    already exists for this fragment, the existing artifacts are REUSED (no new API
+    call) — even with --force. Delete them to deliberately regenerate.
+
+    Returns {"analysis_md": Path|None, "images": [Path…], "reused": bool}
+    or None when the smart pass is unavailable/failed (caller falls back to
+    PySceneDetect).
+    """
+    # --- Paid-artifact protection: reuse existing analysis + cadres -------
+    # (checked BEFORE the API key — reusing what's on disk costs nothing)
+    analysis_md = markdown_dir / "gemini_analysis.md"
+    existing_cadres = sorted(images_dir.glob("smart_cadre_*.jpg"))
+    if analysis_md.exists() or existing_cadres:
+        logger.info(
+            f"  Reusing existing Gemini analysis artifacts "
+            f"({'gemini_analysis.md' if analysis_md.exists() else ''}"
+            f"{' + ' if analysis_md.exists() and existing_cadres else ''}"
+            f"{f'{len(existing_cadres)} smart cadre(s)' if existing_cadres else ''}) — "
+            f"delete them to regenerate (each pass costs a real API call)"
+        )
+        return {
+            "analysis_md": analysis_md if analysis_md.exists() else None,
+            "images": existing_cadres,
+            "reused": True,
+        }
+
+    if not os.environ.get("OPENROUTER_API_KEY"):
+        logger.info(
+            "  OPENROUTER_API_KEY not set — cannot run Gemini smart cadres "
+            "(falling back to legacy PySceneDetect)"
+        )
+        return None
+
+    try:
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from video_analyzer import (
+            SUPPORTED_MIME_TYPES,
+            analyze_video_full,
+            format_smart_cadre_index,
+            get_video_duration_seconds,
+        )
+    except ImportError as exc:
+        logger.error(f"  Could not import video_analyzer.py — {exc}")
+        return None
+
+    if shutil.which("ffmpeg") is None:
+        logger.info(
+            "  ffmpeg not found on PATH — cannot extract smart cadre frames "
+            "(falling back to legacy PySceneDetect)"
+        )
+        return None
+
+    # --- Decide single-pass vs chaptered ----------------------------------
+    chapter_minutes = None
+    try:
+        duration_min = get_video_duration_seconds(video_path) / 60.0
+    except Exception:
+        duration_min = None
+    needs_container_transcode = (
+        video_path.suffix.lower() not in SUPPORTED_MIME_TYPES
+    )
+    if (
+        duration_min is not None
+        and duration_min > VIDEO_AUTO_CHAPTER_THRESHOLD_MINUTES
+    ):
+        chapter_minutes = VIDEO_AUTO_CHAPTER_MINUTES
+        logger.info(
+            f"  Video is {duration_min:.1f} min — auto-chaptering into "
+            f"{VIDEO_AUTO_CHAPTER_MINUTES}-min segments"
+        )
+    elif needs_container_transcode:
+        # Chapters are re-encoded to mp4, so the chaptered path doubles as the
+        # container-transcode path for formats OpenRouter can't take inline.
+        chapter_minutes = VIDEO_AUTO_CHAPTER_MINUTES
+        logger.info(
+            f"  {video_path.suffix} not supported for inline upload — "
+            f"routing through chaptered mp4 re-encode"
+        )
+
+    try:
+        logger.info(
+            f"  Sending to Gemini ({model}) for analysis + smart cadres "
+            f"(max {max_cadres})…"
+        )
+        result = analyze_video_full(
+            video_path,
+            GEMINI_INGESTION_PROMPT,
+            model=model,
+            smart_cadres=max_cadres,
+            chapter_minutes=chapter_minutes,
+            images_dir=images_dir,
+            replace_cadres=False,
+        )
+    except Exception as exc:
+        logger.error(f"  Gemini smart cadre pass failed: {exc}")
+        return None
+
+    # --- Write gemini_analysis.md ------------------------------------------
+    today = datetime.now().date().isoformat()
+    body = result.get("description", "").strip()
+    cadre_index = format_smart_cadre_index(
+        result.get("smart_cadres", []), video_path.name
+    )
+    analysis_md.parent.mkdir(parents=True, exist_ok=True)
+    with open(analysis_md, "w", encoding="utf-8") as fh:
+        fh.write(
+            "---\n"
+            f"tier: {_source_tier(video_path)}\n"
+            "source_class: fragment\n"
+            'version: "1.0"\n'
+            f"last_updated: {today}\n"
+            f"description: Gemini native video analysis (ingestion pass) for {video_path.name}\n"
+            f"source_file: {video_path.name}\n"
+            "converter: gemini-video-analyzer\n"
+            f"model: {model}\n"
+            "---\n\n"
+            f"# Gemini Video Analysis — {video_path.name}\n\n"
+        )
+        fh.write(body)
+        if cadre_index:
+            fh.write("\n\n" + cadre_index)
+    logger.info(f"  Analysis saved: {analysis_md.name}")
+
+    saved_images = [
+        Path(m["image_path"])
+        for m in result.get("smart_cadres", [])
+        if m.get("image_path")
+    ]
+    logger.info(f"  Saved {len(saved_images)} smart cadre(s)")
+    return {"analysis_md": analysis_md, "images": saved_images, "reused": False}
+
+
 def process_video(
     filepath: Path,
     fragments_dir: Path,
@@ -1795,15 +2235,24 @@ def process_video(
     images_dir: Path,
     display_name: str,
     whisper_allowed: bool = True,
+    gemini_allowed: bool = True,
 ) -> Dict:
-    """Process a video file: transcript lookup + optional Whisper VTT + scene-change cadres.
+    """Process a video file: transcript lookup + optional Gemini/Whisper VTT + cadre images.
 
     Transcript resolution order:
       1. Companion .vtt/.srt/.txt alongside the video in the source directory
       2. Any .vtt/.srt/.txt already present in the fragment's markdown directory
-      3. Whisper — only when whisper_allowed=True and no transcript was found above
+      3. Gemini (via OpenRouter) — only when whisper_allowed=True and no transcript was
+         found above; falls back to legacy local Whisper if VIDEO_USE_LEGACY_WHISPER is
+         set (--legacy-whisper) or OPENROUTER_API_KEY is not available
 
-    Scene-change cadre images are always extracted regardless of transcript status.
+    Cadre images — Gemini smart cadres are the DEFAULT (since 2026-07-22): one Gemini
+    pass produces markdown/gemini_analysis.md plus smart_cadre_NNN.jpg frames selected
+    by content value. Falls back to legacy PySceneDetect mechanical scene-change cadres
+    when the smart pass is unavailable (no API key, no ffmpeg, import/API failure), or
+    when forced via --legacy-cadres / --legacy-whisper / --smart-cadres 0, or when
+    gemini_allowed=False (user declined paid processing for this video).
+
     Returns a results dict compatible with the standard manifest format.
     """
     results = {
@@ -1814,6 +2263,8 @@ def process_video(
         "docling": None,
         "drawio_parsed": None,
         "vtt": None,
+        "gemini_analysis": None,
+        "cadre_mode": None,
         "manual_subtitles": [],
         "images": [],
         "status": "pending",
@@ -1843,23 +2294,67 @@ def process_video(
                 str(f.relative_to(fragments_dir)) for f in in_frag
             ]
 
-    # 3. Whisper — only when no transcript was found AND Whisper is allowed
+    # 3. Transcription — only when no transcript was found AND transcription is allowed.
+    # Gemini (OpenRouter) is the default engine since 2026-07-02; legacy local Whisper
+    # remains available via --legacy-whisper (e.g. no OPENROUTER_API_KEY, or a large
+    # cost-conscious bulk run).
     if results["manual_subtitles"]:
-        logger.info("→ Skipping Whisper — transcript already present")
+        logger.info("→ Skipping transcription — transcript already present")
     elif whisper_allowed:
-        logger.info("→ Generating VTT subtitles (Whisper)…")
-        vtt = generate_vtt_subtitles(filepath, markdown_dir, VIDEO_WHISPER_MODEL)
+        vtt = None
+        if VIDEO_USE_LEGACY_WHISPER:
+            logger.info("→ Generating VTT subtitles (legacy Whisper)…")
+            vtt = generate_vtt_subtitles(filepath, markdown_dir, VIDEO_WHISPER_MODEL)
+        else:
+            logger.info("→ Generating VTT subtitles (Gemini via OpenRouter)…")
+            vtt = generate_vtt_via_gemini(filepath, markdown_dir, VIDEO_GEMINI_MODEL)
+            if vtt is None and not os.environ.get("OPENROUTER_API_KEY"):
+                logger.info("  Falling back to legacy Whisper (no OPENROUTER_API_KEY)…")
+                vtt = generate_vtt_subtitles(
+                    filepath, markdown_dir, VIDEO_WHISPER_MODEL
+                )
         if vtt:
             results["vtt"] = str(vtt.relative_to(fragments_dir))
     else:
         logger.info(
-            "→ Skipping Whisper — no transcript available, Whisper not requested"
+            "→ Skipping transcription — no transcript available, transcription not requested"
         )
 
-    # 4. Scene-change cadre images
-    logger.info("→ Extracting scene-change frames…")
-    imgs = extract_scene_frames(filepath, images_dir, VIDEO_SCENE_THRESHOLD)
-    results["images"] = [str(p.relative_to(fragments_dir)) for p in imgs]
+    # 4. Cadre images — Gemini smart cadres (default) with PySceneDetect fallback
+    smart_pass = None
+    smart_allowed = (
+        gemini_allowed
+        and not VIDEO_USE_LEGACY_CADRES
+        and not VIDEO_USE_LEGACY_WHISPER  # --legacy-whisper = fully local run
+        and VIDEO_SMART_CADRES > 0
+    )
+    if smart_allowed:
+        logger.info("→ Extracting smart cadres (Gemini analysis pass)…")
+        smart_pass = extract_smart_cadres_via_gemini(
+            filepath,
+            markdown_dir,
+            images_dir,
+            model=VIDEO_GEMINI_MODEL,
+            max_cadres=VIDEO_SMART_CADRES,
+        )
+    if smart_pass is not None:
+        results["cadre_mode"] = "smart"
+        if smart_pass.get("analysis_md"):
+            results["gemini_analysis"] = str(
+                smart_pass["analysis_md"].relative_to(fragments_dir)
+            )
+        results["images"] = [
+            str(p.relative_to(fragments_dir)) for p in smart_pass.get("images", [])
+        ]
+    else:
+        if smart_allowed:
+            logger.info(
+                "  Smart cadre pass unavailable — falling back to legacy PySceneDetect"
+            )
+        logger.info("→ Extracting scene-change frames (legacy PySceneDetect)…")
+        imgs = extract_scene_frames(filepath, images_dir, VIDEO_SCENE_THRESHOLD)
+        results["images"] = [str(p.relative_to(fragments_dir)) for p in imgs]
+        results["cadre_mode"] = "scenedetect" if imgs else "none"
 
     # Status
     has_text = bool(results["vtt"] or results["manual_subtitles"])
@@ -1888,13 +2383,16 @@ def process_document(
     force: bool = False,
     source_label: Optional[str] = None,
     whisper_allowed: bool = True,
+    gemini_allowed: bool = True,
 ) -> Dict:
     """
-    Process one document: produce dual markdown + WEBP sliding-window images.
+    Process one document: produce markdown + WEBP sliding-window images.
 
     source_label   — optional display name (e.g. for files extracted from archives)
-    whisper_allowed — when False, Whisper is skipped for video files even if no
-                      transcript is found (cadres are still extracted)
+    whisper_allowed — when False, transcription (Gemini or legacy Whisper) is skipped for
+                      video files even if no transcript is found (cadres are still extracted)
+    gemini_allowed  — when False, no OpenRouter-billed work runs for this video (smart
+                      cadres fall back to legacy PySceneDetect)
     """
     display_name = source_label or filepath.name
     ext = filepath.suffix.lower()
@@ -1933,6 +2431,7 @@ def process_document(
             images_dir,
             display_name,
             whisper_allowed=whisper_allowed,
+            gemini_allowed=gemini_allowed,
         )
 
     # 1. Markdown conversion — strategy depends on file type
@@ -1943,15 +2442,30 @@ def process_document(
         if md_drawio:
             results["drawio_parsed"] = str(md_drawio.relative_to(fragments_dir))
     else:
-        # Standard documents get dual markdown conversion
-        logger.info("→ Converting to Markdown (markitdown + docling)…")
-        md_markitdown = convert_with_markitdown(filepath, markdown_dir)
-        if md_markitdown:
-            results["markitdown"] = str(md_markitdown.relative_to(fragments_dir))
-
-        md_docling = convert_with_docling(filepath, markdown_dir)
-        if md_docling:
-            results["docling"] = str(md_docling.relative_to(fragments_dir))
+        if DUAL_CONVERT:
+            # Legacy dual conversion — both converters for cross-referencing
+            logger.info("→ Converting to Markdown (dual: docling + markitdown)…")
+            md_docling = convert_with_docling(filepath, markdown_dir)
+            if md_docling:
+                results["docling"] = str(md_docling.relative_to(fragments_dir))
+            md_markitdown = convert_with_markitdown(filepath, markdown_dir)
+            if md_markitdown:
+                results["markitdown"] = str(md_markitdown.relative_to(fragments_dir))
+        else:
+            # Single-converter strategy (default since 2026-07-22):
+            # docling is THE converter; markitdown runs ONLY when docling fails
+            # or produces an empty body.
+            logger.info("→ Converting to Markdown (docling; markitdown as fallback)…")
+            md_docling = convert_with_docling(filepath, markdown_dir)
+            if md_docling:
+                results["docling"] = str(md_docling.relative_to(fragments_dir))
+            else:
+                logger.info("  docling unavailable/failed — falling back to markitdown…")
+                md_markitdown = convert_with_markitdown(filepath, markdown_dir)
+                if md_markitdown:
+                    results["markitdown"] = str(
+                        md_markitdown.relative_to(fragments_dir)
+                    )
 
     # 2. WEBP images
     logger.info("→ Converting to WEBP images (sliding window)…")
@@ -2019,6 +2533,12 @@ def create_index_file(fragments_dir: Path, manifest: Dict):
                 fh.write(
                     f"- **Drawio Parsed:** [{info['drawio_parsed']}]({info['drawio_parsed']})\n"
                 )
+            if info.get("gemini_analysis"):
+                fh.write(
+                    f"- **Gemini Analysis:** [{info['gemini_analysis']}]({info['gemini_analysis']})\n"
+                )
+            if info.get("cadre_mode"):
+                fh.write(f"- **Cadre mode:** {info['cadre_mode']}\n")
 
             imgs = info.get("images", [])
             if imgs:
@@ -2264,40 +2784,106 @@ def main():
     parser.add_argument(
         "--whisper",
         action="store_true",
-        help="Always use Whisper for videos without transcripts, without prompting "
-        "(implied when stdin is not a terminal)",
+        help="Always transcribe videos without transcripts, without prompting "
+        "(implied when stdin is not a terminal). Uses Gemini via OpenRouter by "
+        "default — add --legacy-whisper to use local Whisper instead.",
+    )
+    parser.add_argument(
+        "--no-whisper",
+        action="store_true",
+        help="Disable video transcription entirely. Also disables paid Gemini smart "
+        "cadres (zero-API-spend contract for videos) — legacy PySceneDetect cadres "
+        "are still extracted.",
+    )
+    parser.add_argument(
+        "--no-video",
+        action="store_true",
+        help="Skip video files entirely (do not scan or process video formats)",
+    )
+    parser.add_argument(
+        "--legacy-whisper",
+        action="store_true",
+        help="Use the local Whisper ASR engine instead of Gemini (via OpenRouter) for "
+        "video transcription — free/offline but slower and audio-only, no visual "
+        "understanding. Also switches cadre extraction to legacy PySceneDetect "
+        "(fully local, zero-API-cost video run). Gemini is the default since 2026-07-02.",
+    )
+    parser.add_argument(
+        "--legacy-cadres",
+        action="store_true",
+        help="Use legacy PySceneDetect mechanical scene-change cadre images instead of "
+        "Gemini smart cadres. Free/local, but fires on any pixel change and can produce "
+        "hundreds of near-duplicate frames. Smart cadres are the default since 2026-07-22.",
+    )
+    parser.add_argument(
+        "--smart-cadres",
+        type=int,
+        default=12,
+        metavar="N",
+        help="Max smart cadres per video for the Gemini analysis pass — the model picks "
+        "between max(3, N//3) and N moments based on content density (default: 12; "
+        "0 disables the smart pass and falls back to legacy PySceneDetect).",
+    )
+    parser.add_argument(
+        "--dual-convert",
+        action="store_true",
+        help="Run BOTH markdown converters (docling + markitdown) for every document, "
+        "for cross-referencing (legacy pre-2026-07-22 behavior). Default: docling only, "
+        "with markitdown as automatic fallback when docling fails.",
     )
     parser.add_argument(
         "--whisper-model",
         type=str,
         default="base",
         choices=["tiny", "base", "small", "medium", "large"],
-        help="Whisper model for video transcription (default: base)",
+        help="Whisper model for video transcription — only used with --legacy-whisper (default: base)",
+    )
+    parser.add_argument(
+        "--gemini-model",
+        type=str,
+        default="google/gemini-3.5-flash",
+        help="OpenRouter model slug for Gemini video transcription (default: google/gemini-3.5-flash)",
     )
     parser.add_argument(
         "--scene-threshold",
         type=float,
         default=5.0,
-        help="Scene detection sensitivity for videos — lower = more cadres (default: 5.0)",
+        help="Scene detection sensitivity for legacy PySceneDetect cadres — "
+        "lower = more cadres (default: 5.0; only used with --legacy-cadres or as fallback)",
     )
 
     args = parser.parse_args()
 
-    # Apply video settings to module-level defaults
-    global VIDEO_WHISPER_MODEL, VIDEO_SCENE_THRESHOLD
+    # Apply video/converter settings to module-level defaults
+    global \
+        VIDEO_WHISPER_MODEL, \
+        VIDEO_SCENE_THRESHOLD, \
+        VIDEO_GEMINI_MODEL, \
+        VIDEO_USE_LEGACY_WHISPER, \
+        VIDEO_USE_LEGACY_CADRES, \
+        VIDEO_SMART_CADRES, \
+        DUAL_CONVERT
     VIDEO_WHISPER_MODEL = args.whisper_model
     VIDEO_SCENE_THRESHOLD = args.scene_threshold
+    VIDEO_GEMINI_MODEL = args.gemini_model
+    VIDEO_USE_LEGACY_WHISPER = args.legacy_whisper
+    VIDEO_USE_LEGACY_CADRES = args.legacy_cadres
+    VIDEO_SMART_CADRES = args.smart_cadres
+    DUAL_CONVERT = args.dual_convert
+    if not args.legacy_whisper and not os.environ.get("OPENROUTER_API_KEY"):
+        logger.info(
+            "  Note: OPENROUTER_API_KEY not set — video transcription will fall back to "
+            "legacy Whisper and cadre extraction to legacy PySceneDetect automatically "
+            "when needed (pass --legacy-whisper to silence this)."
+        )
 
     # Resolve scan directory: --scan-dir > --specs-dir > auto-detect
     scan_dir = args.scan_dir or args.specs_dir
     if scan_dir is None:
-        # Auto-detect: prefer data/intake/, fall back to legacy .agents/intake/, else scan CWD
+        # Auto-detect: if data/intake/ exists, use it; otherwise scan CWD
         if Path("data/intake").exists():
             scan_dir = Path("data/intake")
             logger.info("Auto-detected data/intake/ directory — scanning it.")
-        elif Path(".agents/intake").exists():
-            scan_dir = Path(".agents/intake")
-            logger.info("Auto-detected legacy .agents/intake/ directory — scanning it.")
         else:
             scan_dir = Path(".")
             logger.info("No data/intake/ found — scanning project root recursively.")
@@ -2341,6 +2927,14 @@ def main():
     else:
         # Recursive scan with directory exclusions
         all_files, archive_files = _collect_files_recursive(scan_dir)
+
+    if args.no_video:
+        all_files = [
+            f
+            for f in all_files
+            if SUPPORTED_EXTENSIONS.get(f.suffix.lower()) != "video"
+        ]
+        logger.info("  Skipping video files entirely (--no-video flag active)")
 
     # Apply --file filter to documents AND archives
     if args.file:
@@ -2417,6 +3011,7 @@ def main():
                         manifest,
                         force=args.force,
                         source_label=display,
+                        gemini_allowed=not args.no_whisper,
                     )
                     inner_key = display
                     manifest["files"][inner_key] = doc_results
@@ -2457,6 +3052,11 @@ def main():
     # All other videos either have transcripts or Whisper was declined.
     whisper_video_set: set = set()
 
+    # gemini_declined_videos: videos the user explicitly declined paid Gemini work
+    # for in the interactive prompt — smart cadres fall back to legacy PySceneDetect
+    # for these (transcription is skipped anyway via whisper_video_set).
+    gemini_declined_videos: set = set()
+
     if pending_videos:
         missing = _collect_videos_missing_transcripts(
             pending_videos,
@@ -2465,18 +3065,29 @@ def main():
         )
         if not missing:
             logger.info(
-                f"✓ All {len(pending_videos)} video(s) have transcripts — Whisper not needed"
+                f"✓ All {len(pending_videos)} video(s) have transcripts — transcription not needed"
+            )
+        elif args.no_whisper:
+            whisper_video_set = set()
+            logger.info(
+                "  Video transcription explicitly disabled via --no-whisper flag"
             )
         elif args.whisper or not sys.stdin.isatty():
             # Non-interactive run or explicit --whisper flag: behave like before
             whisper_video_set = {vid for vid, _ in missing}
+            engine = (
+                "legacy Whisper"
+                if VIDEO_USE_LEGACY_WHISPER
+                else "Gemini via OpenRouter"
+            )
             logger.info(
                 f"  {len(missing)} video(s) without transcript — "
-                f"Whisper will be used ({'--whisper flag' if args.whisper else 'non-interactive'})"
+                f"{engine} will be used ({'--whisper flag' if args.whisper else 'non-interactive'})"
             )
         else:
             # Interactive: let the user decide
             whisper_video_set = _prompt_for_transcripts(missing)
+            gemini_declined_videos = {vid for vid, _ in missing} - whisper_video_set
 
     # ------------------------------------------------------------------ #
     # Process regular documents                                            #
@@ -2496,6 +3107,13 @@ def main():
         is_video = SUPPORTED_EXTENSIONS.get(doc_path.suffix.lower()) == "video"
         whisper_ok = (doc_path in whisper_video_set) if is_video else True
 
+        # Paid Gemini work (smart cadres + analysis) is disabled for videos when the
+        # user passed --no-whisper (zero-API-spend contract) or declined the video
+        # in the interactive prompt — those fall back to legacy PySceneDetect cadres.
+        gemini_ok = True
+        if is_video and (args.no_whisper or doc_path in gemini_declined_videos):
+            gemini_ok = False
+
         try:
             results = process_document(
                 doc_path,
@@ -2504,6 +3122,7 @@ def main():
                 args.force,
                 source_label=label,
                 whisper_allowed=whisper_ok,
+                gemini_allowed=gemini_ok,
             )
             manifest["files"][file_key] = results
 

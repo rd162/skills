@@ -9,9 +9,11 @@ description: video source re-analysis for deep research
 
 Extended reference for handling video material (recordings, demos, walkthroughs) as a
 knowledge source during deep research. Loaded on demand — not part of the main SKILL.md
-context. Complements the `data-intake` skill's video ingestion pipeline (Whisper/Gemini
-transcript + cadre images) — this file is about how to RE-USE and RE-VERIFY that material
-during a research task, not how to produce it in the first place.
+context. Complements this skill's video ingestion pipeline (`ingestion-pipeline.md`;
+Whisper/Gemini transcript + cadre images) — this file is about how to RE-USE and RE-VERIFY
+that material during a research task, not how to produce it in the first place. Round
+budgeting and the evidence ladder for repeated passes: the Iterative Saturation Loop
+in the main SKILL.md.
 
 ---
 
@@ -97,7 +99,7 @@ fewer than ~1 frame per 30 seconds of runtime means long stretches were never sa
 
 Mechanical scene-change detection (fires on any pixel change — cursor movement, animations) can
 produce hundreds of near-duplicate, low-value frames for a single recording. If the tooling
-available supports it (e.g. `data-intake`'s `video_analyzer.py --smart-cadres N`), prefer asking
+available supports it (e.g. this skill's `scripts/video_analyzer.py --smart-cadres N`), prefer asking
 the video-understanding model itself to name the N most visually important moments (timestamp +
 why it matters) and extracting exactly those via a frame-seek tool (e.g. ffmpeg), rather than
 either (a) analyzing a mechanical scene-change sample or (b) not extracting any images at all.
@@ -119,7 +121,7 @@ cadre), remember to convert chapter-relative timestamps to global video time
 the temporary per-chapter clips.
 
 **Known failure mode, confirmed on a real 40-minute video, now auto-recovered in
-`data-intake`'s `video_analyzer.py`:** because every chapter turn resends the FULL prior
+this skill's `scripts/video_analyzer.py`:** because every chapter turn resends the FULL prior
 conversation history (every earlier chapter's video content, not just its text reply), the
 CUMULATIVE payload can hit an infrastructure gateway timeout (Cloudflare 502/504) on a later turn
 even though no single chapter exceeds the tool's own size cap. This showed up as the exact same

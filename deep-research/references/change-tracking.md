@@ -105,6 +105,18 @@ each manifest key's source path still exists on disk.
   🗑 Cleaned: removed_diagram/ (was: specs/removed_diagram.drawio)
 ```
 
+**Collision safety (fixed 2026-07-02):** fragment directories are keyed by filename stem, not
+by manifest key. The same file can end up with more than one manifest key over time (e.g. after
+a directory rename, or being scanned once with `--scan-dir` pointed at a subfolder and once at
+the project root) — if one of those keys becomes orphaned while another key for the SAME file is
+still current and valid, a naive clean would delete the shared fragment directory and destroy
+the still-valid entry's data too. Confirmed in production: an early version of this logic wiped
+66 valid fragment directories in one `--clean` run. `_clean_orphaned_fragments()` now checks
+whether any non-orphaned manifest entry still resolves to the same fragment stem before
+deleting — if so, only the stale manifest key is removed and the shared directory is left alone.
+If you ever see a fragment directory disappear unexpectedly after `--clean` on an OLDER copy of
+this script, that's this bug — update to the current `doc_converter.py`.
+
 ---
 
 ## Typical Incremental Workflows
