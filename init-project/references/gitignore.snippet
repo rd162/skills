@@ -5,4 +5,9 @@
 # Uncomment if data/intake/ holds symlinks (OneDrive/SharePoint) or large/sensitive originals:
 # data/intake/
 
-# Committed (do NOT ignore): AGENTS.md, .agents/skills/, specs/, memory/, scripts/, data/corpus/, data/research/
+# Committed (do NOT ignore): AGENTS.md, .agents/skills/, openspec/, memory/, scripts/, data/corpus/, data/research/
+
+# --- Claude Code bridge (thin reference to AGENTS.md; see AGENTS.md § Agent Tool Onboarding) ---
+.claude/settings.local.json   # personal permission overrides — never shared
+
+# Also committed: CLAUDE.md, .claude/skills (relative symlink -> ../.agents/skills)

@@ -2,9 +2,11 @@
 name: init-project
 description: >-
   Initialize a new project, or adopt/convert an existing one, to the cross-platform agent standard with
-  AGENTS.md as the single source of truth (specs/, memory/, data/, .agents/skills/, scripts/). New
+  AGENTS.md as the single source of truth (openspec/, memory/, data/, .agents/skills/, scripts/). New
   projects get the scaffolded layout plus an AGENTS.md whose Tool Onboarding Contract lets any agent tool
   (Claude Code, Copilot, Cursor, Codex, Gemini, Kiro) self-configure by reference, not duplication.
+  Spec-driven work follows **OpenSpec** (brownfield-first delta model) — the skill scaffolds the
+  conventions and bridges; `openspec init` itself runs when spec work actually starts.
   Existing tool projects are adopted additively (bridge files, never move the tool's dirs). When an
   existing tool project ALSO has its own non-tool custom dirs and the user explicitly asks to convert,
   those non-tool dirs are migrated while the tool's dirs stay untouched (Mode B+M). When explicitly
@@ -14,10 +16,10 @@ description: >-
   AGENTS.md layout.
 metadata:
   author: rd162@hotmail.com
-  tags: project-init, agents-md, cross-platform, scaffolding, onboarding, single-source-of-truth, specs, memory
+  tags: project-init, agents-md, cross-platform, scaffolding, onboarding, single-source-of-truth, openspec, memory
 tier: T3
 source_class: llm
-last_updated: 2026-06-25
+last_updated: 2026-08-17
 ---
 
 # Init Project — cross-platform agent standard initializer
@@ -43,7 +45,8 @@ single source of truth (SSOT); every other tool references it, never duplicates 
 AGENTS.md                      SSOT: instructions/steering + the Tool Onboarding Contract   [commit]
 llms.txt                       optional doc-map for agents (llmstxt.org)                    [commit]
 .agents/skills/<n>/SKILL.md    skills (Agent Skills open standard; Zed reads here)          [commit]
-specs/<feature>/               SDD triad: requirements.md · design.md · tasks.md  [T2·commit]
+openspec/specs/<cap>/spec.md  behavior specs — source of truth (OpenSpec)        [T2·commit · starts empty]
+openspec/changes/<name>/      active change: proposal.md · delta specs/ · design.md · tasks.md  [OpenSpec]
 memory/                        durable memory; INDEX.md first, progressive disclosure  [T3·commit]
                                (maintained per the memory-manager skill: typed wiki-linked artifacts, verification chain)
     INDEX.md · brief.md · patterns.md · decisions.md · preferences.md · active-context.md · glossary.md
@@ -53,6 +56,18 @@ data/research/                 generated research / surveys  [T4 · commit]
 scripts/                       persistent, reusable automation scripts (committed)  [commit]
 .agents/rules/*.md             ONLY for monorepos: glob/path-scoped rules (else keep rules in AGENTS.md)
 ```
+
+The Claude Code bridge (`CLAUDE.md` + `.claude/skills` → relative symlink to `../.agents/skills`) is created
+together with `.agents/skills/` — see Mode A step 6 and `references/tool-bridges.md` § Claude Code. OpenCode
+reads `.agents/skills/` and `.claude/skills/` natively, so no separate bridge is needed for it.
+
+**Spec standard: OpenSpec, not a pre-created `specs/` dir.** OpenSpec is brownfield-first — a delta spec
+describes only what changes against the source of truth, so `openspec/specs/` correctly starts empty and
+fills as changes archive. The skill scaffolds the AGENTS.md conventions and tool bridges; run
+`openspec init --tools <ids>` (e.g. `claude,opencode`) when the first spec change actually starts, never
+before. OpenSpec v1.7.0+ writes `openspec-*` skills into `.agents/skills/` via the Claude bridge's symlink
+(sandbox-verified, one physical copy) plus thin command files under `.claude/commands/opsx/` /
+`.opencode/commands/`.
 
 Tiers/aliases and the full recognize-map live in `deep-research/references/source-tiering.md` §8.
 
@@ -88,12 +103,22 @@ Read `references/tool-bridges.md` before writing tool-facing instructions or a M
 
 ## Mode A — NEW project (greenfield)
 
-1. Create dirs: `.agents/skills/`, `specs/`, `memory/`, `data/intake/`, `data/corpus/`, `data/research/`, `scripts/` (add `.gitkeep` to empty committed dirs). Do **not** create `.cache/` or any other scratch dir.
+1. Create dirs: `.agents/skills/`, `memory/`, `data/intake/`, `data/corpus/`, `data/research/`, `scripts/` (add `.gitkeep` to empty committed dirs). Do **not** create `.cache/` or any other scratch dir. Do **not** pre-create `openspec/` or `specs/` — spec work starts with `openspec init` when it actually happens (see "Spec standard" above).
 2. Write `AGENTS.md` from `references/AGENTS.template.md` — fill `{{PROJECT_NAME}}` / overview; keep the **layout map + Tool Onboarding Contract + recognize-map** intact.
 3. Write `memory/INDEX.md` from `references/memory-INDEX.template.md`; create the 6 topic stubs (`brief, patterns, decisions, preferences, active-context, glossary`).
 4. Append `references/gitignore.snippet` to `.gitignore` (create if missing).
 5. Optional: add `llms.txt` if the project will expose docs to agents.
-6. **Do NOT pre-create** `CLAUDE.md` / `.cursor/` / `.github/` etc. The Onboarding Contract in `AGENTS.md` tells each tool to self-configure by reference the first time it runs.
+6. **Create the Claude Code bridge now, together with `.agents/skills/`** — the one deliberate exception to
+   "don't pre-create tool dirs" (see `references/tool-bridges.md` § Claude Code):
+   - `CLAUDE.md` = one line `@AGENTS.md`.
+   - `.claude/skills` = relative symlink → `../.agents/skills` (`ln -s ../.agents/skills .claude/skills`) —
+     Claude Code hard-scans that exact path with no `@import`/config redirect, so this is the only
+     non-duplicating way to share skills with it.
+   - Copy `references/fix_claude_skills_link.py` → the project's `scripts/fix_claude_skills_link.py`
+     (Windows fallback when Developer Mode isn't available; stdlib-only, no venv).
+   - Create (or extend) `README.md` with the "Windows setup" copy-paste block from `references/tool-bridges.md`.
+   Still do **NOT** pre-create `.cursor/` / `.github/` / `.kiro/` etc. — those tools read `AGENTS.md`
+   natively and self-configure on first run; only Claude Code has the skills-directory gap.
 7. If no git repo: offer to `git init` (ask first; never auto-commit).
 
 ## Mode B — EXISTING project (adopt — don't duplicate)
@@ -105,8 +130,8 @@ Read `references/tool-bridges.md` before writing tool-facing instructions or a M
 3. Write a **project-specific recognize-map** into `AGENTS.md`: our concept → where it actually lives here. Example for a Claude project:
    `memory/ → .claude/memory/ · specs/ → .kiro/specs/ (if present) · rules → .cursor/rules/ (if present)`.
    Use `references/tool-bridges.md` for the exact per-tool mappings.
-4. **Add only the canonical dirs the project lacks** (commonly `data/intake/`, `data/corpus/`, `data/research/`, `scripts/`, `.agents/skills/`) so the cross-platform flow works — **without moving** the tool's existing dirs.
-5. **No symlinks** (git + Windows unsafe). Bridge with `@import` where supported (Claude `CLAUDE.md`) and otherwise with explicit instruction lines ("memory lives in `.claude/memory/` in this project").
+4. **Add only the canonical dirs the project lacks** (commonly `data/intake/`, `data/corpus/`, `data/research/`, `scripts/`, `.agents/skills/`) so the cross-platform flow works — **without moving** the tool's existing dirs. If the project has no `.claude/` footprint yet, also add the Claude Code bridge here (Mode A step 6: `CLAUDE.md`, `.claude/skills` symlink, `fix_claude_skills_link.py`, README note). If `.claude/` already exists with real content, don't touch it — recognize and map it instead (step 3).
+5. **No symlinks** (git + Windows unsafe) for instructions/settings/memory — bridge with `@import` where supported (Claude `CLAUDE.md`) and otherwise with explicit instruction lines ("memory lives in `.claude/memory/` in this project"). **One documented exception**: Claude Code skills (`.claude/skills` → relative symlink to `../.agents/skills`) — no `@import` equivalent exists for skill folders; ship the Windows fallback script alongside it.
 6. Keep the original tool flow intact; document the mapping so both flows coexist and AGENTS.md stays SSOT.
 
 ## Mode B+M — EXISTING recognized-tool project: migrate non-tool dirs (explicit convert only)
@@ -122,7 +147,7 @@ migrated.
    These are non-destructive and must happen regardless of whether migration is later confirmed.
 
 2. **Identify non-tool custom dirs**: scan the project for dirs that are neither canonical
-   (`memory/`, `data/`, `specs/`, `scripts/`, `.agents/skills/`, `.agents/rules/`) nor part of a
+   (`memory/`, `data/`, `openspec/`, `scripts/`, `.agents/skills/`, `.agents/rules/`) nor part of a
    recognized tool (`.claude/`, `.cursor/`, `.kiro/`, etc.). Examples:
    `.agents/memory/`, `.agents/corpus/`, `.agents/intake/`, `.agents/research/`, `.agents/spec/`
 
@@ -164,7 +189,7 @@ that have **no recognized tool footprint at all**.
    (`references/tool-bridges.md § Custom/legacy layout → canonical`). Typical:
        docs|notes|wiki → memory/ · research|surveys → data/research/ · raw|inputs → data/intake/
        processed|fragments → data/corpus/ · bin|tools|automation → scripts/
-       requirements|design → specs/<feature>/ · PROMPT.md|INSTRUCTIONS.md|AI_GUIDE.md → fold into AGENTS.md
+       requirements|design → openspec/ (content-level: convert to a change proposal + delta specs, not a bare move) · PROMPT.md|INSTRUCTIONS.md|AI_GUIDE.md → fold into AGENTS.md
 2. Present the plan as a `from → to` table, one-line rationale each. **Confirm before moving** (destructive).
    Anything ambiguous stays put and is listed for the user to decide — never guess-move.
 3. Execute with `move_path` (one per mapping; git detects renames, history preserved). Create any canonical
@@ -182,7 +207,7 @@ It is addressed to *any* future agent tool and instructs it to:
 1. Read `AGENTS.md` as the single source of truth — do **not** duplicate it.
 2. Map its native files onto our dirs (per `references/tool-bridges.md`).
 3. Create **only a thin bridge** that references `AGENTS.md` (e.g. `CLAUDE.md` = `@AGENTS.md`; `.github/copilot-instructions.md` = "Follow ./AGENTS.md").
-4. Put new specs in `specs/<feature>/`, memory in `memory/`, data in `data/…` — never invent parallel dirs.
+4. Put spec work in `openspec/` (changes → archive into `openspec/specs/`), memory in `memory/`, data in `data/…` — never invent parallel dirs.
 
 This is what makes `AGENTS.md` self-bootstrapping: a new tool reads it, understands what-for-what, and wires itself in by reference.
 
@@ -201,6 +226,7 @@ This is what makes `AGENTS.md` self-bootstrapping: a new tool reads it, understa
 - [ ] memory/INDEX.md present (+ topic stubs for NEW)
 - [ ] .gitignore covers .cache/ + .venv/ (third-party caches) (+ data/intake/ if it holds symlinks/large originals)
 - [ ] No duplicated instruction content: tool files REFERENCE AGENTS.md, never copy it
+- [ ] Claude Code bridge present: `CLAUDE.md` (`@AGENTS.md`) + `.claude/skills` (symlink → `../.agents/skills`) + `scripts/fix_claude_skills_link.py` + README Windows note
 - [ ] EXISTING-TOOL (Mode B): original tool flow intact + mapping documented (nothing moved)
 - [ ] Mode B+M: tool dirs untouched · non-tool dirs moved · old-path refs patched · AGENTS.md layout map updated to canonical
 - [ ] Mode C (convert): move plan confirmed first · canonical tree clean · broken refs repaired · no tool dirs moved
@@ -214,3 +240,4 @@ This is what makes `AGENTS.md` self-bootstrapping: a new tool reads it, understa
 | `references/memory-INDEX.template.md` | `memory/INDEX.md` bootstrap (progressive-disclosure protocol + topic stubs) |
 | `references/tool-bridges.md` | Per-tool onboarding (new) + existing-project mapping + custom→canonical move map (Mode C) |
 | `references/gitignore.snippet` | Lines to append to `.gitignore` |
+| `references/fix_claude_skills_link.py` | Copy into the project's `scripts/` — Windows fallback for the `.claude/skills` bridge when Developer Mode isn't available |
