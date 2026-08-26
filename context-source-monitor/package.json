@@ -1,0 +1,9 @@
+{
+  "name": "context-source-monitor-skill",
+  "private": true,
+  "type": "module",
+  "description": "Dev/runtime dependency for the OpenCode plugin adapter (scripts/opencode-plugin.ts) and its tests. The CLI (scripts/context_source_monitor.mjs) needs none of this.",
+  "dependencies": {
+    "@opencode-ai/plugin": "1.18.15"
+  }
+}

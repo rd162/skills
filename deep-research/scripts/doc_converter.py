@@ -260,6 +260,10 @@ ARCHIVE_EXTENSIONS = {
 # These are never scanned for source documents.
 EXCLUDED_DIRS = {
     "corpus",
+    "drafts",
+    "draft",
+    "archive",
+    "archives",
     ".venv",
     "venv",
     ".env",
