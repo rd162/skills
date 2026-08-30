@@ -10,6 +10,42 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+/**
+ * Remove heredoc bodies before any shell parsing.
+ *
+ * A heredoc body is DATA, not shell, and treating it as shell manufactures phantom file
+ * activity. Observed in practice: an agent running `python3 - <<'PY' ... PY` whose script
+ * contained `p.write_text(...)` and `>` produced recorded "writes" to files named `,`,
+ * `write`, `citation`, `path")` and `limit)`. Harmless while writes were only reported;
+ * not harmless once writes drive automatic provenance decisions.
+ *
+ * Handles `<<WORD`, `<<'WORD'`, `<<"WORD"` and `<<-WORD` (tab-indented terminator).
+ */
+export function stripHeredocs(commandLine) {
+  if (!commandLine || !commandLine.includes("<<")) return commandLine;
+  const lines = commandLine.split("\n");
+  const out = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    out.push(line);
+    // Every heredoc opened on this line, in order.
+    const markers = [...line.matchAll(/<<(-?)\s*(?:'([^']+)'|"([^"]+)"|([A-Za-z_][A-Za-z0-9_]*))/g)].map((m) => ({
+      dash: m[1] === "-",
+      word: m[2] ?? m[3] ?? m[4],
+    }));
+    i++;
+    for (const { dash, word } of markers) {
+      while (i < lines.length) {
+        const candidate = dash ? lines[i].replace(/^\t+/, "") : lines[i];
+        i++;
+        if (candidate.trim() === word) break;
+      }
+    }
+  }
+  return out.join("\n");
+}
+
 const READ_UTILITIES = new Set([
   "cat", "bat", "batcat", "glow", "head", "tail", "sed", "awk", "less", "more",
   "nl", "tac", "rev", "strings", "fold", "cut", "od", "hexdump", "xxd", "dd", "wc", "grep", "rg",
@@ -156,8 +192,9 @@ function parseIntSafe(value) {
  * Reads implied by a shell command.
  * @returns {{filePath: string, utility: string, offset?: number, limit?: number, tailLines?: number, wholeFile: boolean}[]}
  */
-export function extractReads(commandLine, workspace) {
-  if (!commandLine || typeof commandLine !== "string") return [];
+export function extractReads(rawCommandLine, workspace) {
+  if (!rawCommandLine || typeof rawCommandLine !== "string") return [];
+  const commandLine = stripHeredocs(rawCommandLine);
   const out = [];
 
   for (const segment of splitPipeline(commandLine)) {
@@ -249,8 +286,9 @@ export function extractReads(commandLine, workspace) {
  * Writes implied by a shell command.
  * @returns {{filePath: string, utility: string, append: boolean}[]}
  */
-export function extractWrites(commandLine, workspace) {
-  if (!commandLine || typeof commandLine !== "string") return [];
+export function extractWrites(rawCommandLine, workspace) {
+  if (!rawCommandLine || typeof rawCommandLine !== "string") return [];
+  const commandLine = stripHeredocs(rawCommandLine);
   const out = [];
   const seen = new Set();
   const add = (filePath, utility, append) => {

@@ -42,7 +42,7 @@ import {
 } from "../scripts/context_source_monitor/text.mjs";
 import { IgnoreRules, walkFiles } from "../scripts/context_source_monitor/ignore.mjs";
 import { parseStructure, isProbablyBinary } from "../scripts/context_source_monitor/structure.mjs";
-import { extractReads, extractWrites } from "../scripts/context_source_monitor/terminal.mjs";
+import { extractReads, extractWrites, stripHeredocs } from "../scripts/context_source_monitor/terminal.mjs";
 import {
   InfluenceGraph,
   GraphArchive,
@@ -59,7 +59,7 @@ import {
 } from "../scripts/context_source_monitor/graph.mjs";
 import { WorkspaceIndex } from "../scripts/context_source_monitor/resolve.mjs";
 import { ShingleIndex, tokenize } from "../scripts/context_source_monitor/overlap.mjs";
-import { GENERIC_FANOUT_THRESHOLD } from "../scripts/context_source_monitor/detectors.mjs";
+import { GENERIC_FANOUT_THRESHOLD, disclaimsDerivation } from "../scripts/context_source_monitor/detectors.mjs";
 import {
   ContextSourceMonitorEngine,
   ARTIFACT_DIR,
@@ -1532,6 +1532,143 @@ group("engine: infer (content-driven provenance)", () => {
     equal(result.sourceRoots, ["docs/spec.md"]);
     equal(result.targetRoots, ["docs/other.md"]);
     fs.unlinkSync(path.join(workspace, ARTIFACT_DIR, "roles.txt"));
+  });
+
+  check("a watched read -> write -> citation settles itself without a reader", () => {
+    // The convention does the work: agents are told to cite sources in what they write.
+    // Where that holds, the tool has WATCHED the derivation -- source read, target
+    // written, target cites source -- and direction is observed, not guessed. Those
+    // edges should not occupy the judgment queue.
+    write("docs/upstream.md", "# Upstream\n\nThe canonical rule is X.\n");
+    write("out/derived.md", "# Derived\n\nPer `docs/upstream.md` the rule is X.\n");
+
+    const e = new ContextSourceMonitorEngine({ workspace });
+    e.enable();
+    e.recordRead("docs/upstream.md", { interval: { start: 1, end: 3 }, tool: "read" });
+    e.recordWrite("out/derived.md", { tool: "write" });
+
+    const g = e.buildInfluenceGraph({
+      sourceRoots: ["docs"],
+      targetRoots: ["out"],
+      detectors: ["path-reference"],
+      mapPath: "state/observed.json",
+    });
+    const edges = [...g.edges.values()];
+    const obs = edges.filter((x) => x.basis === "observed-read-write");
+    assert(obs.length === 1, `expected 1 observed edge, got ${obs.length} of ${edges.length}`);
+    equal(obs[0].state, "confirmed");
+    assert(obs[0].confidence < 1, "an observation must rank below a reader's judgment");
+    assert(/observed:/.test(obs[0].note || ""), "an observed edge must say why");
+  });
+
+  check("an observation never settles a citation that disclaims derivation", () => {
+    // "NOT FOUND: looked in x" cites x precisely because nothing was drawn from it.
+    // This is the false positive that auto-settling would otherwise make permanent.
+    write("docs/absent.md", "# Absent\n\nnothing relevant here\n");
+    write("out/negative.md", "# Findings\n\nNOT FOUND: no port is declared in `docs/absent.md`.\n");
+
+    const e = new ContextSourceMonitorEngine({ workspace });
+    e.enable();
+    e.recordRead("docs/absent.md", { interval: { start: 1, end: 3 }, tool: "read" });
+    e.recordWrite("out/negative.md", { tool: "write" });
+
+    const g = e.buildInfluenceGraph({
+      sourceRoots: ["docs"],
+      targetRoots: ["out"],
+      detectors: ["path-reference"],
+      mapPath: "state/observed-negative.json",
+    });
+    const into = [...g.edges.values()].filter((x) => g.nodes.get(x.to)?.path === "out/negative.md");
+    assert(into.length > 0, "the citation should still produce a hint");
+    assert(
+      into.every((x) => x.basis !== "observed-read-write"),
+      "a disclaiming citation must stay a hint for a reader to judge",
+    );
+  });
+
+  check("a heredoc body is data, never shell", () => {
+    // Observed for real: an agent ran `python3 - <<'PY'` whose script contained
+    // `p.write_text(...)` and `>`, and the parser recorded writes to files named `,`,
+    // `write`, `citation`, `path")` and `limit)`. Tolerable while writes were only
+    // reported; not tolerable once a write drives an automatic provenance decision.
+    const cmd = [
+      "python3 - <<'PY'",
+      "import pathlib",
+      "p = pathlib.Path('real.txt')",
+      "p.write_text('x > y, citation, limit)')",
+      "print('a' > 'b')",
+      "PY",
+      "echo done > actually-written.txt",
+    ].join("\n");
+    const writes = extractWrites(cmd, workspace).map((w) => w.filePath);
+    equal(writes, ["actually-written.txt"]);
+    assert(!stripHeredocs(cmd).includes("write_text"), "the heredoc body must be gone before parsing");
+    // A terminator inside the body must not end it early, and unquoted markers work too.
+    const nested = ["cat <<EOF", "not EOF really", "EOF", "rm -f x > kept.txt"].join("\n");
+    equal(extractWrites(nested, workspace).map((w) => w.filePath), ["kept.txt"]);
+  });
+
+  check("provenance is never recorded for a path outside the workspace", () => {
+    const e = new ContextSourceMonitorEngine({ workspace });
+    e.enable();
+    equal(e.recordRead("../../elsewhere/secret.md"), null);
+    equal(e.recordWrite("/etc/hosts"), null);
+    assert(!e.reads.has("../../elsewhere/secret.md"), "an escaping read must not be stored");
+    assert(e.reads.size === 0 && e.writes.size === 0, "nothing outside the workspace is provenance");
+  });
+
+  check("only text BEFORE a citation can disclaim it", () => {
+    // The asymmetry is the correctness argument. These markers govern what FOLLOWS them.
+    // A first version scanned whole lines around the citation and blocked a real edge
+    // because "rather than" appeared in the CITED CONTENT ("per `x`, use Gemini rather
+    // than Whisper"). Only the lookbehind may veto.
+    const lines = [
+      "NOT FOUND: no port is declared in `docs/a.md`.",
+      "Per `docs/b.md`, use Gemini rather than local Whisper.",
+      "Unlike `docs/c.md`, this one is normative.",
+    ];
+    // column of the citation on each line
+    const col = (i, token) => lines[i].indexOf(token);
+    assert(disclaimsDerivation(lines, 1, col(0, "`docs/a.md`")), "a preceding NOT FOUND must veto");
+    assert(
+      !disclaimsDerivation(lines, 2, col(1, "`docs/b.md`")),
+      "a contrast AFTER the citation governs the contrasted thing, not the citation",
+    );
+    assert(disclaimsDerivation(lines, 3, col(2, "`docs/c.md`")), "a preceding 'Unlike' must veto");
+  });
+
+  check("an observation requires the read to precede the write", () => {
+    write("docs/later.md", "# Later\n\nrule Y\n");
+    write("out/early.md", "# Early\n\nsee `docs/later.md`\n");
+
+    const e = new ContextSourceMonitorEngine({ workspace });
+    e.enable();
+    e.recordWrite("out/early.md", { tool: "write" });
+    const w = e.writes.get("out/early.md");
+    w.firstWriteAt = w.lastWriteAt = "2020-01-01T00:00:00.000Z"; // write long before the read
+    e.recordRead("docs/later.md", { interval: { start: 1, end: 3 }, tool: "read" });
+
+    const g = e.buildInfluenceGraph({
+      sourceRoots: ["docs"],
+      targetRoots: ["out"],
+      detectors: ["path-reference"],
+      mapPath: "state/observed-order.json",
+    });
+    assert(
+      [...g.edges.values()].every((x) => x.basis !== "observed-read-write"),
+      "a citation written before its source was ever read is not observed derivation",
+    );
+  });
+
+  check("a reader's judgment outranks a later observation", () => {
+    const g = new InfluenceGraph();
+    const a = g.ensureFileNode("docs/upstream.md", { content: "x" });
+    const b = g.ensureFileNode("out/derived.md", { content: "y" });
+    g.addEdge({ from: a.id, to: b.id, state: "confirmed", confidence: 1, note: "read both, vouched" });
+    g.addEdge({ from: a.id, to: b.id, state: "confirmed", confidence: 0.9, basis: "observed-read-write" });
+    const edge = g.edges.get(`${a.id}->${b.id}`);
+    equal(edge.confidence, 1);
+    assert(!edge.basis, "an observation must not overwrite a judged edge's basis");
   });
 
   check("a gitignored tree declared in roles.txt is still in coverage scope", () => {

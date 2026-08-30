@@ -25,6 +25,52 @@ import { ShingleIndex, DEFAULT_OVERLAP_OPTIONS } from "./overlap.mjs";
 /** Uniform confidence for every scaffold-proposed hint, regardless of mechanism. */
 export const HINT_CONFIDENCE = 0.3;
 
+/**
+ * Confidence for an OBSERVED edge: the tool watched the target file get written in a
+ * session where the cited source had already been read, and the write cites it.
+ *
+ * Deliberately below 1. A judged edge means a reader compared both sides and vouched
+ * for the claim; an observed edge means the mechanism saw the act. The act is strong
+ * evidence of derivation and settles DIRECTION outright — the read came first — but it
+ * still cannot see that the citing sentence says "unlike `x`" or "not found in `x`".
+ * Ranking it equal to a judged edge would erase a distinction a reviewer needs.
+ */
+export const OBSERVED_CONFIDENCE = 0.9;
+
+/**
+ * A citation inside one of these constructions is NOT evidence of derivation, and is the
+ * one class of false positive that auto-settling would otherwise bake in permanently.
+ * A report that says "NOT FOUND: looked in `x.py`" cites `x.py` precisely because it did
+ * not draw from it; "unlike `y`" cites a contrast. Left as a hint, a reader decides.
+ */
+const NON_DERIVATION_CONTEXT =
+  /\b(not found|no such|does not exist|doesn't exist|absent from|missing from|unlike|instead of|rather than|as opposed to|in contrast to|cannot find|could not find|couldn't find|to be created|not present in|nothing in|no mention (?:of|in)|never appears in|is absent)\b[^.!?]*$/i;
+
+/** How much text before a citation can govern it. */
+const DISCLAIMER_LOOKBEHIND = 120;
+
+/**
+ * Whether the text governing a citation disclaims derivation.
+ *
+ * Only the text BEFORE the citation, on its own line, is consulted, and that asymmetry is
+ * the whole correctness argument. These markers govern what FOLLOWS them: "NOT FOUND: no
+ * port is declared in `x`" disclaims `x`, while "per `x`, use Gemini rather than Whisper"
+ * does not disclaim anything — the contrast governs Whisper.
+ *
+ * A first version scanned a window of whole lines around the citation and blocked a
+ * genuine edge on that second sentence, because `rather than` appeared in the CITED
+ * CONTENT. Anchoring the pattern to end-of-string and looking only backwards fixes it.
+ *
+ * The bias is deliberate. A false block costs nothing — the edge stays a hint and a reader
+ * judges it, which is the old behaviour. A false promotion is permanent and unreviewed. So
+ * where the two are traded off, block.
+ */
+export function disclaimsDerivation(lines, line, column = null) {
+  const text = lines[line - 1] ?? "";
+  const before = column == null ? text : text.slice(Math.max(0, column - DISCLAIMER_LOOKBEHIND), column);
+  return NON_DERIVATION_CONTEXT.test(before);
+}
+
 /** Which internal scaffold mechanisms exist, for the `detectors` option. Not persisted on edges. */
 export const SCAFFOLD_MECHANISMS = ["path-reference", "entity-mention", "content-overlap"];
 
@@ -93,7 +139,8 @@ export function extractReferences(content) {
     const key = `${kind}|${raw}|${line}`;
     if (seen.has(key)) return;
     seen.add(key);
-    out.push({ raw, line, kind });
+    // Column anchors the disclaimer lookbehind: only text before a citation governs it.
+    out.push({ raw, line, kind, column: Math.max(0, index - offsets[line - 1]) });
   };
 
   for (const re of IMPORT_PATTERNS) {
@@ -125,7 +172,7 @@ export function detectReferences({ graph, index, relPath, content, options = {} 
   const fanoutThreshold = options.genericFanoutThreshold ?? GENERIC_FANOUT_THRESHOLD;
   const sourceFilter = options.sourceFilter || null;
   const allows = (candidate) => !sourceFilter || sourceFilter.has(candidate);
-  const stats = { edges: 0, unresolved: 0, skippedOutOfScope: 0, skippedGeneric: 0 };
+  const stats = { edges: 0, unresolved: 0, skippedOutOfScope: 0, skippedGeneric: 0, observed: 0 };
   const explicit = new Set(); // citation anchors, so a weaker entity mention does not restate them
 
   /** The citing line plus a little context — enough text to be identifiable. */
@@ -134,7 +181,9 @@ export function detectReferences({ graph, index, relPath, content, options = {} 
     end: line + CITATION_CONTEXT_LINES,
   });
 
-  const emit = (sourceRel, targetInterval) => {
+  const contentLines = options.observed ? splitLines(content) : null;
+
+  const emit = (sourceRel, targetInterval, ref = null) => {
     const sourceContent = options.loadContent(sourceRel);
     if (sourceContent === null || sourceContent === undefined) return false;
     // Source = the cited file as a whole: file scope, so editing it does not
@@ -142,6 +191,25 @@ export function detectReferences({ graph, index, relPath, content, options = {} 
     const fromNode = graph.ensureFileNode(sourceRel, { content: sourceContent });
     const { node: toNode } = graph.ensureSpanNode(relPath, targetInterval, content);
     if (fromNode.id === toNode.id) return false;
+
+    // An observed edge is emitted through this same path, with the same node identity,
+    // so it PROMOTES the hint it would otherwise have been instead of racing it.
+    const observed =
+      options.observed && ref && !disclaimsDerivation(contentLines, ref.line, ref.column)
+        ? options.observed(sourceRel, ref)
+        : null;
+    if (observed) {
+      graph.addEdge({
+        from: fromNode.id,
+        to: toNode.id,
+        state: "confirmed",
+        confidence: OBSERVED_CONFIDENCE,
+        basis: "observed-read-write",
+        note: observed.note,
+      });
+      stats.observed++;
+      return true;
+    }
     graph.addEdge({ from: fromNode.id, to: toNode.id, confidence: HINT_CONFIDENCE });
     return true;
   };
@@ -171,7 +239,10 @@ export function detectReferences({ graph, index, relPath, content, options = {} 
         stats.skippedOutOfScope++;
         continue;
       }
-      if (emit(sourceRel, targetInterval)) {
+      // `ref` is passed ONLY here, for an explicit path citation. An entity mention
+      // below is a bare NAME that happens to resolve to a file; that is far weaker
+      // evidence and never auto-settles, however clear the read/write pairing looks.
+      if (emit(sourceRel, targetInterval, ref)) {
         explicit.add(`${sourceRel}|${ref.line}`);
         stats.edges++;
       }

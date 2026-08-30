@@ -509,8 +509,17 @@ export class InfluenceGraph {
       // A re-proposed hint must never quietly undo a human/LLM judgment, but a
       // confirmation always wins, and re-confirming clears a reconfirm flag.
       if (state === EDGE_STATES.CONFIRMED) {
+        // A reader's judgment outranks an observation: never let a re-run of the
+        // scaffold pull a judged edge back down to OBSERVED confidence, and never
+        // let an observation overwrite the basis a reader recorded.
+        const judged = existing.state === EDGE_STATES.CONFIRMED && !existing.basis;
         existing.state = EDGE_STATES.CONFIRMED;
-        existing.confidence = clampConfidence(input.confidence ?? 1);
+        if (!(judged && input.basis)) {
+          existing.confidence = clampConfidence(input.confidence ?? 1);
+          if (input.basis) existing.basis = input.basis;
+          else delete existing.basis;
+          if (input.note) existing.note = input.note;
+        }
         delete existing.priorState;
         delete existing.priorConfidence;
         delete existing.demotedAt;
@@ -523,6 +532,8 @@ export class InfluenceGraph {
     }
 
     const edge = { id, from, to, state, confidence: clampConfidence(input.confidence) };
+    if (input.basis) edge.basis = input.basis;
+    if (input.note) edge.note = input.note;
     if (state === EDGE_STATES.NEEDS_RECONFIRM) {
       edge.confidence = Math.min(edge.confidence, NEEDS_RECONFIRM_CEILING);
       if (input.priorState) edge.priorState = input.priorState;

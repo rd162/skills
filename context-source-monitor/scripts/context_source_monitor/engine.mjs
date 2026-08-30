@@ -170,6 +170,10 @@ export class ContextSourceMonitorEngine {
   recordRead(rawPath, options = {}) {
     if (!rawPath) return null;
     const { absolute, relative } = this.normalize(rawPath);
+    // Provenance is a statement about THIS workspace. A path that escapes it (a skill
+    // module under $HOME, /tmp scratch) has no node, no coverage row and no place in the
+    // map, and recording it only pollutes the write set that now drives auto-settling.
+    if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) return null;
     const { lines: totalLines, bytes } = statLines(absolute);
     const now = new Date().toISOString();
     const tool = options.tool || "read";
@@ -221,6 +225,10 @@ export class ContextSourceMonitorEngine {
   recordWrite(rawPath, options = {}) {
     if (!rawPath) return null;
     const { absolute, relative } = this.normalize(rawPath);
+    // Provenance is a statement about THIS workspace. A path that escapes it (a skill
+    // module under $HOME, /tmp scratch) has no node, no coverage row and no place in the
+    // map, and recording it only pollutes the write set that now drives auto-settling.
+    if (!relative || relative.startsWith("..") || path.isAbsolute(relative)) return null;
     const { lines: totalLines, bytes } = statLines(absolute);
     const now = new Date().toISOString();
     const tool = options.tool || "write";
@@ -521,6 +529,56 @@ export class ContextSourceMonitorEngine {
     return roles;
   }
 
+  // -- observed provenance: a watched read -> write -> citation ---------------
+
+  /**
+   * Build the predicate that turns a WATCHED derivation into a settled edge.
+   *
+   * The reasoning. Every other mechanism here compares content and guesses, and the one
+   * thing content similarity can never establish is DIRECTION — shared wording says two
+   * files are related, never which came first. But when the tool has actually watched
+   * the work happen, it knows more than any comparison can recover: file S was read,
+   * then file T was written, and T cites S by path. That is not a resemblance, it is the
+   * causal act, and the ordering is observed rather than inferred.
+   *
+   * This depends on a convention, not on cleverness: agents are instructed to cite their
+   * sources in what they generate. Where that instruction is followed, provenance
+   * announces itself, and the expensive step — a reader opening both sides to judge a
+   * hint — is not needed for those edges. That is the whole saving: the judgment queue
+   * should hold what genuinely needs judging.
+   *
+   * Three conditions, all required:
+   *   1. T was written while tracking was on.
+   *   2. S was read while tracking was on, and the FIRST read precedes the LAST write
+   *      to T. A citation added before the source was ever opened is not observed
+   *      derivation, whatever it looks like afterwards.
+   *   3. T cites S by an explicit path (an entity-name match does not qualify) and the
+   *      citing sentence does not disclaim derivation — see `disclaimsDerivation`.
+   *
+   * Returns null when nothing was written under tracking, which is also the honest
+   * result for a map rebuilt from history: nothing was observed, so nothing is settled
+   * this way, and every edge goes to the reader as before.
+   */
+  observedPredicate() {
+    if (!this.writes.size || !this.reads.size) return null;
+    return (targetRel) => {
+      const write = this.writes.get(targetRel);
+      if (!write) return null;
+      const writtenAt = Date.parse(write.lastWriteAt || write.firstWriteAt || "") || null;
+      return (sourceRel) => {
+        const read = this.reads.get(sourceRel);
+        if (!read) return null;
+        const readAt = Date.parse(read.firstReadAt || "") || null;
+        // Ordering is the point. Without it this would settle edges whose citation was
+        // written first and whose source was opened afterwards.
+        if (readAt && writtenAt && readAt > writtenAt) return null;
+        return {
+          note: `observed: ${sourceRel} read${read.firstReadAt ? ` at ${read.firstReadAt}` : ""}, then cited by a write to ${targetRel}`,
+        };
+      };
+    };
+  }
+
   // -- influence graph: scaffold ---------------------------------------------
 
   /**
@@ -535,7 +593,8 @@ export class ContextSourceMonitorEngine {
     const byRelPath = new Map([...sourceFiles, ...targetFiles].map((f) => [f.relPath, f]));
     const loadContent = (relPath) => byRelPath.get(relPath)?.load() ?? null;
 
-    const stats = { references: 0, unresolved: 0, skippedOutOfScope: 0, skippedGeneric: 0, overlap: 0 };
+    const stats = { references: 0, unresolved: 0, skippedOutOfScope: 0, skippedGeneric: 0, overlap: 0, observed: 0 };
+    const observed = options.observed === false ? null : this.observedPredicate();
     const restrictTo = options.onlyTargets ? new Set(options.onlyTargets) : null;
     const scaffoldTargets = restrictTo ? targetFiles.filter((f) => restrictTo.has(f.relPath)) : targetFiles;
 
@@ -556,9 +615,11 @@ export class ContextSourceMonitorEngine {
             entityMentions: enabled.has("entity-mention"),
             sourceFilter,
             loadContent,
+            observed: observed?.(file.relPath) ?? null,
           },
         });
         stats.references += result.edges;
+        stats.observed += result.observed || 0;
         stats.unresolved += result.unresolved;
         stats.skippedOutOfScope += result.skippedOutOfScope;
         stats.skippedGeneric += result.skippedGeneric;

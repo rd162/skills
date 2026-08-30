@@ -111,6 +111,14 @@ const STATE_SECTIONS = [
   ["Hints — needs review", "hint"],
 ];
 
+/** Settled by watching the work, not by a reader: `basis: "observed-read-write"`. */
+export function splitObserved(edges) {
+  const observed = [];
+  const judged = [];
+  for (const e of edges) (e.basis === "observed-read-write" ? observed : judged).push(e);
+  return { observed, judged };
+}
+
 export function renderInfluenceMarkdown(graph, options = {}) {
   const limit = options.limit ?? 25;
   const stats = graph.stats();
@@ -137,10 +145,24 @@ export function renderInfluenceMarkdown(graph, options = {}) {
       "`needs-reconfirm` edges were settled once and then one side's content changed underneath them: re-read " +
       "both sides and `confirm` again, or `reject`. Only `confirmed` is a settled answer.",
   );
+  const observedCount = [...graph.edges.values()].filter((e) => e.basis === "observed-read-write").length;
+  if (observedCount) {
+    out.push("");
+    out.push(
+      `**${observedCount} confirmed edge(s) were settled by observation, not by a reader.** The tool watched the ` +
+        "source get read, then watched the target get written citing it by path, so direction is observed rather " +
+        "than inferred. They are listed separately below and carry confidence < 1 to keep them distinguishable " +
+        "from a judgment. They are deliberately kept OUT of the review queue — that is the saving — so spot-check " +
+        "them if a convention slipped, and `reject` any that are wrong.",
+    );
+  }
   out.push("");
 
   for (const [title, state] of STATE_SECTIONS) {
-    const edges = [...graph.edges.values()].filter((e) => e.state === state);
+    let edges = [...graph.edges.values()].filter((e) => e.state === state);
+    // Observed edges are confirmed, but they were never read by anyone. Listing them
+    // inside "Confirmed" would hide exactly the set most worth spot-checking.
+    if (state === "confirmed") edges = splitObserved(edges).judged;
     if (!edges.length) continue;
     out.push(`## ${title} (${edges.length})`);
     out.push("");
@@ -161,6 +183,21 @@ export function renderInfluenceMarkdown(graph, options = {}) {
       out.push("");
     }
     if (byTarget.size > limit) out.push(`... ${byTarget.size - limit} more target files`, "");
+  }
+
+  if (observedEdges.length) {
+    out.push(`## Settled by observation — not reviewed (${observedEdges.length})`);
+    out.push("");
+    out.push(
+      "The source was read, then the target was written citing it by path. Direction is observed. " +
+        "No reader has compared the two sides: skim for a citation that names a file it did not draw from.",
+    );
+    out.push("");
+    for (const e of observedEdges.sort((a, b) => b.confidence - a.confidence).slice(0, limit)) {
+      out.push(`- ${loc(nodes.get(e.from))} → ${loc(nodes.get(e.to))} (confidence ${e.confidence})`);
+    }
+    if (observedEdges.length > limit) out.push(`... ${observedEdges.length - limit} more`);
+    out.push("");
   }
 
   if (graph.unresolved.length) {
