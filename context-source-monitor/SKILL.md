@@ -308,3 +308,37 @@ So the split is:
 tracking is legitimate — during a noisy refactor of the tooling itself, for instance — but it silently
 costs the observed provenance of every write in that window, and no tool recovers it afterwards.
 `link` is the repair, and only the agent that was there can perform it.
+
+### The fallback when nobody reconciled in place
+
+In-place reconciliation by the working agent is **mandatory, not preferred**. But work escapes it —
+a session ends early, tracking was off, an agent finishes without reconciling, a map predates the
+rule. That backlog must still be answerable, so there is a second procedure. It is strictly worse,
+and knowing why is what keeps it from becoming the habit.
+
+**Run it only on an accumulated backlog.** It is token-expensive, so batching is the whole point: one
+large pass over many unsettled edges beats ten small ones. A *fresh* context is genuinely better for
+it, because the reader must reason from content rather than from what it half-remembers doing.
+
+1. List every unsettled edge — `pending`, plus the hint set in the map.
+2. **Re-read the real intervals on both sides.** Not paths, not summaries: the text. Pulling whole
+   files into context is usually cheaper and more reliable than fetching dozens of windows, and it
+   also reveals derivations that cut across interval boundaries.
+3. Ask what no detector can: **does this passage read as derived from that source?** Distinctive
+   vocabulary, a value appearing nowhere else, a structure mirroring the source's ordering, a claim
+   only that document makes. Shared boilerplate and common technical terms are not evidence.
+4. `confirm` where the derivation is legible, `reject` where the resemblance is coincidental, `link`
+   where you can see a source no detector proposed. **Leave ambiguous edges as hints** — an unsettled
+   edge is honest; a wrongly settled one is a permanent falsehood that nobody will revisit.
+5. **Say in the note that this was content inference in a later pass, not the authoring agent.** A
+   future reader must be able to distinguish a witnessed edge from a reconstructed one, and the note
+   is the only place that distinction survives.
+
+**Its three blind spots, so results are read correctly.** Paraphrase is invisible to it: a finding
+restated in the author's own words leaves no shared vocabulary to match. It silently favours verbose
+sources over terse ones, because more distinctive strings mean easier linking. And everything it
+yields is inference, however careful — the writer knew causation, a later reader can only observe
+resemblance and argue backwards.
+
+**So reconcile in place, every time.** The fallback exists because backlogs exist, not because
+deferring is acceptable.
