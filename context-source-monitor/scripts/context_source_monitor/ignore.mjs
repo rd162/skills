@@ -120,19 +120,32 @@ export class IgnoreRules {
    * Same verdict as `isIgnored`, plus which rule (raw .gitignore line) decided it —
    * so a caller can explain *why* a path was skipped, not just that it was.
    *
-   * @returns {{ignored: boolean, rule: string|null}}
+   * `matched` distinguishes "no rule mentioned this path" from "a negation re-included
+   * it". Both report `ignored: false`, and a caller layering one rule set over another
+   * cannot combine them correctly without knowing which happened.
+   *
+   * `unmask` is a list of workspace-relative roots that must stay in scope. Any
+   * non-negated rule that would exclude one of those roots OUTRIGHT is skipped. This is
+   * deliberately narrower than re-including the whole subtree: it cancels the exclusion
+   * *of* the tree while leaving exclusions *within* it — a nested `.gitignore`, or a root
+   * rule like `*.log` — fully in force.
+   *
+   * @returns {{ignored: boolean, rule: string|null, matched: boolean}}
    */
-  matchRule(relPath, isDir) {
+  matchRule(relPath, isDir, unmask = null) {
     let ignored = false;
     let rule = null;
+    let matched = false;
     for (const r of this.rules) {
+      if (unmask && !r.negate && unmask.some((root) => r.regex.test(root))) continue;
       if (!r.regex.test(relPath)) continue;
       // `dir/` must not ignore a plain file at exactly that path
       if (r.dirOnly && !isDir && r.exact.test(relPath)) continue;
       ignored = !r.negate;
       rule = r.raw;
+      matched = true;
     }
-    return { ignored, rule };
+    return { ignored, rule, matched };
   }
 }
 
@@ -147,7 +160,13 @@ export function toPosix(p) {
  * @param {string} options.workspace           absolute workspace root
  * @param {string} [options.root]              absolute dir to walk (defaults to workspace)
  * @param {boolean} [options.respectGitignore] honor .gitignore files (default true)
- * @param {string[]} [options.extraIgnores]    additional gitignore-style patterns
+ * @param {string[]} [options.extraIgnores]    additional gitignore-style patterns, applied
+ *   as an override layer AFTER every .gitignore (so a `!negation` here really does win)
+ * @param {string[]} [options.forceInclude]     workspace-relative roots that must stay in
+ *   scope even when .gitignore excludes them. Cancels the exclusion OF each root, not
+ *   exclusions WITHIN it: a nested .gitignore inside the tree still applies, and
+ *   HARD_IGNORES is never overridden. This is the case of a locally mounted dependency —
+ *   gitignored because it is an independent git tree, and still the material that matters.
  * @param {(relPath: string) => boolean} [options.filter]
  * @param {number} [options.maxFiles]
  * @param {object[]} [options.ignoredSink]     if given, every skipped entry is pushed here as
@@ -167,7 +186,26 @@ export function walkFiles(options) {
     // Root .gitignore applies to the whole workspace, including nested roots.
     rules.addFile(path.join(workspace, ".gitignore"), "");
   }
-  if (options.extraIgnores?.length) rules.addPatterns(options.extraIgnores, "");
+
+  /**
+   * `extraIgnores` is an OVERRIDE layer, consulted after every `.gitignore`, and it is
+   * kept in its own rule set rather than appended to `rules` for a reason that cost a
+   * silent bug: the walk re-loads a directory's own `.gitignore` on the way in, and the
+   * workspace root has one, so anything appended to `rules` here was immediately
+   * outranked by the root file at the very first level. A negation could never
+   * re-include anything.
+   *
+   * As a separate layer applied last, these patterns have the final say in both
+   * directions — they can ignore, and they can re-include a tree that `.gitignore`
+   * excluded. `HARD_IGNORES` is still checked first and is never overridable.
+   */
+  const overrides = new IgnoreRules();
+  if (options.extraIgnores?.length) overrides.addPatterns(options.extraIgnores, "");
+  const hasOverrides = overrides.rules.length > 0;
+
+  const forceInclude = (options.forceInclude || [])
+    .map((r) => toPosix(String(r)).replace(/^\.\//, "").replace(/\/+$/, ""))
+    .filter((r) => r && r !== "." && !r.startsWith(".."));
 
   const out = [];
   const recordIgnored = (relPath, isDir, reason, rule) => {
@@ -205,9 +243,16 @@ export function walkFiles(options) {
         continue;
       }
 
-      const match = dirRules.matchRule(relPath, isDir);
-      if (match.ignored) {
-        recordIgnored(relPath, isDir, "gitignore", match.rule);
+      // Only a path at or inside a forced root gets the unmask; everywhere else the
+      // ordinary rules decide, so declaring one root cannot widen scope anywhere else.
+      const unmask = forceInclude.length
+        ? forceInclude.filter((root) => relPath === root || relPath.startsWith(`${root}/`))
+        : null;
+      const match = dirRules.matchRule(relPath, isDir, unmask?.length ? unmask : null);
+      const override = hasOverrides ? overrides.matchRule(relPath, isDir) : null;
+      const effective = override?.matched ? override : match;
+      if (effective.ignored) {
+        recordIgnored(relPath, isDir, "gitignore", effective.rule);
         continue;
       }
 

@@ -82,6 +82,8 @@ export class ContextSourceMonitorEngine {
       : path.join(this.workspace, ARTIFACT_DIR, STATE_FILENAME);
 
     this.active = false;
+    /** mtime of `statePath` the last time `isTracking()` re-read the `active` flag from disk. */
+    this.activeMtimeMs = null;
     this.sessions = [];
     /** @type {Map<string, object>} relPath -> read record */
     this.reads = new Map();
@@ -97,16 +99,44 @@ export class ContextSourceMonitorEngine {
 
   enable(sessionId) {
     this.active = true;
+    this.activeMtimeMs = null; // force a re-stat, so the next isTracking() sees our own write
     this.touchSession(sessionId);
     return { active: true, message: `Context Source Monitor enabled for ${this.workspace}` };
   }
 
   disable() {
     this.active = false;
+    this.activeMtimeMs = null;
     return { active: false, message: `Context Source Monitor disabled (${this.reads.size} files tracked)` };
   }
 
+  /**
+   * Whether hooks should record.
+   *
+   * The in-memory flag is authoritative for THIS process, but a long-running host
+   * (the OpenCode plugin loads this module once per process and caches the engine)
+   * must still notice an `enable`/`disable` performed by a *different* process — the
+   * CLI, or another editor session sharing the workspace. Without that, `enable` from
+   * a terminal silently does nothing to a running session, and the two processes race
+   * each other's `active` flag on save.
+   *
+   * Re-reading the whole state file on every tool call would be wasteful, so the
+   * on-disk `active` flag is consulted behind an mtime guard: one `stat()` per call,
+   * a parse only when the file actually changed since we last looked.
+   */
   isTracking() {
+    try {
+      const stat = fs.statSync(this.statePath);
+      if (stat.mtimeMs !== this.activeMtimeMs) {
+        this.activeMtimeMs = stat.mtimeMs;
+        const onDisk = JSON.parse(fs.readFileSync(this.statePath, "utf8"));
+        if (onDisk && typeof onDisk === "object" && typeof onDisk.active === "boolean") {
+          this.active = onDisk.active;
+        }
+      }
+    } catch {
+      /* no state file yet, or unreadable/corrupt: fall back to the in-memory flag */
+    }
     return this.active;
   }
 
@@ -235,7 +265,8 @@ export class ContextSourceMonitorEngine {
   scan(options = {}) {
     const scope = options.scope ? path.resolve(this.workspace, options.scope) : this.workspace;
     const respectGitignore = options.respectGitignore ?? this.config.respectGitignore;
-    const cacheKey = `${scope}|${respectGitignore}|${(options.extraIgnores || []).join(",")}`;
+    const forceInclude = options.declaredRoots === false ? [] : this.declaredRoots();
+    const cacheKey = `${scope}|${respectGitignore}|${(options.extraIgnores || []).join(",")}|${forceInclude.join(",")}`;
     if (!options.force && !options.ignoredSink && this.scanCache?.key === cacheKey) return this.scanCache.files;
 
     const walked = walkFiles({
@@ -243,6 +274,7 @@ export class ContextSourceMonitorEngine {
       root: scope,
       respectGitignore,
       extraIgnores: options.extraIgnores,
+      forceInclude,
       ignoredSink: options.ignoredSink,
     });
 
@@ -426,6 +458,38 @@ export class ContextSourceMonitorEngine {
 
   rolesFile() {
     return path.join(this.workspace, ARTIFACT_DIR, ROLES_FILENAME);
+  }
+
+  /**
+   * Every root declared in `roles.txt`, as force-include roots for the walk.
+   *
+   * Why this is needed. `.gitignore` is the right way to keep build output, caches and
+   * vendored trees out of scope, and it stays on. But "not committed here" and "not
+   * relevant here" are different statements, and one important case separates them:
+   * a locally mounted dependency — a cloned service repository, a vendored upstream, a
+   * mounted volume — is gitignored precisely BECAUSE it is an independent git tree, and
+   * is at the same time the most important material in the workspace.
+   *
+   * Left alone, the tool contradicted itself: `roles.txt` declared such a tree a
+   * `source:` and the influence map duly scaffolded edges out of it, while read coverage
+   * reported it as zero files in scope — two scope rules inside one tool, disagreeing
+   * silently. Coverage said 0% of every line and the real reason was invisible.
+   *
+   * The resolution: declaring a role IS the explicit statement of relevance, and it
+   * beats gitignore. The walk cancels the rule that excluded the tree itself, and
+   * nothing more — a nested `.gitignore` inside a clone still filters its build output,
+   * a root rule like `*.log` still applies inside the tree, and `HARD_IGNORES` keeps
+   * `.git`, `node_modules` and `.venv` out regardless.
+   *
+   * Pass `declaredRoots: false` to `scan()` to opt out.
+   */
+  declaredRoots() {
+    if (this._declaredRoots) return this._declaredRoots;
+    const roles = this.loadRoles();
+    this._declaredRoots = [...new Set([...roles.source, ...roles.generated])]
+      .map((r) => toPosix(r).replace(/^\.\//, "").replace(/\/+$/, ""))
+      .filter((r) => r && r !== "." && !r.startsWith("..") && !path.isAbsolute(r));
+    return this._declaredRoots;
   }
 
   /**
@@ -1255,6 +1319,7 @@ export class ContextSourceMonitorEngine {
       throw new Error(`incompatible state schema ${state.schemaVersion} (expected ${SCHEMA_VERSION})`);
     }
     this.active = !!state.active;
+    this.activeMtimeMs = null;
     this.config = { ...this.config, ...(state.config || {}) };
     this.sessions = state.sessions || [];
     this.reads = new Map(Object.entries(state.reads || {}));
@@ -1267,6 +1332,15 @@ export class ContextSourceMonitorEngine {
   save(targetPath = this.statePath) {
     const dest = path.resolve(this.workspace, targetPath);
     writeFileAtomic(dest, `${JSON.stringify(this.toState(), null, 2)}\n`);
+    // Our own write must not read back as "someone else changed active" on the next
+    // isTracking(); record the mtime we just produced.
+    if (dest === this.statePath) {
+      try {
+        this.activeMtimeMs = fs.statSync(dest).mtimeMs;
+      } catch {
+        this.activeMtimeMs = null;
+      }
+    }
     return dest;
   }
 

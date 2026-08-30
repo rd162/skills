@@ -105,6 +105,14 @@ async function runQueue() {
   }
 }
 
+function readIfExists(rel) {
+  try {
+    return fs.readFileSync(path.join(workspace, rel), "utf8");
+  } catch {
+    return "";
+  }
+}
+
 function assert(condition, message) {
   if (!condition) throw new Error(message || "assertion failed");
 }
@@ -318,8 +326,30 @@ group("discovery: gitignore and binaries", () => {
 group("discovery: ignored-list capture (walk-level, .gitignore-driven)", () => {
   check("matchRule reports which line decided the verdict", () => {
     const rules = new IgnoreRules().addPatterns(["*.log", "!keep.log"]);
-    equal(rules.matchRule("debug.log", false), { ignored: true, rule: "*.log" });
+    equal(rules.matchRule("debug.log", false), { ignored: true, rule: "*.log", matched: true });
     equal(rules.matchRule("keep.log", false).ignored, false);
+    // `matched` separates "a negation re-included this" from "no rule mentioned it".
+    // Both say ignored:false, and an override layer cannot compose them without this.
+    equal(rules.matchRule("keep.log", false).matched, true);
+    equal(rules.matchRule("untouched.txt", false), { ignored: false, rule: null, matched: false });
+  });
+  check("extraIgnores override every .gitignore, in both directions", () => {
+    // The override layer must outrank a directory's own .gitignore, including the
+    // workspace root's -- which the walk re-loads on the way in. Appending these
+    // patterns to the same rule set silently lost to the root file at the first level.
+    const reIncluded = walkFiles({ workspace, extraIgnores: ["!generated/"] }).map((f) => f.relPath);
+    assert(
+      reIncluded.some((p) => p.startsWith("generated/")),
+      `a negation must re-include a gitignored tree, got: ${reIncluded.join(", ")}`,
+    );
+    const excluded = walkFiles({ workspace, extraIgnores: ["*.md"] }).map((f) => f.relPath);
+    assert(!excluded.some((p) => p.endsWith(".md")), "an extra ignore must still exclude");
+    // HARD_IGNORES is never overridable.
+    const hard = walkFiles({ workspace, extraIgnores: ["!node_modules/", "!.git/"] }).map((f) => f.relPath);
+    assert(
+      !hard.some((p) => p.startsWith("node_modules/") || p.startsWith(".git/")),
+      "hard ignores must survive an explicit negation",
+    );
   });
   check("walkFiles reports gitignored entries with the matching rule, once each", () => {
     const sink = [];
@@ -1501,6 +1531,37 @@ group("engine: infer (content-driven provenance)", () => {
     const result = engine.inferProvenance({ mapPath: "state/infer-roles.json" });
     equal(result.sourceRoots, ["docs/spec.md"]);
     equal(result.targetRoots, ["docs/other.md"]);
+    fs.unlinkSync(path.join(workspace, ARTIFACT_DIR, "roles.txt"));
+  });
+
+  check("a gitignored tree declared in roles.txt is still in coverage scope", () => {
+    // The case this fixes: a locally mounted dependency -- a cloned service repo, a
+    // vendored upstream -- is gitignored BECAUSE it is an independent git tree, and is
+    // simultaneously the most important material in the workspace. Before this, the tool
+    // contradicted itself: `influence --sources` scanned it with gitignore off and built
+    // edges out of it, while `coverage` reported zero files in scope. Coverage read 0% of
+    // everything and the reason was invisible.
+    write("vendor/dep/main.py", "print('x')\n");
+    write("vendor/dep/.gitignore", "artifact.txt\n");
+    write("vendor/dep/artifact.txt", "generated, must stay out\n");
+    write("vendor/dep/node_modules/pkg/index.js", "module.exports = 1\n");
+    write(".gitignore", `${readIfExists(".gitignore")}\nvendor/\n`);
+
+    const plain = new ContextSourceMonitorEngine({ workspace });
+    const before = plain.scan({ force: true }).map((f) => f.relPath);
+    assert(!before.some((p) => p.startsWith("vendor/")), "gitignore alone must hide the tree");
+
+    write(`${ARTIFACT_DIR}/roles.txt`, "source: vendor\n");
+    const declared = new ContextSourceMonitorEngine({ workspace });
+    const after = declared.scan({ force: true }).map((f) => f.relPath);
+    assert(after.includes("vendor/dep/main.py"), `declaring a role must restore scope, got: ${after.filter((p) => p.startsWith("vendor")).join(", ")}`);
+    // The clone's OWN .gitignore keeps filtering inside it, and hard ignores hold.
+    assert(!after.includes("vendor/dep/artifact.txt"), "a nested .gitignore must still apply inside a re-included tree");
+    assert(!after.some((p) => p.includes("node_modules")), "hard ignores must hold inside a re-included tree");
+    // And opting out is still possible.
+    const opted = declared.scan({ force: true, declaredRoots: false }).map((f) => f.relPath);
+    assert(!opted.some((p) => p.startsWith("vendor/")), "declaredRoots:false must restore the old behaviour");
+
     fs.unlinkSync(path.join(workspace, ARTIFACT_DIR, "roles.txt"));
   });
 
