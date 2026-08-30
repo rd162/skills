@@ -5,15 +5,12 @@ description: >-
   AGENTS.md as the single source of truth (openspec/, memory/, data/, .agents/skills/, scripts/). New
   projects get the scaffolded layout plus an AGENTS.md whose Tool Onboarding Contract lets any agent tool
   (Claude Code, Copilot, Cursor, Codex, Gemini, Kiro) self-configure by reference, not duplication.
-  Spec-driven work follows **OpenSpec** (brownfield-first delta model) — the skill scaffolds the
-  conventions and bridges; `openspec init` itself runs when spec work actually starts.
-  Existing tool projects are adopted additively (bridge files, never move the tool's dirs). When an
-  existing tool project ALSO has its own non-tool custom dirs and the user explicitly asks to convert,
-  those non-tool dirs are migrated while the tool's dirs stay untouched (Mode B+M). When explicitly
-  asked to convert a fully CUSTOM non-tool layout, physically rename/move its dirs into the canonical
-  ones (Mode C). Use when the user says initialize / scaffold / standardize / agentize / onboard a
-  project, set up AGENTS.md, bootstrap agent structure, or convert / migrate / restructure into the
-  AGENTS.md layout.
+  Spec-driven work follows OpenSpec's brownfield-first delta model. Existing tool projects are adopted
+  additively via bridge files, never moving the tool's own dirs (Mode B); their extra custom dirs are
+  migrated only when the user explicitly asks to convert (Mode B+M); a fully custom layout is physically
+  renamed into the canonical dirs on explicit request (Mode C). Use when the user says initialize,
+  scaffold, standardize, agentize, or onboard a project, set up AGENTS.md, bootstrap agent structure, or
+  convert / migrate / restructure into the AGENTS.md layout.
 metadata:
   author: rd162@hotmail.com
   tags: project-init, agents-md, cross-platform, scaffolding, onboarding, single-source-of-truth, openspec, memory

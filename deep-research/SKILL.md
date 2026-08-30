@@ -2,29 +2,17 @@
 name: deep-research
 version: "4.0"
 description: >-
-  Unified deep-research engine over BOTH the web and local raw sources —
-  absorbs the former data-intake skill. INGESTION: converts raw documents
-  (PDF, DOCX, PPTX, XLSX), draw.io diagrams, and video files (MP4, MKV, AVI,
-  MOV) into an AI-readable corpus — Docling markdown (MarkItDown fallback),
-  WEBP sliding-window images via libvips, Gemini-native video understanding
-  via OpenRouter (VTT transcript, visual+audio analysis, smart cadres,
-  auto-chaptering, SHA256 change tracking). RESEARCH: temporal-aware
-  multi-angle web searching with source tiering (T1-T4), tier-weighted
-  conflict resolution, high-stakes escalation (medical/legal/financial →
-  T1-only + forward-consequence queries), sub-agent fan-out, and ITERATIVE
-  SATURATION — repeated rounds of gap-driven targeted prompts over videos,
-  documents, and the web (default 3 rounds per session, more while yield
-  stays strong) with an own-eye verification ladder. SURVEY: builds a
-  targeted knowledge base from fragments with source traceability,
-  gap/contradiction catalogue, and clarification questions. Use when the
-  user says "research this", "verify this", "deep dive", "systematic
-  review", "convert documents", "ingest documents", "process videos",
-  "analyze this video", "extract key frames", "run the converter", "build
-  survey", "what do the specs say", "summarize the RFP", "saturate the
-  knowledge base", "run another analysis round", or needs authoritative
-  current knowledge from the web or from a raw-file corpus. Can write
-  findings to a persistent playbook file.
-
+  Unified deep-research engine over BOTH the web and local raw sources. INGESTION: converts documents
+  (PDF, DOCX, PPTX, XLSX), draw.io diagrams, and video (MP4, MKV, AVI, MOV) into an AI-readable corpus via
+  Docling (MarkItDown fallback), WEBP sliding-window images, and Gemini video understanding through
+  OpenRouter (VTT transcript, visual+audio analysis, smart cadres, auto-chaptering). RESEARCH:
+  temporal-aware multi-angle web search with source tiering (T1-T4), tier-weighted conflict resolution,
+  high-stakes escalation for medical/legal/financial topics, sub-agent fan-out, and gap-driven saturation
+  rounds. SURVEY: builds a knowledge base with source traceability, gap and contradiction catalogue, and
+  clarification questions. Use when the user says "research this", "verify this", "deep dive", "systematic
+  review", "convert documents", "ingest documents", "process videos", "build survey",
+  "what do the specs say", or needs authoritative current knowledge from the web or a
+  raw-file corpus.
 argument-hint: "<topic> [--file deep_research.md]"
 allowed-tools: WebSearch, WebFetch, Read, Write, Edit, Grep, Glob, Bash, Task, AskUserQuestion
 metadata:

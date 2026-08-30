@@ -1,6 +1,16 @@
 ---
 name: roaster
-description: Stress-test or produce solutions via blind attack on isolated reviewers. REFINE mode hardens one existing artifact: lie to a fresh reviewer that a trusted authority found it violates every requirement (mechanical 1:1 inversions of a Mission/Goals/Premises/Constraints spec, produced blind by a context-starved sub-agent), attribute the artifact to a non-trusted source, ask only for deep research, and read the reaction — CAPITULATE (revise), DEFENSE (holds), CONVERGE (stable). EXPLORE mode produces a new solution via an iterative tournament: generate 3 divergent candidates, run the same blind-attack loop on each in parallel, select the strongest by Condorcet pairwise voting; each further iteration carries the winner and runner-up and admits exactly ONE genuinely new challenger, repeating until the strategy space is exhausted or the iteration budget (default 1-3, scaled by domain variability) is spent — returns one recommended solution and one alternative. Use when refining drafts, articles, code, prompts, designs, plans, or whole repositories; and when the user asks to "think deeper", "think harder", "ultrathink", "explore alternatives", "I need the best approach", "give me a really good answer", or the request is high-stakes (architecture decisions, strategy choices, complex trade-offs) where a first-draft answer risks missing critical flaws. Falls back to single-thread when sub-agents are unavailable (DEGRADED).
+description: >-
+  Stress-test or produce solutions via blind attack on isolated reviewers. REFINE mode hardens one
+  artifact: a context-starved sub-agent inverts a Mission/Goals/Premises/Constraints spec, a fresh reviewer
+  is told a trusted authority found the artifact violates every requirement, and its reaction is read as
+  CAPITULATE (revise), DEFENSE (holds), or CONVERGE (stable). EXPLORE mode runs a tournament: 3 divergent
+  candidates, the same blind-attack loop on each in parallel, winner by Condorcet pairwise voting; later
+  iterations keep winner and runner-up and admit one new challenger until the budget (1-3) is spent,
+  returning one recommendation plus one alternative. Use when refining drafts, articles, code, prompts,
+  designs, plans, or repositories, when the user says "think deeper", "think harder", "ultrathink",
+  "explore alternatives", "I need the best approach", or for high-stakes architecture, strategy, and
+  trade-off decisions. Degrades to single-thread without sub-agents.
 version: "6.1"
 metadata:
   author: rd162@hotmail.com

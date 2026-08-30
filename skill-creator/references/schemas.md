@@ -1,10 +1,3 @@
----
-tier: T3
-source_class: llm
-last_updated: 2026-06-26
-description: schemas
----
-
 # JSON Schemas
 
 This document defines the JSON schemas used by skill-creator.
