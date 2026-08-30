@@ -534,6 +534,11 @@ export const ContextSourceMonitorPlugin: Plugin = async ({ directory, worktree, 
     },
 
     dispose: async () => {
+      // Only persist what we actually tracked. An inactive engine holds nothing worth
+      // saving, and writing it anyway would clobber state produced by another process
+      // (the CLI, or a second editor session on the same workspace) with an empty,
+      // stale snapshot on every shutdown.
+      if (!engine.isTracking()) return;
       persist();
     },
   };

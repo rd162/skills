@@ -259,3 +259,52 @@ explain <path>                    provenance of one file
 ```
 Full argument tables and worked examples: `references/cli-reference.md`. The install/update/drift-detection
 mechanism and how to add support for a new tool: `references/installation.md`.
+
+---
+
+## Reconcile in the agent that did the work, as its final step
+
+**Default rule: whichever agent read the sources and wrote the outputs reconciles the map before it
+finishes.** Not a later session, not a dedicated reconciliation pass, not the user.
+
+This is not a stylistic preference. Provenance is a claim about *derivation* — this document says
+what it says because that source said something — and the agent that just did the work knows that
+directly. Every later reader, model or human, is reduced to comparing content and guessing at
+direction, which is exactly what the detectors do and exactly what they cannot do well. Content
+comparison recovers resemblance; only the writer knows causation. **Deferring reconciliation converts
+knowledge into inference, permanently.**
+
+Three rules follow, and they matter more than the general principle:
+
+1. **Confirm only what you wrote yourself.** An edge into a file authored in an earlier session is
+   not yours to confirm however plausible it looks. Confirming it records inference at the confidence
+   reserved for judgment, which is worse than leaving an honest hint. Leave it.
+2. **State how you know, in the note.** "Authored in this session from this guide, all nine page
+   images included" is provenance. "The wording is similar" is a guess wearing provenance's clothes,
+   and the note is the only place that distinction survives.
+3. **Scope the scaffold and protect existing judgments.** Build to a separate map file when a
+   populated map exists — rebuilding from scratch discards other sessions' work.
+
+### When no detector can propose the edge — use `link`
+
+Some deliverables are required to be **self-contained**: they may not carry a path into the
+repository that produced them, and they cite a source-register identifier plus a section title
+instead. For those, the citation mechanism cannot fire — there is no path in the text to match, and
+there never will be.
+
+Measured on a real pair of sibling documents: the one whose sources were two intake documents drew
+**zero** proposed edges, while its sibling drew twelve — and those twelve came from content overlap on
+shared command strings, not from any citation. The zero is not a coverage gap to close later. It is
+structural, and `link` is the only instrument that reaches it.
+
+So the split is:
+
+| Artifact | Cites | Detector proposes? | Provenance recorded by |
+|---|---|---|---|
+| Working notes, research reports, docs | repository-relative paths | **Yes** — settles automatically under tracking | nothing; spot-check the observed section |
+| Self-contained deliverable | register id + locator | **No, structurally** | `link`, by the authoring agent, at authoring time |
+
+**If tracking was off for part of the session, say so and `link` the edges anyway.** Disabling
+tracking is legitimate — during a noisy refactor of the tooling itself, for instance — but it silently
+costs the observed provenance of every write in that window, and no tool recovers it afterwards.
+`link` is the repair, and only the agent that was there can perform it.
