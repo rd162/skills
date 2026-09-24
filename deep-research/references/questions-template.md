@@ -20,11 +20,11 @@ Each question includes a default assumption that enables proposal work to procee
 
 ## Business Questions
 
-| ID  | Question                           | Rationale            | Default Assumption | Answer |
-| --- | ---------------------------------- | -------------------- | ------------------ | ------ |
-| B1  | **{{question}}** {{RFP_reference}} | {{why_this_matters}} | {{what_we_assume}} |        |
-| B2  |                                    |                      |                    |        |
-| B3  |                                    |                      |                    |        |
+| Question                           | Rationale            | Default Assumption | Answer |
+| ---------------------------------- | -------------------- | ------------------ | ------ |
+| **{{question}}** {{RFP_reference}} | {{why_this_matters}} | {{what_we_assume}} |        |
+|                                    |                      |                    |        |
+|                                    |                      |                    |        |
 
 > **Guidance — Business questions typically cover:**
 >
@@ -40,11 +40,11 @@ Each question includes a default assumption that enables proposal work to procee
 
 ## Application Questions
 
-| ID  | Question                           | Rationale            | Default Assumption | Answer |
-| --- | ---------------------------------- | -------------------- | ------------------ | ------ |
-| A1  | **{{question}}** {{RFP_reference}} | {{why_this_matters}} | {{what_we_assume}} |        |
-| A2  |                                    |                      |                    |        |
-| A3  |                                    |                      |                    |        |
+| Question                           | Rationale            | Default Assumption | Answer |
+| ---------------------------------- | -------------------- | ------------------ | ------ |
+| **{{question}}** {{RFP_reference}} | {{why_this_matters}} | {{what_we_assume}} |        |
+|                                    |                      |                    |        |
+|                                    |                      |                    |        |
 
 > **Guidance — Application questions typically cover:**
 >
@@ -61,11 +61,11 @@ Each question includes a default assumption that enables proposal work to procee
 
 ## Technical Questions
 
-| ID  | Question                           | Rationale            | Default Assumption | Answer |
-| --- | ---------------------------------- | -------------------- | ------------------ | ------ |
-| T1  | **{{question}}** {{RFP_reference}} | {{why_this_matters}} | {{what_we_assume}} |        |
-| T2  |                                    |                      |                    |        |
-| T3  |                                    |                      |                    |        |
+| Question                           | Rationale            | Default Assumption | Answer |
+| ---------------------------------- | -------------------- | ------------------ | ------ |
+| **{{question}}** {{RFP_reference}} | {{why_this_matters}} | {{what_we_assume}} |        |
+|                                    |                      |                    |        |
+|                                    |                      |                    |        |
 
 > **Guidance — Technical questions typically cover:**
 >
@@ -84,10 +84,10 @@ Each question includes a default assumption that enables proposal work to procee
 
 ## Compliance Questions (Include Only If Applicable)
 
-| ID  | Question                           | Rationale            | Default Assumption | Answer |
-| --- | ---------------------------------- | -------------------- | ------------------ | ------ |
-| C1  | **{{question}}** {{RFP_reference}} | {{why_this_matters}} | {{what_we_assume}} |        |
-| C2  |                                    |                      |                    |        |
+| Question                           | Rationale            | Default Assumption | Answer |
+| ---------------------------------- | -------------------- | ------------------ | ------ |
+| **{{question}}** {{RFP_reference}} | {{why_this_matters}} | {{what_we_assume}} |        |
+|                                    |                      |                    |        |
 
 > **Guidance — Compliance questions apply ONLY when the domain requires it:**
 >
@@ -106,9 +106,9 @@ Each question includes a default assumption that enables proposal work to procee
 
 | Priority              | Criteria                                                     | Action                                           |
 | --------------------- | ------------------------------------------------------------ | ------------------------------------------------ |
-| **P1 — Blocking**     | Answer changes scope, architecture, or team composition      | Must resolve before proposal finalization        |
-| **P2 — Important**    | Answer affects effort estimation or risk assessment          | Should resolve; default assumption is reasonable |
-| **P3 — Nice to have** | Answer improves proposal quality but doesn't change approach | Proceed with default; revisit during engagement  |
+| **Blocking**          | Answer changes scope, architecture, or team composition      | Must resolve before proposal finalization        |
+| **Important**         | Answer affects effort estimation or risk assessment          | Should resolve; default assumption is reasonable |
+| **Nice to have**      | Answer improves proposal quality but doesn't change approach | Proceed with default; revisit during engagement  |
 
 ---
 

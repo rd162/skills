@@ -8,7 +8,7 @@
 # Installs (default):
 #   - docling                  (primary markdown converter)
 #   - markitdown               (fallback markdown converter)
-#   - pyvips + Pillow          (WEBP image rendering)
+#   - Pillow                   (WEBP image compositing; rasterization via system pdftoppm)
 #   - python-pptx, python-docx (Office document handling)
 #   - docx2pdf                 (DOCX → PDF via Word/LibreOffice)
 #   - openpyxl                 (Excel handling)
@@ -141,9 +141,13 @@ pip install docling --quiet
 echo "  [2/10] markitdown  (fallback markdown converter)…"
 pip install "markitdown[all]" --quiet
 
-# ── Image processing ──────────────────────────────────────────────────────────
-echo "  [3/10] pyvips…"
-pip install pyvips --quiet
+# ── Image processing (rasterization is system pdftoppm, not pip) ──
+echo "  [3/10] pdftoppm (system poppler — required for PDF → WEBP)…"
+if ! command -v pdftoppm &> /dev/null; then
+  echo "  ⚠  pdftoppm NOT found — PDF → WEBP rendering will fail.";
+  echo "     Install on macOS:   brew install poppler";
+  echo "     Install on Ubuntu:  sudo apt install poppler-utils";
+fi
 
 echo "  [4/10] Pillow…"
 pip install Pillow --quiet
@@ -201,15 +205,15 @@ echo ""
 echo "Checking system dependencies…"
 echo ""
 
-# libvips (required for PDF → WEBP rendering via pyvips)
-if command -v vips &> /dev/null; then
-    echo "✓ libvips: $(vips --version | head -1)"
+# poppler/pdftoppm (required for PDF → PNG rasterization)
+if command -v pdftoppm &> /dev/null; then
+    echo "✓ pdftoppm: found"
 else
-    echo "⚠  libvips NOT found — PDF/DOCX → WEBP rendering will fail."
+    echo "⚠  pdftoppm NOT found — PDF/DOCX → WEBP rendering will fail."
     echo ""
-    echo "   Install on macOS:   brew install vips poppler"
-    echo "   Install on Ubuntu:  sudo apt install libvips-dev poppler-utils"
-    echo "   Install on Fedora:  sudo dnf install vips-devel poppler-utils"
+    echo "   Install on macOS:   brew install poppler"
+    echo "   Install on Ubuntu:  sudo apt install poppler-utils"
+    echo "   Install on Fedora:  sudo dnf install poppler-utils"
     echo ""
 fi
 
@@ -228,11 +232,11 @@ else
     echo ""
 fi
 
-# poppler (pdfinfo — used as an alternative page-count tool)
+# poppler (pdftoppm rasterization + pdfinfo page-count fallback)
 if command -v pdfinfo &> /dev/null; then
-    echo "✓ poppler (pdfinfo): found"
+    echo "✓ poppler (pdftoppm + pdfinfo): found"
 else
-    echo "ℹ  poppler/pdfinfo not found (optional — pyvips handles page counts)"
+    echo "ℹ  poppler not found (pdftoppm renders pages; pdfinfo counts them)"
 fi
 
 # ffmpeg (video compression, chaptering, smart-cadre frame extraction)

@@ -289,27 +289,31 @@ Mission:  [One sentence: terminal purpose of this image. Why does it need to exi
           Example: "Communicate the four-step asymmetric modernization flow to readers
           of an academic engineering journal at a glance."
 
-Goals:
-  G1: [Primary visual/communicative goal — what the image must achieve]
-  G2: [Style goal — what aesthetic register must be achieved]
-  G3: [Text/content accuracy goal — labels, captions, displayed elements]
-  G4: [Mood goal — what emotional register is required]
-  G5: [Composition goal — spatial, density, balance requirements]
-  G6: [Use-case fit — does it work at the target size/context/platform]
-  [Add goals as needed from the brief]
+Goals (named, never numbered — the name is how the quality gate refers to each one):
+  communication: [Primary visual/communicative goal — what the image must achieve]
+  style:         [Style goal — what aesthetic register must be achieved]
+  text accuracy: [Text/content accuracy goal — labels, captions, displayed elements]
+  mood:          [Mood goal — what emotional register is required]
+  composition:   [Composition goal — spatial, density, balance requirements]
+  use-case fit:  [Does it work at the target size/context/platform]
+  [Add goals as needed from the brief, each with a short descriptive name]
 
 Premises:
-  P1: [Assumption about the image generation model's capabilities]
-  P2: [Assumption about how the output will be used]
+  - [Assumption about the image generation model's capabilities]
+  - [Assumption about how the output will be used]
 
-Constraints (hard — violation = regenerate):
-  CH1–CHN: [Rules from the brief whose violation makes the image unusable]
+Hard constraints (violation = regenerate):
+  - [Rules from the brief whose violation makes the image unusable]
   Examples: "no text on image" (for art briefs), "must use brand color X",
   "landscape only", "no human faces", "must be a labelled technical diagram"
 
-Constraints (soft — violation = acceptable but penalised):
-  CS1–CSN: [Preferences from the brief]
+Soft constraints (violation = acceptable but penalised):
+  - [Preferences from the brief]
 ```
+
+Use descriptive names, never handles like `G1`/`P2`/`CH3`. Handles are unstable across
+rewrites and collide with identifiers that already mean something in the surrounding
+work; a name like `text accuracy` states what it governs and survives being quoted.
 
 **Document this shared spec in MASTER's context, then write it to
 `/tmp/img-requirements.txt`** — this file is what Phase 3/4/5 sub-agents
@@ -455,8 +459,10 @@ Spawn 3 isolated sub-agents — one per image. Each sub-agent receives:
 > Then give an overall verdict:
 >
 > - PASS if all requirements are PASS (MINOR allowed on style/composition goals only)
-> - MINOR if one of G2/G4/G5/G6 is MINOR and everything else is PASS
-> - FAIL if any of Mission/G1/G3/CH\* is FAIL, OR if two or more requirements are FAIL
+> - MINOR if exactly one presentation goal (style, mood, composition, use-case fit) is
+>   MINOR and everything else is PASS
+> - FAIL if the Mission, the communication goal, the text-accuracy goal, or any hard
+>   constraint is FAIL, OR if two or more requirements are FAIL
 >
 > Report findings as a structured list. Be specific about WHAT you see in
 > the image that earns each grade — not what you assume the requirements

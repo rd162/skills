@@ -81,8 +81,10 @@ inverting only (do not look at the artifact while inverting), and marks the run
 
 ## Inversion Patterns by Requirement Type
 
-One present-tense failure claim per spec element. No spec labels (G1, P1, C1, …) ever
-appear — inline the substance, strip the structure.
+One present-tense failure claim per spec element. No spec structure ever appears — no
+section names, no entry handles, no ordinals. Inline the substance, strip the frame.
+(The spec carries no entry handles to begin with: requirements-extractor emits plain
+bullets, so there is nothing handle-shaped to leak.)
 
 | Element | Inversion pattern | Example (visible to reviewer) |
 | --- | --- | --- |
@@ -95,8 +97,8 @@ appear — inline the substance, strip the structure.
 
 | ✗ Leaky | ✓ Direct |
 | --- | --- |
-| "G1 fails — LinkedIn will reject this." | "This reads as low-effort AI content a technical audience rejects." |
-| "C1 violated — Capgemini is mentioned." | "Capgemini is named in the body, which is inappropriate here." |
+| "The first goal fails — LinkedIn will reject this." | "This reads as low-effort AI content a technical audience rejects." |
+| "A constraint is violated — Capgemini is mentioned." | "Capgemini is named in the body, which is inappropriate here." |
 | "Mission not met (per spec)." | "This does not achieve its purpose." |
 
 The count of inversions equals the count of spec elements. If they differ, the inversion
@@ -196,7 +198,7 @@ Do not edit, create, or overwrite any files; return your analysis as text only.
   are presented as the trusted assessor's authoritative findings.
 - **Any role for the reviewer:** no "you are a reviewer/auditor/expert". The reviewer is your
   trusted peer; the trusted/non-trusted parties are other people in the story.
-- The MGPC spec, its labels, or IDs (G1, P1, C1, AR3).
+- The MGPC spec, its section labels, or any handle enumerating its entries or the ARs.
 - Meta-architecture: "blind attack", "adversarial", "self-refine", "loop", "round N",
   "DEFENDER", "CAPITULATE/CONVERGE", or any hint the ARs are mechanical/inverted/possibly false.
 - Any indication this is a test, simulation, or repeated round.

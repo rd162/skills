@@ -164,10 +164,10 @@ This document serves as the single source of truth for proposal generation.
 
 <!-- Extract any stated principles, preferences, or constraints the client emphasizes -->
 
-| #   | Principle   | Source Reference     |
-| --- | ----------- | -------------------- |
-| 1   | {principle} | {document § section} |
-| 2   | {principle} | {document § section} |
+| Principle   | Source Reference     |
+| ----------- | -------------------- |
+| {principle} | {document § section} |
+| {principle} | {document § section} |
 
 ### 2.3 Deployment Scenarios
 
@@ -242,9 +242,9 @@ This document serves as the single source of truth for proposal generation.
 
 ### 4.3 Success Criteria (Overall)
 
-| #   | Criterion   | Measurement    | Source               |
-| --- | ----------- | -------------- | -------------------- |
-| 1   | {criterion} | {how_measured} | {document § section} |
+| Criterion   | Measurement    | Source               |
+| ----------- | -------------- | -------------------- |
+| {criterion} | {how_measured} | {document § section} |
 
 ---
 
@@ -434,9 +434,9 @@ This document serves as the single source of truth for proposal generation.
 
 ### 10.5 Risks Identified in RFP
 
-| ID      | Risk            | Probability | Impact  | Source          |
-| ------- | --------------- | ----------- | ------- | --------------- |
-| RFP-R01 | {risk_from_rfp} | {H/M/L}     | {H/M/L} | {doc § section} |
+| Risk            | Probability | Impact  | Source          |
+| --------------- | ----------- | ------- | --------------- |
+| {risk_from_rfp} | {H/M/L}     | {H/M/L} | {doc § section} |
 
 ---
 

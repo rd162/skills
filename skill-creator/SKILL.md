@@ -6,6 +6,7 @@ metadata:
 tier: T3
 source_class: llm
 last_updated: 2026-06-26
+source: https://github.com/anthropics/skills/tree/main/skills/skill-creator
 ---
 # Skill Creator
 
@@ -457,6 +458,27 @@ If you're in Cowork, the main things to know are:
 - Packaging works — `package_skill.py` just needs Python and a filesystem.
 - Description optimization (`run_loop.py` / `run_eval.py`) should work in Cowork just fine since it uses `claude -p` via subprocess, not a browser, but please save it until you've fully finished making the skill and the user agrees it's in good shape.
 - **Updating an existing skill**: The user might be asking you to update an existing skill, not create a new one. Follow the update guidance in the claude.ai section above.
+
+---
+
+## External skill provenance
+
+Whenever you install a skill from an external upstream (official vendor repo, community
+catalog, any source that is not authored in this session), record its origin so it
+can be updated later. This is why provenance exists: upstream skills drift —
+endpoints get removed, guidance changes — and without a recorded source there is
+no way to re-sync.
+
+- Add a top-level `source:` key to the installed SKILL.md frontmatter with the
+  exact upstream URL the files came from (repo + path + branch), e.g.
+  `source: https://github.com/firecrawl/skills/tree/main/skills/core/firecrawl-parse`.
+- Do this automatically at install time — never leave an externally-sourced skill
+  without a `source:` marker.
+- To update an external skill later, re-fetch from its `source:` URL and
+  three-way compare: keep local customizations, take upstream fixes. If upstream
+  deleted a file the local copy still has (e.g. a removed endpoint reference),
+  delete the local file — it documents something that no longer exists.
+- Skills authored locally (no upstream) carry no `source:` key.
 
 ---
 

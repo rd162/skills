@@ -11,8 +11,7 @@ description: troubleshooting
 
 | Issue                                             | Cause                                                              | Solution                                                                            |
 | ------------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| `ModuleNotFoundError: pyvips`                     | Wrong Python interpreter or venv not activated                     | Use direct path: `scripts/.venv/bin/python scripts/doc_converter.py`                |
-| `unable to call pdfload`                          | libvips installed but poppler missing                              | `brew install vips poppler` (macOS) or `sudo apt install libvips-dev poppler-utils` |
+| `pdftoppm` not found                            | poppler not installed                                          | `brew install poppler` (macOS) or `sudo apt install poppler-utils`                  |
 | `soffice` not found                               | LibreOffice not installed                                          | `brew install --cask libreoffice` — `--cask` is required on macOS                   |
 | `brew install libreoffice` gives no `soffice`     | Installed the formula, not the cask                                | `brew uninstall libreoffice && brew install --cask libreoffice`                     |
 | DOCX `images/` directory is empty                 | No DOCX→PDF converter found at runtime                             | Install LibreOffice, then re-run with `--force`                                     |
@@ -27,7 +26,7 @@ description: troubleshooting
 | Slow processing on large batch                    | Normal: docling is ML-based; LibreOffice spawns per file           | Use `--file name.docx` to process specific files; re-runs are incremental           |
 | Script crashes on `.zip` archive                  | Archive contained a `.doc` file                                    | Fixed in current version — update `doc_converter.py`                                |
 | `Python 3.14` crash                               | `BaseException` incompatibility in some deps                       | Fixed in current version; or switch to Python 3.11 via `pyenv`                      |
-| Blank or corrupted WEBP images                    | libvips rendering issue or very low DPI                            | Run `scripts/.venv/bin/python scripts/verify_images.py --verbose` to diagnose       |
+| Blank or corrupted WEBP images                    | pdftoppm rendering issue or very low DPI                         | Run `scripts/.venv/bin/python scripts/verify_images.py --verbose` to diagnose       |
 | `status: failed` entries in `.manifest.json`      | DOCX→PDF conversion failed at runtime                              | Install LibreOffice; re-run `--force` to retry failed files                         |
 | INDEX.md not updated                              | Run was interrupted before final write                             | Re-run converter — INDEX.md is regenerated on every clean exit                      |
 | Fragment directory exists but is empty            | Previous run crashed mid-file                                      | Re-run with `--force` for that specific file                                        |
@@ -90,8 +89,8 @@ Install LibreOffice and re-run to resolve.
 Run this to confirm all critical dependencies are available:
 
 ```text
-# libvips (required for all WEBP)
-python -c "import pyvips; print('pyvips', pyvips.__version__)"
+# poppler/pdftoppm (required for all WEBP rasterization)
+command -v pdftoppm && pdftoppm -v 2>&1 | head -1
 
 # LibreOffice (preferred DOCX→PDF)
 soffice --version

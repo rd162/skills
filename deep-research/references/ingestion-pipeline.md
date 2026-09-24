@@ -153,7 +153,7 @@ running the pipeline.
    (with labels), multi-page diagram names → structured markdown + CLI→WEBP export.
 5. **WEBP sliding-window images** — Office docs converted to PDF via the
    three-strategy chain (LibreOffice → Chrome+mammoth → docx2pdf), then
-   rendered as 3-page overlapping WEBP windows via pyvips.
+   rendered as 3-page overlapping WEBP windows via pdftoppm + Pillow.
    **Never skipped for page-producing formats.**
 6. **Collision-safe fragment naming** — detects files with the same name from
    different subdirectories and automatically prepends the first distinguishing
@@ -254,8 +254,8 @@ Usage: `scripts/.venv/bin/python scripts/video_extract.py`
 ### What `setup_converter.sh` does
 
 - Detects best available Python (prefers 3.11, warns on 3.13+)
-- Creates `.venv/` with docling, markitdown, pyvips, mammoth, requests, and all deps
-- Checks libvips, LibreOffice, Chrome, draw.io, ffmpeg, and `OPENROUTER_API_KEY`;
+- Creates `.venv/` with docling, markitdown, Pillow, PyMuPDF, mammoth, requests, and all deps
+- Checks pdftoppm/poppler, LibreOffice, Chrome, draw.io, ffmpeg, and `OPENROUTER_API_KEY`;
   reports which DOCX→PDF strategy and which video engine will be active
 - Does NOT install the heavy legacy video engines by default (openai-whisper
   pulls in multi-GB torch) — pass `--legacy-video` to add openai-whisper,
@@ -275,7 +275,7 @@ Usage: `scripts/.venv/bin/python scripts/video_extract.py`
 | Dependency             | Required        | macOS                             | Linux                                        |
 | ---------------------- | --------------- | --------------------------------- | -------------------------------------------- |
 | Python 3.10–3.12       | Yes             | `brew install python@3.11`        | `sudo apt install python3.11`                |
-| libvips + poppler      | Yes             | `brew install vips poppler`       | `sudo apt install libvips-dev poppler-utils` |
+| poppler (pdftoppm)    | Yes             | `brew install poppler`            | `sudo apt install poppler-utils`             |
 | **LibreOffice**        | **Recommended** | `brew install --cask libreoffice` | `sudo apt install libreoffice`               |
 | Google Chrome/Chromium | Fallback        | Usually pre-installed             | `sudo apt install chromium-browser`          |
 | draw.io                | Optional        | `brew install --cask drawio`      | [download .deb from jgraph/drawio-desktop]   |
@@ -330,7 +330,7 @@ Option B: bash scripts/setup_converter.sh
 Verify:
 
 ```text
-scripts/.venv/bin/python -c "import pyvips; import docling; import markitdown; import mammoth; import requests; print('OK')"
+command -v pdftoppm && scripts/.venv/bin/python -c "import docling, markitdown, mammoth, requests; from PIL import Image; print('OK')"
 soffice --version
 ```
 
@@ -600,7 +600,7 @@ Both manual and generated subtitles are preserved — they complement each other
 
 ## Graceful degradation
 
-- **Full tooling** (Python 3.10–3.12 + libvips + LibreOffice + `OPENROUTER_API_KEY` + ffmpeg):
+- **Full tooling** (Python 3.10–3.12 + poppler/pdftoppm + LibreOffice + `OPENROUTER_API_KEY` + ffmpeg):
   Complete pipeline — docling markdown + WEBP images + Gemini video
   (VTT + gemini_analysis.md + smart cadres) + change tracking.
 - **docling fails on a document:** markitdown runs automatically as the fallback
@@ -609,8 +609,8 @@ Both manual and generated subtitles are preserved — they complement each other
   DOCX→PDF→WEBP. Good fidelity; DOCX themes not preserved.
 - **No LibreOffice, no Chrome:** docx2pdf (Word via AppleScript on macOS) as last
   resort. May show permission dialogs or time out — unreliable.
-- **Python only, no libvips:** Markdown conversion works; WEBP generation is
-  skipped. Report "WEBP unavailable — install libvips".
+- **Python only, no poppler:** Markdown conversion works; WEBP generation is
+  skipped. Report "WEBP unavailable — install poppler (pdftoppm)".
 - **No OPENROUTER_API_KEY:** Video transcription falls back to local Whisper,
   smart cadres fall back to PySceneDetect — both only if installed
   (`setup_converter.sh --legacy-video`). Existing Gemini artifacts still reused.
@@ -630,7 +630,7 @@ Both manual and generated subtitles are preserved — they complement each other
 | ------------- | -------------------------------------------------------------------- | --------------------------------------------------- |
 | COMPLETE      | All documents processed, INDEX.md exists, manifest shows no failures | ✓ STOP — report fragment inventory                  |
 | PARTIAL       | Some documents processed, others failed                              | ✓ STOP — report successes and failures with actions |
-| NO_DEPS       | Python, libvips, or required libraries unavailable after setup       | Degrade — attempt manual read_file fallback         |
+| NO_DEPS       | Python, poppler/pdftoppm, or required libraries unavailable after setup | Degrade — attempt manual read_file fallback         |
 | VIDEO_PARTIAL | No OPENROUTER_API_KEY and legacy engines missing — video partially processed | Degrade — report which video outputs are available  |
 | BLOCKED       | No `data/intake/` directory and user cannot provide documents     | Ask user to place documents in `data/intake/`    |
 
@@ -641,16 +641,15 @@ Both manual and generated subtitles are preserved — they complement each other
 | Approach                                             | Why it fails                                                                                                                                                                                                                                                                                           |
 | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `PyMuPDF` DOCX→PDF                                   | Silently drops all embedded images — diagram pages render blank in WEBP output                                                                                                                                                                                                                         |
-| `pyvips` direct DOCX                                 | pyvips has no DOCX loader: "not a known file format" — PDF is always required                                                                                                                                                                                                                          |
+| Opening DOCX directly in an image renderer        | Neither pdftoppm nor pyvips has a DOCX loader: "not a known file format" — PDF is always required                                                                                                                                                          |
 | Skipping WEBP for Office docs                        | Architecture diagrams and visual tables are only readable via LLM vision on WEBP                                                                                                                                                                                                                       |
 | `brew install libreoffice` (no `--cask`)             | Installs the formula, not the app — `soffice` is never linked                                                                                                                                                                                                                                          |
 | `docx2pdf` as primary strategy                       | Word AppleScript is unreliable: permission dialogs, 2-min timeouts, silent drops                                                                                                                                                                                                                       |
-| Assuming `pyvips.Image.pdfload` works                | libvips ships pdfload as a **dynamic module** (vips-poppler.dylib) that may not load at runtime even when `vips --vips-config` says "true". Always probe with `_pdfload_available()` and fall back to `pdftoppm`. The silent failure mode is an empty `AttributeError` with no message — easy to miss. |
+| Reintroducing pyvips/VIPS for PDF rendering        | VIPS was removed deliberately: its pdfload is a dynamic module (vips-poppler.dylib) that segfaults on macOS and needs ctypes pre-loading hacks. pdftoppm (poppler) renders directly with no middleman layer. Do not add the dependency back. |
 | `os.walk(data/intake)` without `followlinks=True` | `data/intake/` entries are symlinks — walk stops at the symlink, finds zero files. Always use the converter script or pass `followlinks=True` / `find -L` explicitly.                                                                                                                               |
 | Ad-hoc manifest cross-check via custom scan          | Writing a custom file scanner to check what's in the manifest bypasses the converter's symlink handling. Run `doc_converter.py` (dry-run or normal) to get an authoritative view.                                                                                                                      |
 | Trusting archive ingestion to be complete            | Only supported member types are converted — a ZIP's `.j2`/`.txt`/config members are silently skipped and may be the most valuable content. Audit `unzip -l` against the manifest.                                                                                                                      |
 | Whisper `large` model on CPU                         | Extremely slow (~6h for 30-min video on ARM Mac). Use `tiny` or `base` for CPU; reserve `large` for GPU.                                                                                                                                                                                               |
-| Eager vips module loading with Whisper               | Loading vips modules at import time interferes with PyTorch/Whisper on ARM Macs. Use lazy init pattern.                                                                                                                                                                                                |
 | Trusting sparse cadre samples for video conclusions  | Cadres cluster unevenly; a 10-frame sample concluded "static screen, total mismatch" on a video whose screen switched 8+ times. Verify any surprising cadre-based conclusion with a native `video_analyzer.py` pass before reporting it. See `video-analysis.md`.                                       |
 | Sub-agents re-summarizing `video_analyzer.py` output | The output is already a targeted AI inference; a second summarization layer loses precision (confirmed: smoothed over a real source ambiguity). Sub-agents run the command and report the path — the dispatcher reads the raw markdown.                                                                 |
 | Overwriting `gemini_analysis*.md` to "redo" a pass   | Each pass is a paid, durable, independently-citable artifact. Use topic-qualified filenames for new questions; `--overwrite` only when the approach itself changed.                                                                                                                                     |
@@ -668,7 +667,7 @@ analysis: `troubleshooting.md`. Most common fix for empty `images/` directories:
 | --------------------------- | --------------------------------------- | --------------------------------------------- |
 | Markdown conversion (default) | Python 3.10–3.12 + docling            | markitdown fallback (per-document, automatic) |
 | Markdown fallback           | markitdown                              | No markdown when docling also fails           |
-| WEBP from PDF               | libvips + poppler                       | No WEBP — install libvips                     |
+| WEBP from PDF               | poppler (pdftoppm) + Pillow             | No WEBP — install poppler                     |
 | WEBP from DOCX/PPTX         | LibreOffice (preferred) or Chrome       | No WEBP for Office docs — install LibreOffice |
 | DOCX themes / cover pages   | LibreOffice                             | Themes lost with Chrome fallback              |
 | Legacy `.doc` / `.ppt`      | LibreOffice                             | Skipped without LibreOffice                   |
@@ -681,7 +680,7 @@ analysis: `troubleshooting.md`. Most common fix for empty `images/` directories:
 | Long-video chaptering       | ffmpeg + ffprobe                        | Single-pass with compression (attention may degrade late in video) |
 | Incremental resume on crash | doc_converter.py v1.4+                  | Full restart on interruption (old versions)   |
 | Any AI assistant            | —                                       | Works with Claude Code, Cursor, Copilot, etc. |
-| Any OS                      | libvips available                       | macOS + Linux native; Windows needs WSL       |
+| Any OS                      | poppler available                       | macOS + Linux native; Windows needs WSL       |
 
 ---
 

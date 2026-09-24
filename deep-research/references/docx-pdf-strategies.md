@@ -9,8 +9,8 @@ description: docx pdf strategies
 
 ## Why PDF is Required
 
-pyvips cannot open Office formats directly.
-Running `pyvips.Image.new_from_file("doc.docx")` raises "not a known file format".
+No image renderer opens Office formats directly — neither pdftoppm nor
+VIPS/pyvips can read DOCX (pyvips raises "not a known file format").
 PDF is always the mandatory intermediate for WEBP rendering.
 
 The converter in `doc_converter.py` tries three strategies in priority order,
@@ -127,6 +127,6 @@ These approaches must NOT be used in the DOCX→PDF→WEBP pipeline:
 | Approach                                  | Why it fails                                                                                                                                                                                      |
 | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `PyMuPDF` (`fitz`) DOCX open              | Opens DOCX and produces a PDF, but **silently drops all embedded images**. Diagram and chart pages render completely blank in the WEBP output. Text is preserved but images are lost.             |
-| `pyvips.Image.new_from_file("file.docx")` | pyvips raises "not a known file format" — it has no DOCX loader. PDF is always required as the intermediate format; there is no way to bypass this.                                               |
+| Opening DOCX directly in an image renderer | Neither pdftoppm nor pyvips has a DOCX loader ("not a known file format"). PDF is always required as the intermediate format; there is no way to bypass this. |
 | Skipping WEBP for DOCX/PPTX               | WEBP images are mandatory. Architecture diagrams, process flows, tables, and cover pages are only accessible for LLM vision analysis via WEBP. Empty `images/` directories mean information loss. |
 | Relying solely on docx2pdf                | Word's AppleScript interface is fragile on macOS: permission prompts, Protected View dialogs, and 2-minute timeouts make it unreliable for automation. Always prefer LibreOffice.                 |

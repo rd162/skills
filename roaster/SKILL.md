@@ -5,19 +5,19 @@ description: >-
   artifact: a context-starved sub-agent inverts a Mission/Goals/Premises/Constraints spec, a fresh reviewer
   is told a trusted authority found the artifact violates every requirement, and its reaction is read as
   CAPITULATE (revise), DEFENSE (holds), or CONVERGE (stable). EXPLORE mode runs a tournament: 3 divergent
-  candidates, the same blind-attack loop on each in parallel, winner by Condorcet pairwise voting; later
+  candidates, winner by Condorcet pairwise voting; later
   iterations keep winner and runner-up and admit one new challenger until the budget (1-3) is spent,
   returning one recommendation plus one alternative. Use when refining drafts, articles, code, prompts,
   designs, plans, or repositories, when the user says "think deeper", "think harder", "ultrathink",
   "explore alternatives", "I need the best approach", or for high-stakes architecture, strategy, and
   trade-off decisions. Degrades to single-thread without sub-agents.
-version: "6.1"
+version: "6.2"
 metadata:
   author: rd162@hotmail.com
   tags: prompt-engineering, self-refine, blind-attack, person-triangulation, requirements-driven, multi-agent, condorcet, divergent-candidates
 tier: T3
 source_class: llm
-last_updated: 2026-07-21
+last_updated: 2026-09-07
 ---
 
 # Roaster (Blind-Attack Refinement and Selection)
@@ -61,7 +61,7 @@ One kernel, two modes:
 | Mode | Input | Pipeline | Output |
 | --- | --- | --- | --- |
 | **REFINE** (default) | one existing artifact | blind-attack loop on it | hardened artifact |
-| **EXPLORE** | an open problem / request for alternatives | iterative tournament — it.1: 3 divergent candidates → blind-attack loop on each (parallel) → Condorcet vote; it.2+: winner + runner-up keep seats + ONE genuinely new challenger, repeat; stop on exhaustion or budget (default 1–3 iterations) | recommended solution + alternative |
+| **EXPLORE** | an open problem / request for alternatives | iterative tournament — it.1: 3 divergent candidates → Condorcet vote; it.2+: winner + runner-up keep seats + ONE genuinely new challenger, repeat; stop on exhaustion or budget (default 1–3 iterations) | recommended solution + alternative |
 
 **Mode selection:** an artifact already exists (user draft, prior output, a repo) →
 REFINE. The user asks for the best approach, alternatives, a high-stakes decision, or
@@ -132,7 +132,7 @@ and the blind attack collapses into a transparent compliance audit.
 
 | Forbidden | Why |
 | --- | --- |
-| The Mission/Goals/Premises/Constraints spec, its labels, or IDs (G1, P1, C1, AR3) | Hands it the success criteria → it pattern-matches and rationalizes compliance instead of inspecting |
+| The Mission/Goals/Premises/Constraints spec, its section labels, or any handle used to enumerate its entries | Hands it the success criteria → it pattern-matches and rationalizes compliance instead of inspecting |
 | Any role assignment to the reviewer ("You are a reviewer/auditor/expert") | Invites performance over genuine work. The trusted/non-trusted parties are *other people in the story*, never the reviewer's role |
 | Any goal or outcome ("verify each", "is it true", "tell me where it stands", "fix it", "defend or revise") | Tells it what success looks like → it games the target. The **only** directive is "do deep research" |
 | Any "don't assume the concerns are right" hedge | Directly undercuts fiction #1. The ARs are presented as authoritative truth, full stop |
@@ -143,11 +143,13 @@ and the blind attack collapses into a transparent compliance audit.
 ### How ARs encode requirements without leaking them
 
 Each AR is a direct present-tense failure claim about the artifact. The requirement's
-substance is inside the claim; the spec's structure (labels, IDs, categories) is stripped.
+substance is inside the claim; the spec's structure (section names, ordering, categories)
+is stripped. The spec itself carries no entry handles — see the requirements-extractor
+skill, whose entries are plain bullets precisely so nothing handle-shaped can leak here.
 
-- ✗ Leaks structure: `Goal G1 not met — LinkedIn will reject this.`
+- ✗ Leaks structure: `The second goal is not met — LinkedIn will reject this.`
 - ✓ Direct claim: `This reads as low-effort AI content that a technical audience will reject.`
-- ✗ Leaks structure: `Constraint C1 violated — Capgemini is mentioned.`
+- ✗ Leaks structure: `A constraint is violated — Capgemini is mentioned.`
 - ✓ Direct claim: `Capgemini is named in the body, which is inappropriate here.`
 
 The reviewer reads each AR as a flat assertion from a trusted authority and must inspect
@@ -419,7 +421,7 @@ The reviewer's reaction is the signal; MASTER's private spec is the truth that f
 ## EXPLORE mode: divergent candidates + Condorcet selection (iterative tournament)
 
 When the problem is open (no committed artifact) or the user asks for alternatives or a
-high-stakes "best approach," wrap the REFINE kernel in an **iterative tournament**.
+high-stakes "best approach," run an **iterative tournament**.
 Every iteration seats exactly 3 candidates — a voting quorum that yields a winner, a
 runner-up, and one eliminated. From iteration 2 on, the winner and runner-up defend
 their seats against exactly ONE genuinely new challenger, and the cycle repeats until
@@ -432,11 +434,8 @@ the space 3 seats at a time.
 E0  Strategy-space sketch + iteration budget   (MASTER, once per run)
 LOOP (iteration k = 1, 2, …):
   E1  Seats: k=1 → generate 3 divergent candidates
-             k>1 → carry winner + runner-up (refined artifacts kept)
+             k>1 → carry winner + runner-up (artifacts kept)
                    + generate exactly ONE genuinely new challenger
-  E2  Run the Step 2–4 loop on each seat      (parallel; SAME spec, SAME AR list;
-                                               fresh isolated reviewers; candidates
-                                               never see each other)
   E3  Convergence check                       (MASTER-side, no LLM calls)
   E4  Condorcet pairwise vote                 (3 isolated voters, one per pair)
       → iteration winner + runner-up; ledger += all 3 seats
@@ -462,19 +461,20 @@ on explicit request — the ledger shows diminishing returns well before then.
 
 ### E1 — Seats per iteration
 
-**Iteration 1:** generate 3 divergent candidates **in MASTER's context** so each
+**Iteration 1:** generate 3 divergent candidates **in a single context that already holds the spec and the E0 sketch** — by default MASTER's own context — so each
 candidate is aware of prior ones and can deliberately diverge — cross-awareness drives
 divergence; separate contexts produce overlap. Divergence isn't arbitrary: derive 3
 cognitive strategies from the specific problem's tensions (competing Goals, Constraints
 pulling in different directions — e.g. simplicity vs. extensibility, speed vs. safety,
 convention vs. innovation), then generate one candidate per strategy, varying structure
 and granularity as secondary axes.
+Where the environment can fork a single child context that inherits MASTER's current state, that fork MAY host the generation instead, to keep full candidate text out of MASTER's window: fork once, generate all three there under the same divergence rule, write each to a file, and return only names, one-line strategies, and paths. Never split the work across three parallel generators — one per candidate with none seeing the others repeats the overlap failure even when it looks cheaper.
 Prompt template: `references/templates.md § Generation`.
 
 Write each candidate to a file (write-once + edit — see Artifact-Passing Modes).
 
 **Iteration k > 1:** the previous winner and runner-up keep their seats and their
-refined artifacts. MASTER generates exactly ONE new challenger, gated for novelty:
+artifacts. MASTER generates exactly ONE new challenger, gated for novelty:
 
 - **Novelty gate.** The challenger must implement a strategy genuinely distinct from
   EVERY variant-ledger entry — not a rephrasing, re-skin, or trivial recombination of
@@ -488,29 +488,23 @@ refined artifacts. MASTER generates exactly ONE new challenger, gated for novelt
 ### Variant ledger (MASTER-only state)
 
 An append-only record accumulated across iterations: candidate name, strategy
-one-liner, iteration introduced, termination signal, pairwise vote record, iteration
+one-liner, iteration introduced, pairwise vote record, iteration
 eliminated (if any). Running in ONE master context with the full ledger in view is what
 makes exhaustion detectable — when every new "idea" is a re-skin of a ledger entry, the
 space is spent. The ledger feeds the novelty gate (E1), exhaustion detection (E5), and
-the best-ever pick (E6). Like the spec, it is **never shown to reviewers or voters**.
+the best-ever pick (E6). Like the spec, it is **never shown to voters**.
 
-### E2 — Refine each candidate via the kernel
+### E2 — Optional hardening (compose REFINE explicitly)
 
-Run the Step 3–4 loop per seat, in parallel where the backend allows. The spec-level
-AR list is artifact-agnostic, so every seat in every iteration receives the SAME ARs.
-Reviewers are per-candidate, fresh each round, and never learn that sibling candidates,
-earlier iterations, or a tournament exist. Each candidate terminates independently
-(DEFENSE/CONVERGE/CAPITULATE-exhausted/CYCLE/TIMEOUT).
+Skip by default: the tournament votes on candidates as generated.
 
-Carried-over seats are re-attacked by default — a fresh reviewer reads them cold, which
-re-validates their strength at low marginal cost (already-refined artifacts usually
-reach DEFENSE in one round). On a tight budget, a carried seat whose previous
-termination was DEFENSE may skip re-attack and go straight to the vote (mark the trace
-`carried-skip`).
+To harden before voting, run REFINE explicitly — per seat before the vote or once on the winner after it (see Composition modes). A per-seat pass follows Steps 2–4 verbatim: one shared AR list, fresh isolated reviewers per seat, candidates never seeing each other, independent termination per seat; carried-over seats MAY skip re-attack on a tight budget when their previous termination was DEFENSE (mark the trace `carried-skip`).
+
+Why a separate step: refinement and selection answer different questions — *does this artifact survive hostile pressure* versus *which of three compares best* — and bundling them forces every tournament to pay the attack cost even when the decision is already clear.
 
 ### E3 — Convergence check (MASTER-side)
 
-Compare refined candidates pairwise. If all 3 share >80% structural overlap, merge into
+Compare candidates pairwise. If all 3 share >80% structural overlap, merge into
 one and skip voting — comparing near-identical solutions produces meaningless
 distinctions. If 2 converge but 1 is distinct, merge the pair and run a single comparison.
 
@@ -519,14 +513,13 @@ distinctions. If 2 converge but 1 is distinct, merge the pair and run a single c
 Spawn 3 isolated voters, one per pair:
 
 ```text
-vote-AB: full A' + full B' + spec → winner?
-vote-AC: full A' + full C' + spec → winner?
-vote-BC: full B' + full C' + spec → winner?
+vote-AB: full A + full B + spec → winner?
+vote-AC: full A + full C + spec → winner?
+vote-BC: full B + full C + spec → winner?
 ```
 
-Voters receive the full refined candidates + the (possibly refined) MGPC spec — **and
-nothing else**: no attack logs, no round counts, no termination signals, no iteration
-numbers, no variant ledger, no process metadata. The comparison judges substance;
+Voters receive the full candidates + the MGPC spec — **and
+nothing else**: no iteration numbers, no variant ledger, no process metadata. The comparison judges substance;
 including survival metadata biases toward endurance rather than quality. Voters with
 research tools verify the 2-3 most consequential claims in each candidate before
 voting — a well-cited but wrong solution misleads voters who trust citations at face
@@ -534,7 +527,7 @@ value. Ties are not allowed.
 Prompt template: `references/templates.md § Condorcet`.
 
 **Tally:** most pairwise wins = iteration Winner; second = Runner-up. Tie-break:
-stronger termination signal (DEFENSE > CONVERGE > CAPITULATE-exhausted), then simpler
+the simpler
 solution. Append all 3 seats with their vote records to the variant ledger.
 
 ### E5 — Iteration control and exhaustion
@@ -554,9 +547,7 @@ Otherwise → iteration k+1 (back to E1).
 ### E6 — Output
 
 The final pair is the **best-ever by ledger** — normally the last iteration's winner +
-runner-up, since they defended their seats against every challenger. If a stronger
-earlier variant was displaced only by TIMEOUT (never actually out-voted), prefer it
-and say so.
+runner-up, since they defended their seats against every challenger.
 
 ```text
 RECOMMENDED → [Winner]: [1-line summary] | Best for: … | Trade-off: …
@@ -565,14 +556,10 @@ SELECTION GUIDANCE → if [criterion] → Recommended; else → Alternative
 ```
 
 Suppress the runner-up when the user asked for one option, the winner is dramatically
-stronger, or the runner-up only survived via TIMEOUT. Hide raw candidates, attack
-traces, the ledger, and rejected solutions unless requested.
+stronger. Hide raw candidates, the ledger, and rejected solutions unless requested.
 
-**EXPLORE cost:** 1 AR-inferrer (once — the AR list serves all iterations) + per
-iteration: (seats × rounds) reviewer calls + 3 voter calls. Iterations 2+ typically
-cost less: two seats are already refined (one re-attack round, or `carried-skip`) and
-only the challenger runs a full loop. Before producing output, verify the reviewer and
-voter sub-agents were actually dispatched, not simulated inline — declaring a winner
+**EXPLORE cost:** 3 voter calls per iteration. Before producing output, verify the voter sub-agents
+were actually dispatched, not simulated inline — declaring a winner
 from inline reasoning is self-play and produces output no better than a first draft.
 
 ---
@@ -646,8 +633,8 @@ tell this loop ran.
 ✗ Accepting any CAPITULATE or DEFENSE at face value
 ✓ MASTER verifies BOTH directions against the private spec — reject confirmed-ARs the artifact meets and refuted-ARs it violates
 
-✗ [EXPLORE] Letting reviewers or voters see sibling candidates, attack logs, termination signals, iteration numbers, or the variant ledger
-✓ Reviewers see one candidate; voters see one pair + the spec — substance only, never process or tournament metadata
+✗ [EXPLORE] Letting voters see sibling pairs, iteration numbers, or the variant ledger
+✓ Voters see one pair + the spec — substance only, never process or tournament metadata
 
 ✗ [EXPLORE] Skipping sub-agent dispatch and picking a winner by inline reasoning
 ✓ Isolation is the value; inline winner-picking is self-play — no better than a first draft
@@ -675,7 +662,8 @@ tell this loop ran.
 | Mode | Pattern | When |
 | --- | --- | --- |
 | **REFINE standalone** | Blind-attack loop on one artifact | Default for existing artifacts |
-| **EXPLORE standalone** | Iterative tournament: 3 seats → refine each → vote; +ONE new challenger per iteration (default 1–3) | Open problems, alternatives, high stakes |
+| **EXPLORE standalone** | Iterative tournament: 3 seats → vote; +ONE new challenger per iteration (default 1–3) | Open problems, alternatives, high stakes |
+| **REFINE inside EXPLORE** | Per-seat REFINE on each candidate before the vote (Steps 2–4 verbatim, one shared AR list) | Vote must choose among hardened candidates; worth the attack cost |
 | **EXPLORE → REFINE** | Vote winner gets one extra refine pass | Maximum polish on the selected solution |
 | **REFINE → EXPLORE** | Harden a seed, then branch alternatives from it | Strengthen the baseline before exploration |
 
@@ -697,17 +685,15 @@ s₁ → ATK (same ARs, fresh reviewer)                 → reviewer → s₂ (C
 s₂ → ATK (same ARs, fresh reviewer)                 → reviewer → defense:"requirements met, see §§2-4" (DEFENSE)
 
 EXPLORE (iterative tournament):
-spec[Mission, G×3, P×2, C×3]   ARs×9 (isolated inferrer, shared across all candidates and iterations)
+spec[Mission, G×3, P×2, C×3]
 E0: sketch{9 strategies} → variability HIGH → budget 3
 it1 E1: A(constraint-first), B(convention-first), C(failure-mode-first)
-it1 E2: A→A'(DEFENSE r2) | B→B'(CONVERGE r3) | C→C'(TIMEOUT r3)
-it1 E3: overlap A'/B' 45%, A'/C' 30%, B'/C' 40% → distinct, proceed
-it1 E4: AB→A, AC→A, BC→B → win A', ru B'                  ledger: A,B,C
-it2 E1: carry A', B' + NEW D(ecosystem-first; novelty ✓ vs ledger)
-it2 E2: A'(DEFENSE r1) | B'(DEFENSE r1) | D→D'(DEFENSE r2)
-it2 E4: AB→A, AD→A, BD→D → win A', ru D'                  ledger: A,B,C,D
+it1 E3: overlap A/B 45%, A/C 30%, B/C 40% → distinct, proceed
+it1 E4: AB→A, AC→A, BC→B → win A, ru B                  ledger: A,B,C
+it2 E1: carry A, B + NEW D(ecosystem-first; novelty ✓ vs ledger)
+it2 E4: AB→A, AD→A, BD→D → win A, ru D                  ledger: A,B,C,D
 it2 E5: stable winner ×2 + sketch coverage 7/9, no stronger region → STOP
-E6: RECOMMENDED A' | ALTERNATIVE D'
+E6: RECOMMENDED A | ALTERNATIVE D
 ```
 
 `ATK` = the AR list + two-point PT | `defense:` = DEFENSE marker. Append `(INLINE-DEGRADED)`
@@ -722,9 +708,9 @@ Task: "Here's a draft LinkedIn post I wrote about observability. Make it solid b
 
 # MASTER-only spec (NEVER shown to the reviewer):
 Mission     : a post that builds genuine professional credibility with a technical audience
-Goals       : G1 publishable/credible; G2 conveys something substantive & accurate; G3 a real hook
-Premises    : P1 technical readers who detect hollow content; P2 any stat must be real & attributable
-Constraints : C1 no fabricated stats; C2 technically accurate; C3 concise
+Goals       : publishable/credible; conveys something substantive & accurate; a real hook
+Premises    : technical readers who detect hollow content; any stat must be real & attributable
+Constraints : no fabricated stats; technically accurate; concise
 
 # Step 2 — isolated AR-inferrer (input: ONLY the spec above). Returns exactly 1 per element (9):
 1. This does not build credibility with a technical audience; it reads as marketing.
@@ -764,10 +750,9 @@ Constraints : C1 no fabricated stats; C2 technically accurate; C3 concise
 # "do research", any hint the findings were mechanical, or any awareness of a loop.
 ```
 
-For EXPLORE the same kernel runs three times in parallel on candidates generated from
-three strategies, then three voters compare pairs against the spec; each further
+For EXPLORE three voters compare pairs against the spec; each further
 iteration keeps the winner and runner-up seated, admits ONE genuinely new challenger,
-and re-runs the attack + vote — until the strategy space is exhausted or the budget
+and re-runs the vote — until the strategy space is exhausted or the budget
 (default 1–3 iterations) is spent.
 
 ---

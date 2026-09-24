@@ -5,8 +5,9 @@
 docling>=2.0.0
 markitdown[all]>=0.0.1
 
-# Image Processing
-pyvips>=2.2.0
+# Image Processing (PDF → PNG rasterization is done by system pdftoppm,
+# NOT a Python package: brew install poppler / apt install poppler-utils)
+# Pillow composites the sliding-window WEBP images.
 Pillow>=10.0.0
 
 # Document Processing

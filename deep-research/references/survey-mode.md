@@ -233,24 +233,28 @@ Load `references/questions-template.md`. Copy to
 
 | Column | Requirement |
 | ------ | ----------- |
-| ID | Category letter + number (B1, A1, T1, C1) |
 | Question | Specific, references source section |
 | Rationale | Why the answer matters |
 | Default Assumption | Actionable — NEVER "TBD" or "unknown" |
 
 ### Categories
 
-- **B (Business):** ownership, licensing, support, commercial
-- **A (Application):** functional scope, journeys, data, integrations
-- **T (Technical):** infrastructure, APIs, SDKs, protocols, environments
-- **C (Compliance):** ONLY if domain requires it
+Group questions under these headings. Do not mint per-question handles (`B1`, `T1`,
+`C1`): a question is identified by its own wording, and letter+number handles collide
+with identifiers that already mean something — `T1` is this skill's own source tier, and
+engineering domains are full of live `C1`/`P1` gate and priority labels.
+
+- **Business:** ownership, licensing, support, commercial
+- **Application:** functional scope, journeys, data, integrations
+- **Technical:** infrastructure, APIs, SDKs, protocols, environments
+- **Compliance:** ONLY if domain requires it
 
 ### Quality Rules
 
 - Target 15–25 questions total
 - Every question references a specific source section
 - No duplicates across categories
-- Order by priority within each: P1 (Blocking), P2 (Important), P3 (Nice)
+- Order by priority within each: Blocking, then Important, then Nice to have
 - Omit Compliance section if no compliance questions apply
 
 ### Default Assumption Strategy

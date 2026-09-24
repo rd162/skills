@@ -6,7 +6,7 @@ Converts documents (PDF, Word, PPT, Excel, draw.io diagrams, video) to:
 1. Markdown using docling (default single converter; markitdown runs ONLY as a
    fallback when docling fails or produces empty output — pass --dual-convert
    to restore the legacy both-converters behavior)
-2. WEBP images using pyvips (3-page sliding window for LLM vision processing)
+2. WEBP images using pdftoppm + Pillow (3-page sliding window for LLM vision processing)
 3. draw.io diagrams: XML-parsed markdown + CLI-exported WEBP images
 4. Video files — Gemini-native pipeline (default since 2026-07-22):
    - VTT transcript via Gemini (OpenRouter native video+audio understanding)
@@ -70,73 +70,6 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
-
-# ---------------------------------------------------------------------------
-# vips dynamic module pre-loader
-# ---------------------------------------------------------------------------
-# On some macOS + libvips 8.18 installations, vips_init() does not call
-# g_module_open for the vips-modules-X.Y directory, so dynamic modules such
-# as vips-poppler (pdfload), vips-heif, vips-jxl are never registered.
-# This function uses GLib's g_module_open directly — the same mechanism
-# vips_init() is supposed to use — before pyvips is imported, so that by the
-# time pyvips calls vips_init() the GObject types are already registered.
-# It is a no-op when modules load correctly (fast path via _pdfload_available).
-
-
-def _ensure_vips_modules_loaded() -> None:
-    """Pre-load libvips dynamic modules via g_module_open if they are missing."""
-    import ctypes
-    import ctypes.util
-    import glob as _glob
-    import os
-
-    # Locate libgmodule (GLib module system)
-    gmodule_path = ctypes.util.find_library("gmodule-2.0")
-    if not gmodule_path:
-        # Common Homebrew location
-        gmodule_path = "/opt/homebrew/opt/glib/lib/libgmodule-2.0.0.dylib"
-    if not os.path.exists(gmodule_path or ""):
-        return  # Can't find gmodule — skip silently
-
-    try:
-        gmodule = ctypes.cdll.LoadLibrary(gmodule_path)
-        gmodule.g_module_open.restype = ctypes.c_void_p
-        gmodule.g_module_open.argtypes = [ctypes.c_char_p, ctypes.c_int]
-        gmodule.g_module_make_resident.argtypes = [ctypes.c_void_p]
-    except Exception:
-        return
-
-    # Find the vips-modules directory (works for Homebrew and standard installs)
-    candidates = [
-        "/opt/homebrew/lib/vips-modules-*",
-        "/usr/local/lib/vips-modules-*",
-        "/usr/lib/vips-modules-*",
-    ]
-    module_dirs = []
-    for pattern in candidates:
-        module_dirs.extend(sorted(_glob.glob(pattern), reverse=True))  # newest first
-
-    loaded = 0
-    for module_dir in module_dirs:
-        for dylib in sorted(Path(module_dir).glob("*.dylib")):
-            handle = gmodule.g_module_open(str(dylib).encode(), 1)  # LAZY=1
-            if handle:
-                gmodule.g_module_make_resident(handle)  # prevent accidental unload
-                loaded += 1
-        if loaded:
-            break  # found a working module dir
-
-
-_vips_modules_loaded = False
-
-
-def _lazy_vips_init():
-    """Load vips modules on first use (not at import time) to avoid
-    interfering with PyTorch/Whisper performance on ARM Macs."""
-    global _vips_modules_loaded
-    if not _vips_modules_loaded:
-        _ensure_vips_modules_loaded()
-        _vips_modules_loaded = True
 
 
 # ---------------------------------------------------------------------------
@@ -931,7 +864,7 @@ def convert_drawio_to_images(
     Convert .drawio to WEBP images.
 
     Strategy:
-      1. draw.io CLI → PDF → pyvips WEBP (best quality)
+      1. draw.io CLI → PDF → pdftoppm WEBP pipeline (best quality)
       2. draw.io CLI → PNG → WEBP (fallback)
       3. No CLI → skip images, rely on XML-parsed markdown
     """
@@ -1054,15 +987,6 @@ def convert_drawio_to_images(
 
 def get_pdf_page_count(filepath: Path) -> int:
     """Return the number of pages in a PDF."""
-    if _pdfload_available():
-        try:
-            _lazy_vips_init()
-            import pyvips
-
-            img = pyvips.Image.pdfload(str(filepath), n=1)
-            return img.get("n-pages")
-        except Exception:
-            pass
     try:
         import fitz
 
@@ -1451,14 +1375,8 @@ def convert_pptx_to_images_fallback(
 
 
 # ---------------------------------------------------------------------------
-# Core PDF page renderer (pyvips sliding window)
+# Core PDF page renderer (pdftoppm + Pillow sliding window)
 # ---------------------------------------------------------------------------
-
-
-def _pdfload_available() -> bool:
-    """Return True if pyvips has a working pdfload operation."""
-    # Force False to avoid libvips poppler dynamic module segmentation faults on macOS
-    return False
 
 
 def _render_pdf_via_pdftoppm(
@@ -1468,9 +1386,9 @@ def _render_pdf_via_pdftoppm(
     pages_per_image: int = PAGES_PER_IMAGE,
 ) -> List[Path]:
     """
-    Fallback renderer: pdftoppm → PNG files → Pillow WEBP sliding window.
+    Primary renderer: pdftoppm → PNG files → Pillow WEBP sliding window.
 
-    Used when pyvips pdfload (poppler dynamic module) is unavailable.
+    pdftoppm (poppler) renders pages directly — no VIPS middleman layer.
     Requires: pdftoppm (poppler-utils) + Pillow.
     """
     import shutil
@@ -1580,75 +1498,14 @@ def render_pdf_pages_to_images(
     """
     Render PDF pages to WEBP images with a sliding window.
 
-    Strategy:
-      1. pyvips pdfload  — fastest, requires poppler dynamic module loaded in libvips
-      2. pdftoppm + Pillow — reliable fallback when pdfload is unavailable
-         (uses pdftoppm to render pages to PNG, then Pillow for WEBP conversion)
+    Rendered with pdftoppm (poppler) + Pillow — direct rasterization,
+    no VIPS middleman layer (pyvips pdfload segfaults on macOS).
 
-    Window structure (pages_per_image pages stacked horizontally):
+    Window structure (pages_per_image pages stacked vertically):
       Image p001-003: page 1 | page 2 | page 3
       Image p002-004: page 2 | page 3 | page 4
       …
     """
-    # --- Strategy 1: pyvips pdfload (requires poppler dynamic module) ---
-    if _pdfload_available():
-        try:
-            _lazy_vips_init()
-            import pyvips
-        except ImportError:
-            logger.error("  ✗ pyvips not installed: pip install pyvips")
-            return []
-
-        created: List[Path] = []
-        try:
-            total_pages = get_pdf_page_count(pdf_path)
-            logger.info(f"  PDF has {total_pages} page(s)")
-
-            if total_pages <= 0:
-                logger.warning(f"  ⚠ No pages found in {pdf_path.name}")
-                return []
-
-            for start_page in range(total_pages):
-                end_page = min(start_page + pages_per_image, total_pages)
-                page_imgs = []
-
-                for page_num in range(start_page, end_page):
-                    page_img = pyvips.Image.pdfload(
-                        str(pdf_path),
-                        page=page_num,
-                        n=1,
-                        dpi=IMAGE_DPI,
-                        background=[255, 255, 255, 255],
-                    )
-                    page_imgs.append(page_img)
-
-                img = (
-                    pyvips.Image.arrayjoin(page_imgs, across=1)
-                    if len(page_imgs) > 1
-                    else page_imgs[0]
-                )
-
-                out_file = (
-                    output_dir
-                    / f"{base_name}_p{start_page + 1:03d}-{end_page:03d}.webp"
-                )
-                img.webpsave(
-                    str(out_file), Q=WEBP_QUALITY, effort=4, smart_subsample=True
-                )
-                created.append(out_file)
-                logger.info(
-                    f"  ✓ Image: pages {start_page + 1}-{end_page} → {out_file.name}"
-                )
-
-                if end_page >= total_pages:
-                    break
-
-            return created
-
-        except Exception as exc:
-            logger.warning(f"  ⚠ pdfload failed ({exc}), falling back to pdftoppm…")
-
-    # --- Strategy 2: pdftoppm + Pillow ---
     logger.info("  Using pdftoppm → PNG → WEBP pipeline…")
     return _render_pdf_via_pdftoppm(pdf_path, output_dir, base_name, pages_per_image)
 
@@ -1666,13 +1523,13 @@ def convert_to_images(
     """
     Convert any supported document to WEBP sliding-window images.
 
-    PDF     → render_pdf_pages_to_images (direct pyvips)
-    DOCX    → (1) LibreOffice→PDF→pyvips
-               (2) docx2pdf→PDF→pyvips
+    PDF     → render_pdf_pages_to_images (pdftoppm + Pillow)
+    DOCX    → (1) LibreOffice→PDF→pdftoppm pipeline
+               (2) docx2pdf→PDF→pdftoppm pipeline
                (3) python-docx native fallback
-    PPTX    → (1) LibreOffice→PDF→pyvips
+    PPTX    → (1) LibreOffice→PDF→pdftoppm pipeline
                (2) python-pptx native fallback
-    Excel   → (1) LibreOffice→PDF→pyvips
+    Excel   → (1) LibreOffice→PDF→pdftoppm pipeline
                (2) no images if LibreOffice unavailable (markdown still generated)
     .drawio → draw.io CLI → PDF/PNG → WEBP
     """

@@ -124,6 +124,13 @@ it's really a Goal; (3) ask "why?" once more — a circular answer confirms the 
 When writing the spec to a file, prepend source-tier frontmatter
 (`tier: T3, source_class: llm` — see the deep-research skill's source-tiering policy).
 
+**Never label the entries.** No `G1`, `P1`, `C1`, no numbered rows, no ID column —
+plain bullets only. Handles look harmless but they enter every downstream context as a
+second namespace competing with the real one: engineering domains are full of live
+`C1`, `P1`, `Q24`, `T1` identifiers meaning something else entirely, and a reader
+cannot tell a spec row from a project gate by shape. Each entry is identified by its
+own wording, which is the thing worth quoting anyway.
+
 ```text
 ## Mission
 
@@ -131,19 +138,17 @@ When writing the spec to a file, prepend source-tier frontmatter
 
 ## Goals
 
-1. [Concrete objective] — [measurable criterion if available]
+- [Concrete objective] — [measurable criterion if available]
 
 ## Premises
 
-| # | Premise | Source | Risk if false |
-|---|---------|--------|---------------|
-| P1 | [assumption] | [where it comes from] | [consequence; flag HIGH RISK] |
+- [assumption]
+  - Source: [stated / inferred from [file/section] / industry standard]
+  - Risk if false: [what breaks; mark HIGH RISK when the Mission itself falls]
 
 ## Constraints
 
-| # | Constraint | Source |
-|---|-----------|--------|
-| C1 | [limit] | [who imposed it] |
+- [limit] — Source: [who or what imposed it]
 
 ## Mission Space
 
@@ -187,7 +192,10 @@ Constraint updates); the Mission is never challenged — it is the fixed point.
 ✓ Mission is ONE sentence — if it needs a list, the "why?" recursion isn't done
 
 ✗ Premises without risk assessment ("Users have internet" — so what?)
-✓ Every Premise states what breaks if false: "P fails → offline-first arch needed"
+✓ Every Premise states what breaks if false: "fails → offline-first arch needed"
+
+✗ Labelling entries ("P1", "C3", "Goal 2") so later work can cite them by handle
+✓ Bullets only — invented handles collide with the domain's own C1/P1/T1 identifiers
 
 ✗ Constraints without source citation ("Must be on-prem" — says who?)
 ✓ Every Constraint cites its source: "On-prem only — Legal (stated)"
