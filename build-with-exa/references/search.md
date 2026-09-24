@@ -9,6 +9,7 @@ Primary semantic retrieval surface for new Exa integrations via `POST /search`.
 - Search coding-agent reference: `/reference/search-api-guide-for-coding-agents`
 - Search best practices: `/reference/search-best-practices`
 - Content freshness: `/reference/livecrawling-contents`
+- Exa Snapshot: `/search/snapshot`
 
 ## Contents
 
@@ -66,6 +67,7 @@ Every parameter below changes behavior away from the server defaults. Add one on
 | `category` | string | The user explicitly requests category-constrained retrieval. See Category. |
 | `includeDomains` | string[] | The user explicitly requests a hard allowlist and supplies or approves its contents. Supports paths and wildcards such as `openai.com/blog` or `*.substack.com`. |
 | `excludeDomains` | string[] | The user explicitly requests a hard blocklist and supplies or approves its contents. Do not convert source preferences or examples into filters; use query phrasing or `systemPrompt`. |
+| `startPublishedDate` / `endPublishedDate` | string (ISO 8601) | The task states a bounded window that must be enforced ("the last seven days", "in 2026"). Hard filters drop undated and misdated pages; "recent" or "latest" alone belongs in the query, not here. |
 | `userLocation` | string | The task is location-sensitive. Two-letter ISO country code. |
 | `systemPrompt` | string | The task uses synthesized output and needs behavior, emphasis, or source-preference guidance. |
 | `outputSchema` | object | The task requires structured output in `output.content`. |
@@ -81,11 +83,11 @@ Use Exa's primary search types as latency/quality presets:
 | `fast` | Low-latency apps | Faster than `auto`, slightly less headroom for synthesis-heavy work |
 | `instant` | Real-time apps | Lowest latency path |
 | `deep-lite` | Lightweight synthesized output | More reasoning and synthesis than `auto` |
-| `deep` | Multi-step synthesis | Higher latency, better for structured or research-like output |
+| `deep` | Multi-step synthesis; wide or multi-search `outputSchema` | Higher latency; runs several searches, so more schema fields come back filled |
 | `deep-reasoning` | Hardest research tasks | Highest reasoning depth and highest latency |
 
 `auto` is the server default. Stay on it unless the use case clearly prioritizes real-time speed, deeper reasoning, or configuration control.
-`outputSchema` works across search types, so do not pick a deep variant only because you want structured output.
+`outputSchema` works across search types, so do not pick a deep variant only because you want structured output; `deep` is for a wide schema whose fields take more than one search to fill (see Structured Output).
 
 ## Nested Contents Options
 
@@ -110,6 +112,7 @@ On the search endpoint, all content-extraction controls live inside `contents`. 
 | `contents.text` | boolean or object | Downstream logic truly needs broad page context. Object form supports `maxCharacters`, `includeHtmlTags`, `verbosity`, `includeSections`, `excludeSections`. |
 | `contents.summary` | boolean or object | The user explicitly requests Exa-side per-result synthesis. Each result adds its own LLM call. A summarized final product is not sufficient justification; use highlights and synthesize downstream. |
 | `contents.maxAgeHours` | integer | The task states a content-freshness requirement. Caps cached page content age before live crawl. `0` forces live crawl, `-1` is cache only. |
+| `contents.snapshotAsOf` | string (ISO 8601 date-time) | The task needs page content as it was at a past datetime (Exa Snapshot). Exa discovers candidate URLs with current retrieval signals, then keeps only pages with a stored version at or before the cutoff and serves that version. Bounds the content, not the ranking. Not with `maxAgeHours`. See `references/snapshot.md`. |
 | `contents.livecrawlTimeout` | integer | Live crawling is in use and slow pages must not block the request. Milliseconds. |
 | `contents.subpages` | integer | The task requires crawling linked subpages per result. |
 | `contents.subpageTarget` | string or string[] | `subpages` is in use and needs focusing. |
@@ -128,38 +131,75 @@ Do not stack `text`, `highlights`, and `summary` in one request. `summary` adds 
 
 ## Structured Output
 
-`systemPrompt` and `outputSchema` do different jobs:
+Use structured output when the user asks for a specific output shape, or for fields that have to be extracted or synthesized from the pages. They do not have to say "JSON" or "schema":
 
-- `systemPrompt` controls behavior, emphasis, and source preferences
-- `outputSchema` controls the shape of `output.content`
+- "the fine amount each article reports", "name, title, and company for each person", "a one-line verdict per paper" are extraction: `outputSchema`
+- "the author of each article" when the user requires it ("I absolutely need the author", "nothing without one") is extraction too: `author` metadata is present only when the publisher exposes it, so a required author has to be confirmed from the page, and results that fail the rule are dropped in `systemPrompt`
+- "10 articles with title and URL" is not: every result already carries `title`, `url`, and `publishedDate`, so this is the recommended request with `numResults: 10` and no schema
 
-```python
-from exa_py import Exa
+Three fields, three jobs. Sort every clause of the user's ask into exactly one:
 
-exa = Exa(api_key="YOUR_EXA_API_KEY")
-result = exa.search(
-    "Who leads OpenAI's safety work?",
-    system_prompt="Prefer official sources and avoid duplicate results.",
-    output_schema={
-        "type": "object",
-        "properties": {
-            "leader": {"type": "string"},
-            "title": {"type": "string"}
-        },
-        "required": ["leader", "title"]
+- `query`: what to retrieve, phrased like a search box entry ("latest news on Nvidia"). Test: if a clause contains `only`, `include`, `exclude`, `drop`, `return`, `must have`, it is not query text.
+- `systemPrompt`: keep/drop and verification rules, source preferences, what to do when a field cannot be verified (omit or null, never a guess). A follow-up that adds a rule ("nothing without an author") edits `systemPrompt`, not `query`.
+- `outputSchema`: the shape of `output.content`
+
+```json
+{
+  "query": "latest news on Nvidia",
+  "systemPrompt": "Include an article only when its page names an individual author. Omit results whose author cannot be verified; never substitute 'Staff' or the publication name.",
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "articles": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {"author": {"type": "string"}, "url": {"type": "string"}},
+          "required": ["author", "url"]
+        }
+      }
     },
-    contents={"highlights": True}
-)
-print(result.output.content if result.output else None)
+    "required": ["articles"]
+  },
+  "contents": {"highlights": true}
+}
 ```
 
-Keep schemas small and explicit. Exa's structured output guidance favors compact, bounded schemas over deeply nested shapes. Use deeper search variants when the retrieval task itself needs more reasoning or synthesis depth.
+Not this: `"query": "latest Nvidia news, only articles with a named author, exclude staff bylines"` with no `systemPrompt`. Same words, wrong field: the rule is now steering retrieval instead of filtering the synthesized output.
+
+Keep `contents: {"highlights": true}` on the request so the fields are filled from page content rather than from titles and metadata alone.
+
+A compact schema (the author and URL above) stays on `auto`. When the schema is wide, or its fields take more than one search to fill (several facts per entity, values that live on different pages), set `type: "deep"`: it runs several searches instead of one, so more of the fields come back filled.
+
+Keep schemas small and explicit. A handful of named fields, one nested object at most, arrays that declare `items`. This is about as far as `/search` wants you to go:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "matches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "site": { "type": "string" },
+          "url": { "type": "string" },
+          "quote": { "type": "string" }
+        }
+      }
+    },
+    "verdict": { "type": "string" }
+  }
+}
+```
+
+If the ask needs more columns than that, drop the least important ones or send the job to `/agent`. Do not fatten or deepen the schema and hope. Compact schemas also synthesize better. Use a deeper search `type` when the retrieval itself needs more reasoning, not because the output is JSON.
 
 ## Category
 
 Do not set `category` unless the user explicitly requests category-constrained retrieval. Mapping task nouns to categories — news tasks to `news`, people tasks to `people`, paper tasks to `publication` — is a mistake: the default index already handles those queries, and the query text itself is the right place to express the topic.
 
-When a user does explicitly request it, documented values include `company`, `people`, `publication`, `news`, `personal site`, and `financial report`. Never invent categories such as `github`, `documentation`, `qa`, or `pdf`. For coding queries, prefer the `/context` endpoint or plain `/search`.
+When a user does explicitly request it, documented values include `company`, `people`, `publication`, `news`, `personal site`, and `financial report`. Never invent categories such as `github`, `documentation`, `qa`, or `pdf`. For coding queries, use plain `/search`.
 
 ### People and Company Routing
 
@@ -201,3 +241,4 @@ Prefer reading citations and grounding from `output.grounding` when using struct
 8. Treat `useAutoprompt`, `numSentences`, and `highlightsPerUrl` as deprecated; do not add them to new examples.
 9. Use `contents.maxAgeHours` instead of `livecrawl`.
 10. Never invent `category` values such as `github`, `documentation`, `qa`, or `pdf`.
+11. Do not add `startPublishedDate` / `endPublishedDate` for "recent" or "latest" alone; phrase that recency in the query. Use date filters when the task states a bounded window that must be enforced (for example "from the last seven days", "published in 2026").

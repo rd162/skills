@@ -1,6 +1,6 @@
 ---
 name: build-with-exa
-description: "Build applications and agents with Exa's API: search, contents extraction, answer, context, Agent API, monitors, websets, OpenAI-compatible endpoints, and exa-py/exa-js SDKs. Use when choosing Exa endpoints, writing Exa API calls, integrating semantic web search or research into products, or debugging Exa request shapes."
+description: "Build applications and agents with Exa's API: search, contents extraction, answer, Agent API, monitors, websets, OpenAI-compatible endpoints, and exa-py/exa-js SDKs. Use when choosing Exa endpoints, writing Exa API calls, integrating semantic web search or research into products, or debugging Exa request shapes."
 metadata:
   author: Exa
   version: "0.2.0"
@@ -14,7 +14,7 @@ source: https://github.com/exa-labs/agent-skills/tree/main/skills/build-with-exa
 
 Included by default:
 
-- Core retrieval APIs: search endpoint, contents endpoint, answer endpoint, context endpoint
+- Core retrieval APIs: search endpoint, contents endpoint, answer endpoint
 - Long-running research workflows: Agent API (`/agent`)
 - Async and recurring workflows: Monitors API
 - Legacy surface: Websets API (existing integrations only; new collection-building work uses the Agent API)
@@ -59,7 +59,7 @@ The recommended Exa search request is the query plus token-efficient content ext
 - Omit `category`. Use it only when the user explicitly asks for category-constrained retrieval.
 - `includeDomains` and `excludeDomains` should be set only when the user explicitly requests a hard allowlist or blocklist and supplies or approves its contents. Express source preferences through query phrasing or `systemPrompt` instead.
 - `maxAgeHours` should be set only when extracted page content must be current. It caps cache age before a live crawl; it is not a publication-recency filter.
-- For "recent stories" tasks, express the window in the query or use `startPublishedDate` / `endPublishedDate`. Do not reach for `maxAgeHours`.
+- For "recent stories" tasks, put the recency in the query ("latest", "recent"). `startPublishedDate` / `endPublishedDate` are hard filters that drop undated and misdated pages; add them only when the task states a bounded window that must be enforced ("from the last seven days", "published in 2026"). Do not reach for `maxAgeHours`.
 - `highlights` should be set to `true` by default for all tasks unless otherwise specified. Do not add `maxCharacters` or other highlight options without an explicit budget requirement in the task.
 
 ## API Decision Workflow
@@ -67,8 +67,8 @@ The recommended Exa search request is the query plus token-efficient content ext
 Before picking an endpoint, decide which workflow shape fits:
 
 - Raw web content for your own LLM or agent: use `/search` with the recommended request above
-- Synthesized structured output: use `/search` and add `outputSchema` (and `systemPrompt` if behavior guidance is needed)
-- Long-running multi-step research, list-building, or enrichment with structured output: use the Agent API (`/agent`)
+- A specific output shape, or fields that have to be extracted or synthesized from the pages: use `/search` and add `outputSchema` (and `systemPrompt` if behavior guidance is needed). The user does not have to say "JSON" or "schema": "the funding amount each article reports", "name, title, and company for each person", or a field the result must carry that result metadata only sometimes has (a required author) are all structured-output requests. Fields every result already carries (title, URL, published date) are not: "10 articles with title and URL" is the recommended request with `numResults`. A compact schema (author and URL per article) stays on `auto`; `type: "deep"` when the schema is wide or its fields take more than one search to fill, since it runs several. See Structured Output in `references/search.md`.
+- Long-running multi-step research, list-building, or enrichment with structured output: use the Agent API (`/agent`), with the same `outputSchema` rule for its fields
 
 **Default to the search endpoint.** Use the search endpoint (`/search`) for most new integrations, then move to a more specialized Exa surface only when the task shape clearly calls for it.
 
@@ -76,11 +76,11 @@ Before picking an endpoint, decide which workflow shape fits:
 2. Already know the URLs and need clean page extraction or freshness controls: use the contents endpoint (`/contents`)
 3. Need pages related to a known seed URL: use the search endpoint (`/search`) with a query derived from the page (for example title, topic, or text from `/contents`)
 4. Need a grounded answer with citations and no LLM of your own doing generation: use the answer endpoint (`/answer`). If the product already has a chat LLM, give it `/search` as a tool instead.
-5. Need code-focused retrieval from repos, docs, and Stack Overflow: use the context endpoint (`/context`)
-6. Need OpenAI SDK drop-in compatibility for chat or responses clients: use the OpenAI-compatible endpoints (`/chat/completions`, `/responses`)
-7. Need asynchronous multi-step research, list-building, enrichment, or follow-up questions over prior research: use the Agent API (`/agent`)
-8. Need scheduled recurring search with webhook delivery: use the Monitors API (`/monitors`)
-9. Maintaining an existing Websets integration: see the migration guide (`references/migrate-websets-to-agent.md`) and transition to the Agent API (`references/agent.md`). Do not use Websets for new work; use the Agent API instead.
+5. Need OpenAI SDK drop-in compatibility for chat or responses clients: use the OpenAI-compatible endpoints (`/chat/completions`, `/responses`)
+6. Need asynchronous multi-step research, list-building, enrichment, or follow-up questions over prior research: use the Agent API (`/agent`)
+7. Need scheduled recurring search with webhook delivery: use the Monitors API (`/monitors`)
+8. Maintaining an existing Websets integration: see the migration guide (`references/migrate-websets-to-agent.md`) and transition to the Agent API (`references/agent.md`). Do not use Websets for new work; use the Agent API instead.
+9. Need page content as it was at a past datetime (backtesting agents, reproducible evals, comparing earlier versions of docs, pricing pages, policies, or filings): use Exa Snapshot, the `snapshotAsOf` field on `/contents` (top level) or `/search` (inside `contents`). See `references/snapshot.md`.
 
 ## Quick Start
 
@@ -136,12 +136,13 @@ curl -X POST "https://api.exa.ai/search" \
 ## Critical Pitfalls
 
 - Do not decorate the recommended request without reason. Adding `category`, domain filters, boilerplate `numResults`, or freshness controls without an explicit task requirement is the most common integration mistake.
+- Do not answer an extraction request with a bare search. A field that has to come out of the page, or a metadata field the user requires on every result, goes in `outputSchema`; keep/drop rules go in `systemPrompt`; `query` is retrieval intent only. If a clause of the query says `only`, `include`, `exclude`, `drop`, or `return`, it is in the wrong field. Do not add `outputSchema` for fields every result already carries (title, URL, published date).
 - On the search endpoint, `text`, `highlights`, and `summary` belong inside `contents`, not at the top level.
 - On the contents endpoint, `text`, `highlights`, and `summary` are top-level fields, not nested inside `contents`.
 - Pick one of `highlights`, `text`, or `summary`. Do not stack them. `summary` requires an explicit user request for Exa-side per-result synthesis.
 - Almost all tasks should use bare `highlights: true`. `numSentences` and `highlightsPerUrl` are deprecated, and `maxCharacters` needs an explicit budget requirement.
 - List-building and enrichment workflows belong on the Agent API (`/agent`), not on `/search` with `category: "people"` or `category: "company"`. Those categories are only for retrieving raw people or company documents.
-- `maxAgeHours` controls crawl/cache freshness (how old extracted page content may be before a live crawl), not publication recency. Do not use it as a "recent results" control; recency belongs in query phrasing or `startPublishedDate` / `endPublishedDate`.
+- `maxAgeHours` controls crawl/cache freshness (how old extracted page content may be before a live crawl), not publication recency. Do not use it as a "recent results" control; recency belongs in query phrasing. `startPublishedDate` / `endPublishedDate` are for task-stated bounded windows ("the last seven days", "in 2026") that must be enforced, not for "recent" or "latest" alone.
 - Never invent category values like `github`, `documentation`, `qa`, or `pdf`. When a user does request category-constrained retrieval, check the search reference first: specialized categories such as `people` and `company` restrict which filters are valid.
 - OpenAI-compatible endpoints are for compatibility-first use cases. Prefer native Exa endpoints for new integrations when you want clearer request semantics.
 - Do not treat `/agent` as a drop-in replacement for `/search`. It is higher-latency and async, so use the dedicated Agent reference when that workflow shape is the real fit. Prefer it over Websets for new collection-building work.
@@ -154,8 +155,8 @@ curl -X POST "https://api.exa.ai/search" \
 |------|--------|
 | [references/search.md](references/search.md) | Search endpoint request/response shape, search types, filters, nested contents, structured output |
 | [references/contents.md](references/contents.md) | Contents endpoint extraction, freshness, statuses, top-level content fields |
+| [references/snapshot.md](references/snapshot.md) | Exa Snapshot: `snapshotAsOf` historical page versions on `/contents` and `/search`, limits, snapshot vs freshness |
 | [references/answer.md](references/answer.md) | Grounded answer generation with citations and structured output |
-| [references/context.md](references/context.md) | Code-focused retrieval with `tokensNum` |
 | [references/agent.md](references/agent.md) | Agent API for async multi-step research, enrichment, structured output, polling, and events |
 | [references/openai-compat.md](references/openai-compat.md) | OpenAI-compatible endpoints, model routing, `extra_body` usage |
 | [references/monitors.md](references/monitors.md) | Standalone Monitors API for scheduled recurring search |
@@ -173,5 +174,6 @@ curl -X POST "https://api.exa.ai/search" \
 - Search reference: `https://exa.ai/docs/reference/search`
 - Agent API guide: `https://exa.ai/docs/reference/agent-api-guide`
 - Exa Connect overview: `https://exa.ai/docs/reference/agent-api/connect/overview`
+- Exa Snapshot: `https://exa.ai/docs/search/snapshot`
 - Python SDK spec: `https://exa.ai/docs/sdks/python-sdk-specification`
 - TypeScript SDK spec: `https://exa.ai/docs/sdks/typescript-sdk-specification`

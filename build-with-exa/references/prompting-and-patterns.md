@@ -8,7 +8,6 @@ Durable usage patterns for Exa queries, output control, and content retrieval.
 - Search best practices: `/reference/search-best-practices`
 - Contents best practices: `/reference/contents-best-practices`
 - Answer reference: `/reference/answer`
-- Context reference: `/reference/context`
 
 ## Contents
 
@@ -40,8 +39,9 @@ Examples:
 
 Use them together, but give them different jobs:
 
-- `systemPrompt`: source preferences, output style, dedup behavior, emphasis
-- `outputSchema`: exact response shape
+- `systemPrompt`: source preferences, output style, dedup behavior, emphasis, what to do when a field cannot be verified
+- `outputSchema`: exact response shape, for fields extracted or synthesized from the pages (not for `title` and `url`, which every result carries)
+- `query`: the search itself; never the field list or the keep/drop rules
 
 Pattern:
 
@@ -75,7 +75,7 @@ Do not stack `text`, `highlights`, and `summary`. `summary` adds a per-result LL
 
 Use `maxAgeHours` to control how old cached page content may be before Exa livecrawls the page.
 
-It is not a publication-date filter. For publication recency, phrase the time window in the query or use `startPublishedDate` / `endPublishedDate` on `/search`.
+It is not a publication-date filter. For publication recency, phrase the time window in the query. Reserve `startPublishedDate` / `endPublishedDate` for a bounded window the task states and must enforce ("the last seven days", "in 2026"); as hard filters they drop undated and misdated pages, so "recent" or "latest" alone does not justify them.
 
 - omit it for the default balanced behavior
 - set a small value when the extracted page content must be near-current
@@ -99,7 +99,6 @@ It matters less on:
 - Question-first UI with no app-side LLM: consider `/answer`
 - App already has a chat LLM, or search-results-first UI: use `/search`
 - Known URLs: use `/contents`
-- Code retrieval: use `/context`
 - Repeated recurring tracking: use `/monitors`
 - List-building and enrichment: use `/agent`
 
