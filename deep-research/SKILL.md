@@ -25,12 +25,6 @@ last_updated: 2026-07-22
 
 # Deep Research — Web + Raw-Source Corpus
 
-Gather, validate, and synthesize knowledge from the web AND from local raw
-sources (documents, diagrams, videos) — with source tiering, temporal
-awareness, iterative saturation rounds, and explicit contradiction handling.
-One engine, four modes: the same gap-driven loop runs whether the source is a
-search index, a PDF, or a 50-minute meeting recording.
-
 ## Mode Selection
 
 | User intent                                        | Mode                     | Read further in                     |
@@ -141,12 +135,6 @@ Seven steps. Skip none.
 
 ## High-Stakes Domain Escalation
 
-Wrong answers in some domains cause death, imprisonment, poisoning, collapse, or ruin:
-**medical, psychology, pharmacology, legal, structural/civil engineering, nutrition
-(medical), childcare, financial (advisory)**. If the answer could plausibly influence
-someone's health, legal standing, financial security, or physical safety — treat as
-high-stakes. When uncertain, escalate (a false negative costs far more than tokens).
-
 Mandatory when detected:
 
 1. **Deepest research available** — strongest tool, or 5-8 searches constrained to T1.
@@ -194,7 +182,7 @@ What each source type yields:
 | .drawio                   | parsed components/connections markdown + WEBP per page                    |
 | Video (MP4/MKV/AVI/MOV/…) | `{stem}_gemini.vtt` transcript + `gemini_analysis.md` + `smart_cadre_NNN.jpg` (Gemini-selected frames); auto-chaptered >20 min; legacy Whisper/PySceneDetect offline fallbacks |
 
-Hard rules (each learned from a real failure — details and anti-pattern table
+Hard rules (details and anti-pattern table
 in the reference):
 
 - **WEBP images are mandatory** for page-producing formats — diagrams and
@@ -239,9 +227,7 @@ channel, with the corpus as the shared substrate.
 **Round 1 — broad baseline.** Ingestion's generic artifacts plus a WIDE themed
 extraction per source. Prefer exhaustive themed sections over narrow yes/no
 checklists — narrow prompts return walls of "NOT PRESENT" while wide ones
-surface facts nobody thought to ask for (proven: a chronological screen
-inventory found an on-screen estimation document that 15 targeted questions
-had missed). For videos: screen/window inventory, people/systems rosters,
+surface facts nobody thought to ask for. For videos: screen/window inventory, people/systems rosters,
 every number with units, verbatim quotes with timestamps, `[AUDIO]` vs
 `[ON-SCREEN]` tags. For document sets: full fragment read + structure map.
 For web: the 3+ angle sweep from the Core Protocol.
@@ -271,10 +257,7 @@ source, built from the gap register:
   fan out sub-agents for independent subjects (`references/sub-agent-dispatch.md`).
 
 **Phrase every verification prompt neutrally — NEVER quote the disputed
-value.** An anchored pass can rationalize a fabrication into existence:
-confirmed 2026-07-22, a verification prompt that mentioned a prior pass's
-invented numbers got back a hallucinated document "containing" exactly those
-numbers. Ask "read all visible cells of any planning document" — not "does it
+value.** Ask "read all visible cells of any planning document" — not "does it
 say 3.5 months?".
 
 **Round 3 — verify and saturate.** Settle what rounds 1-2 left disputed,
@@ -309,10 +292,7 @@ own-eye artifact inspection (extracted frame, raw file, literal grep)
         > inference
 ```
 
-Never silently upgrade a claim's rung. Video execution mechanics — sequential
-runs (parallel chaptered passes amplify 5xx rates), `--chapter-minutes 10`
-payload sizing, the two-layer retry ladder, "hung" runs that are actually
-retrying: `references/video-analysis.md`. Re-analysis of stale video sources
+Never silently upgrade a claim's rung. Video execution mechanics — `references/video-analysis.md`. Re-analysis of stale video sources
 for new questions: `references/video-source-reanalysis.md`.
 
 ---
@@ -333,13 +313,6 @@ Dispatch patterns, output budgets, model selection: `references/sub-agent-dispat
 
 **Async research tools:** poll no more than every 30 seconds; run standard searches in
 parallel while waiting. High-stakes → always the deepest/pro model.
-
-**Video sources:** existing transcripts or AI descriptions answer only the questions
-asked WHEN they were produced. Use them as a relevance filter only; run a NEW analysis
-pass prompted with the CURRENT question; persist under a topic-qualified filename;
-cross-check against text sources (video analysis is T3). Sub-agents RUN video passes
-but never re-summarize the output — the dispatcher reads the raw markdown itself.
-Protocol and proof case: `references/video-source-reanalysis.md`.
 
 ---
 

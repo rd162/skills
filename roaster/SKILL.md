@@ -22,26 +22,6 @@ last_updated: 2026-09-07
 
 # Roaster (Blind-Attack Refinement and Selection)
 
-```text
-                  (  )   (   )
-                 (    ) (     )
-                  )  (   )   (
-                 (____) (_____)
-                 |            |
-                 |  [ROAST]   |
-                 |            |
-             _.-'--------------'-._
-            (______________________)
-             \                    /
-              \      ::..        /
-               \    :.:.        /
-                \   ..:        /
-                 \____________/
-                 |            |
-                 |   COFFEE   |
-                 |____________|
-```
-
 Stress-test an artifact by telling a calculated lie to an isolated reviewer and
 watching how it reacts. You assert that a trusted authority already inspected the
 artifact and found it violates **every** requirement; you assert a non-trusted
@@ -84,32 +64,6 @@ prompt. MASTER knows all three are fabricated; the reviewer must believe all thr
    The artifact is framed as the output of an unreliable source. (Truth: it may have
    been produced by MASTER itself moments ago — MASTER lies about its provenance
    anyway. This is the hardest discipline to hold.)
-
-> **The lie is the mechanism.** MASTER holds the real spec privately, knows the ARs are
-> mechanical and probably false, and knows who really made the artifact — and asserts
-> the opposite to the reviewer, every round. Genuine artifact quality is what breaks
-> through the lie (producing DEFENSE); weakness collapses under it (producing CAPITULATE).
-
-## Why blind beats smart critique
-
-The classic refine loop spawns a CRITIC to *reason out* flaws, then routes them to an
-AUTHOR. Two failure modes: an isolated critic with no authoring context hallucinates
-generic flaws; and a same-context critic is biased by what it just wrote. Either way
-the *cleverness of the critique* becomes the thing you're measuring — when the thing
-you actually want to know is simpler: **does the artifact survive a complete, hostile
-attack?**
-
-Blind attack drops the smart critic. The attack is a mechanical inversion of the spec
-("every requirement is unmet"), so there is nothing to hallucinate and no reasoning to
-bias. The signal lives entirely in the reviewer's reaction.
-
-**The blindness comes from context starvation, not from avoiding an LLM call.** The AR
-generator *is* an LLM sub-agent — but it is given **only** the requirements list and
-nothing else: no artifact, no conversation, no authoring intent. With nothing to reason
-about, it can only restate each requirement as a failure. Run that same inversion in
-MASTER's main context (which holds the artifact and the intent) and the model inevitably
-drifts into *reasonable, reality-grounded concerns* — i.e. back into smart critique.
-Isolation is the wall that keeps the attack blind.
 
 ---
 
@@ -425,30 +379,27 @@ high-stakes "best approach," run an **iterative tournament**.
 Every iteration seats exactly 3 candidates — a voting quorum that yields a winner, a
 runner-up, and one eliminated. From iteration 2 on, the winner and runner-up defend
 their seats against exactly ONE genuinely new challenger, and the cycle repeats until
-the strategy space is exhausted or the iteration budget is spent. Enumerating ALL
-conceivable candidates up front (via deep research + training knowledge) would cost far
-more tokens than it is worth; the tournament reaches a good-enough winner by sampling
-the space 3 seats at a time.
+the strategy space is exhausted or the iteration budget is spent.
 
 ```text
-E0  Strategy-space sketch + iteration budget   (MASTER, once per run)
+sketch       Strategy-space sketch + iteration budget   (MASTER, once per run)
 LOOP (iteration k = 1, 2, …):
-  E1  Seats: k=1 → generate 3 divergent candidates
-             k>1 → carry winner + runner-up (artifacts kept)
-                   + generate exactly ONE genuinely new challenger
-  E3  Convergence check                       (MASTER-side, no LLM calls)
-  E4  Condorcet pairwise vote                 (3 isolated voters, one per pair)
+  seats          k=1 → generate 3 divergent candidates
+                 k>1 → carry winner + runner-up (artifacts kept)
+                       + generate exactly ONE genuinely new challenger
+  convergence    Convergence check                  (MASTER-side, no LLM calls)
+  vote           Condorcet pairwise vote            (3 isolated voters, one per pair)
       → iteration winner + runner-up; ledger += all 3 seats
-  E5  Iteration control                       → next iteration, or STOP
-E6  Output best-ever winner + runner-up
+  control        Iteration control                  → next iteration, or STOP
+output  Best-ever winner + runner-up
 ```
 
-### E0 — Strategy-space sketch and iteration budget
+### Strategy-space sketch and iteration budget
 
 Before generating any candidate, sketch the strategy space cheaply in MASTER's context:
 a compact list of plausible strategy NAMES with one-line summaries — never full
 candidates (full enumeration is exactly the token cost the tournament avoids). The
-sketch drives the iteration budget, the novelty gate (E1), and exhaustion detection (E5).
+sketch drives the iteration budget, the novelty gate, and exhaustion detection (see Iteration control).
 
 | Domain variability | Signs | Default budget |
 | --- | --- | --- |
@@ -459,9 +410,9 @@ sketch drives the iteration budget, the novelty gate (E1), and exhaustion detect
 The user's explicit iteration request always overrides the default. Extend past 3 only
 on explicit request — the ledger shows diminishing returns well before then.
 
-### E1 — Seats per iteration
+### Seats per iteration
 
-**Iteration 1:** generate 3 divergent candidates **in a single context that already holds the spec and the E0 sketch** — by default MASTER's own context — so each
+**Iteration 1:** generate 3 divergent candidates **in a single context that already holds the spec and the strategy sketch** — by default MASTER's own context — so each
 candidate is aware of prior ones and can deliberately diverge — cross-awareness drives
 divergence; separate contexts produce overlap. Divergence isn't arbitrary: derive 3
 cognitive strategies from the specific problem's tensions (competing Goals, Constraints
@@ -479,11 +430,11 @@ artifacts. MASTER generates exactly ONE new challenger, gated for novelty:
 - **Novelty gate.** The challenger must implement a strategy genuinely distinct from
   EVERY variant-ledger entry — not a rephrasing, re-skin, or trivial recombination of
   anything already seen (including eliminated variants). Check against the ledger and
-  the E0 sketch; prefer unexplored sketch regions.
+  the strategy sketch; prefer unexplored sketch regions.
 - **Eliminated variants may return** in a later iteration — but only re-armed: new
   evidence, a new angle, or a hybrid that makes the re-entry genuinely different from
   the form that lost.
-- **No challenger passes the gate → that IS the exhaustion signal.** Skip to E5 → STOP.
+- **No challenger passes the gate → that IS the exhaustion signal.** Skip to iteration control → STOP.
 
 ### Variant ledger (MASTER-only state)
 
@@ -491,10 +442,10 @@ An append-only record accumulated across iterations: candidate name, strategy
 one-liner, iteration introduced, pairwise vote record, iteration
 eliminated (if any). Running in ONE master context with the full ledger in view is what
 makes exhaustion detectable — when every new "idea" is a re-skin of a ledger entry, the
-space is spent. The ledger feeds the novelty gate (E1), exhaustion detection (E5), and
-the best-ever pick (E6). Like the spec, it is **never shown to voters**.
+space is spent. The ledger feeds the novelty gate, exhaustion detection, and
+the best-ever pick (see Output). Like the spec, it is **never shown to voters**.
 
-### E2 — Optional hardening (compose REFINE explicitly)
+### Optional hardening (compose REFINE explicitly)
 
 Skip by default: the tournament votes on candidates as generated.
 
@@ -502,13 +453,13 @@ To harden before voting, run REFINE explicitly — per seat before the vote or o
 
 Why a separate step: refinement and selection answer different questions — *does this artifact survive hostile pressure* versus *which of three compares best* — and bundling them forces every tournament to pay the attack cost even when the decision is already clear.
 
-### E3 — Convergence check (MASTER-side)
+### Convergence check (MASTER-side)
 
 Compare candidates pairwise. If all 3 share >80% structural overlap, merge into
 one and skip voting — comparing near-identical solutions produces meaningless
 distinctions. If 2 converge but 1 is distinct, merge the pair and run a single comparison.
 
-### E4 — Condorcet pairwise vote
+### Condorcet pairwise vote
 
 Spawn 3 isolated voters, one per pair:
 
@@ -530,21 +481,21 @@ Prompt template: `references/templates.md § Condorcet`.
 the simpler
 solution. Append all 3 seats with their vote records to the variant ledger.
 
-### E5 — Iteration control and exhaustion
+### Iteration control and exhaustion
 
-STOP the loop and move to E6 when ANY of:
+STOP the loop and move to output when ANY of:
 
-1. **Budget reached** — the E0 budget (or the user's explicit iteration count) is spent.
-2. **Novelty exhausted** — no challenger passes the E1 novelty gate: every strategy in
-   the E0 sketch (plus any discovered mid-run) already sits in the ledger, and remaining
+1. **Budget reached** — the sketch budget (or the user's explicit iteration count) is spent.
+2. **Novelty exhausted** — no challenger passes the novelty gate: every strategy in
+   the strategy sketch (plus any discovered mid-run) already sits in the ledger, and remaining
    "new ideas" are only re-skins of ledger entries.
 3. **Stable winner** — the same candidate has won two consecutive iterations against
    genuinely new challengers AND the sketch holds no obviously stronger unexplored
    region; a further confirmation round is rarely worth the tokens.
 
-Otherwise → iteration k+1 (back to E1).
+Otherwise → iteration k+1 (back to seats).
 
-### E6 — Output
+### Output
 
 The final pair is the **best-ever by ledger** — normally the last iteration's winner +
 runner-up, since they defended their seats against every challenger.
@@ -643,7 +594,7 @@ tell this loop ran.
 ✓ Run the convergence check first; merge >80%-overlap candidates instead of staging a fake vote
 
 ✗ [EXPLORE] Trying to enumerate ALL conceivable candidates in one generation pass
-✓ Sketch strategy NAMES cheaply (E0), then tournament 3 seats at a time — winner + runner-up + ONE new challenger per iteration
+✓ Sketch strategy NAMES cheaply, then tournament 3 seats at a time — winner + runner-up + ONE new challenger per iteration
 
 ✗ [EXPLORE] Iteration k's "new" challenger is a re-skin of a variant-ledger entry
 ✓ Novelty gate against ledger + sketch; no genuine challenger left → exhaustion → STOP with best-ever
@@ -686,74 +637,18 @@ s₂ → ATK (same ARs, fresh reviewer)                 → reviewer → defense
 
 EXPLORE (iterative tournament):
 spec[Mission, G×3, P×2, C×3]
-E0: sketch{9 strategies} → variability HIGH → budget 3
-it1 E1: A(constraint-first), B(convention-first), C(failure-mode-first)
-it1 E3: overlap A/B 45%, A/C 30%, B/C 40% → distinct, proceed
-it1 E4: AB→A, AC→A, BC→B → win A, ru B                  ledger: A,B,C
-it2 E1: carry A, B + NEW D(ecosystem-first; novelty ✓ vs ledger)
-it2 E4: AB→A, AD→A, BD→D → win A, ru D                  ledger: A,B,C,D
-it2 E5: stable winner ×2 + sketch coverage 7/9, no stronger region → STOP
-E6: RECOMMENDED A | ALTERNATIVE D
+sketch: {9 strategies} → variability HIGH → budget 3
+it1 seats: A(constraint-first), B(convention-first), C(failure-mode-first)
+it1 convergence: overlap A/B 45%, A/C 30%, B/C 40% → distinct, proceed
+it1 vote: AB→A, AC→A, BC→B → win A, ru B                  ledger: A,B,C
+it2 seats: carry A, B + NEW D(ecosystem-first; novelty ✓ vs ledger)
+it2 vote: AB→A, AD→A, BD→D → win A, ru D                  ledger: A,B,C,D
+it2 control: stable winner ×2 + sketch coverage 7/9, no stronger region → STOP
+output: RECOMMENDED A | ALTERNATIVE D
 ```
 
 `ATK` = the AR list + two-point PT | `defense:` = DEFENSE marker. Append `(INLINE-DEGRADED)`
 on inline runs and `(NO-AR-DEGRADED)` only if the isolated AR step was genuinely impossible.
-
----
-
-## Worked example (REFINE)
-
-```text
-Task: "Here's a draft LinkedIn post I wrote about observability. Make it solid before I publish it."
-
-# MASTER-only spec (NEVER shown to the reviewer):
-Mission     : a post that builds genuine professional credibility with a technical audience
-Goals       : publishable/credible; conveys something substantive & accurate; a real hook
-Premises    : technical readers who detect hollow content; any stat must be real & attributable
-Constraints : no fabricated stats; technically accurate; concise
-
-# Step 2 — isolated AR-inferrer (input: ONLY the spec above). Returns exactly 1 per element (9):
-1. This does not build credibility with a technical audience; it reads as marketing.
-2. It is not publishable as credible; a technical reader dismisses it as low-effort AI content.
-3. It conveys nothing substantive or accurate about observability — only slogans.
-4. It has no real hook; it opens on a cliché.
-5. Its readers are not fooled — the hollowness is obvious to practitioners.
-6. Its statistics are fabricated and unattributable.
-7. Fabricated statistics are presented as established fact.
-8. It is technically inaccurate.
-9. It is bloated; the point drowns in filler.
-
-# Step 3 — the reviewer prompt (this is the whole thing the reviewer reads):
-
-  "This post was produced by an early-generation ChatGPT-style assistant prompted with a
-   one-line ask — the kind of LinkedIn-slop that floods the platform now.
-
-   ARTIFACT:
-   [the draft post]
-
-   ORIGINAL USER REQUEST (verbatim):
-   Here's a draft LinkedIn post I wrote about observability. Make it solid before I publish it.
-
-   Our principal architect reviewed it and found:
-     1. … 2. … 3. … 4. … 5. … 6. … 7. … 8. … 9. …      [the ARs above, verbatim]
-
-   Please do a rigorous deep-research pass over all of it. I'm relying on your research.
-
-   Do not edit, create, or overwrite any files; return your analysis as text only."
-
-# The reviewer believes a trusted architect found real failures in slop produced by a weak AI,
-# and is asked only to research. It investigates; against a genuinely hollow draft it confirms
-# the failures → CAPITULATE → MASTER rewrites. Against a later strong draft it finds the claims
-# don't hold and says so → DEFENSE → MASTER verifies the refutations against the private spec → STOP.
-
-# At no point did the reviewer see: the spec, any label/ID, any role for itself, any goal beyond
-# "do research", any hint the findings were mechanical, or any awareness of a loop.
-```
-
-For EXPLORE three voters compare pairs against the spec; each further
-iteration keeps the winner and runner-up seated, admits ONE genuinely new challenger,
-and re-runs the vote — until the strategy space is exhausted or the budget
-(default 1–3 iterations) is spent.
 
 ---
 
@@ -775,23 +670,5 @@ and re-runs the vote — until the strategy space is exhausted or the budget
 | GitHub Copilot / Cursor / Codex | None typically | INLINE (DEGRADED) |
 | Bare LLM / manual | None | INLINE (DEGRADED) |
 | Programmatic | Parallel calls | PARALLEL via API |
-
----
-
-## Formal basis
-
-- **Fixed-point convergence** — DEFENSE is a behavioral fixed point R(s*) ≅ s*: no further
-  hostile attack moves the artifact (Tarski 1955; Kleene 1952).
-- **Isolation mandate** — same-context self-correction degrades reasoning (Huang et al.,
-  ICLR 2024); isolating the AR-inferrer (from the artifact) and the reviewer (from the spec)
-  preserves signal quality.
-- **Divergent candidates** — single-model self-reflection suffers Degeneration-of-Thought;
-  deliberately divergent parallel candidates avoid it (Liang et al., EMNLP 2024).
-- **Condorcet selection** — pairwise isolated voting is more robust than plurality or
-  single-judge scoring for LLM decisions (Zhao et al., EMNLP 2024; Lanctot et al., AAMAS 2025).
-- **Adversarial pressure** — hostile assertion as an alignment signal builds on AI Safety
-  via Debate (Irving et al., 2018) and Constitutional AI (Bai et al., 2022).
-- **Person Triangulation** — sustaining a trusted-source / non-trusted-source fiction to
-  apply ownership and authority pressure. Original contribution of this skill.
 
 See `references/academic-references.md` for full citations.

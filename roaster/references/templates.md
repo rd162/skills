@@ -20,8 +20,8 @@ sub-agent.
 2. [Inversion Patterns by Requirement Type](#inversion-patterns-by-requirement-type)
 3. [Two-Point Person Triangulation Variants](#two-point-person-triangulation-variants)
 4. [The Reviewer Prompt (verbatim text the reviewer reads)](#the-reviewer-prompt-verbatim-text-the-reviewer-reads)
-5. [Generation Prompt (EXPLORE E1)](#generation-prompt-explore-e1)
-6. [Condorcet Comparison Prompt (EXPLORE E4)](#condorcet-comparison-prompt-explore-e4)
+5. [Generation Prompt (EXPLORE generation stage)](#generation-prompt-explore-generation)
+6. [Condorcet Comparison Prompt (EXPLORE vote stage)](#condorcet-comparison-prompt-explore-vote)
 7. [MASTER Classification & Verification](#master-classification--verification)
 8. [Model Selection](#model-selection)
 
@@ -205,7 +205,7 @@ Do not edit, create, or overwrite any files; return your analysis as text only.
 
 ---
 
-## Generation Prompt (EXPLORE E1)
+## Generation Prompt (EXPLORE generation stage)
 
 Run in MASTER's context (not per-candidate) so the model is aware of prior candidates
 and can deliberately diverge. Input: the MGPC spec only.
@@ -246,7 +246,7 @@ labels are MASTER-only state — reviewers and voters never see them.
 
 ---
 
-## Condorcet Comparison Prompt (EXPLORE E4)
+## Condorcet Comparison Prompt (EXPLORE vote stage)
 
 One isolated voter per pair. Voters receive the two full refined candidates + the spec —
 no attack logs, no round counts, no termination signals, no strategy labels.

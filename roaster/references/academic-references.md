@@ -198,7 +198,7 @@ v5.0 deltas.
   Condorcet and ordinal voting for LLM agent decisions;
   surveys 52 multi-agent systems and identifies heavy reliance
   on dictatorial and plurality voting as a diversity failure.
-  Grounds E4's pairwise-voter design over a single judge.
+  Grounds the pairwise-voter design over a single judge.
 
 - Wang, Weiqin, Yile Wang, and Hui Huang.
   "Ranked Voting based Self-Consistency of Large Language Models."

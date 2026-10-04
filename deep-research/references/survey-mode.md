@@ -239,10 +239,10 @@ Load `references/questions-template.md`. Copy to
 
 ### Categories
 
-Group questions under these headings. Do not mint per-question handles (`B1`, `T1`,
-`C1`): a question is identified by its own wording, and letter+number handles collide
-with identifiers that already mean something — `T1` is this skill's own source tier, and
-engineering domains are full of live `C1`/`P1` gate and priority labels.
+Group questions under these headings. Do not mint per-question handles: a question is
+identified by its own wording, and letter+number handles collide with identifiers that
+already mean something — short codes overlap this skill's own source-tier names, and
+engineering domains are full of live gate and priority labels.
 
 - **Business:** ownership, licensing, support, commercial
 - **Application:** functional scope, journeys, data, integrations

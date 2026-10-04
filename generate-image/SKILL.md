@@ -311,7 +311,7 @@ Soft constraints (violation = acceptable but penalised):
   - [Preferences from the brief]
 ```
 
-Use descriptive names, never handles like `G1`/`P2`/`CH3`. Handles are unstable across
+Use descriptive names, never invented handles. Handles are unstable across
 rewrites and collide with identifiers that already mean something in the surrounding
 work; a name like `text accuracy` states what it governs and survives being quoted.
 
